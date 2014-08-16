@@ -1,0 +1,15 @@
+.extract
+.DS_Store
+target
+*.releaseBackup
+release.properties
+.idea
+*.iml
+derby.log
+nul
+.classpath
+.project
+org.eclipse.m2e.core.prefs
+org.eclipse.core.resources.prefs
+org.eclipse.jdt.core.prefs
+dependency-reduced-pom.xml
