@@ -53,6 +53,17 @@ public class TelnetBootstrap {
   public void start() {
     NetServer server = vertx.createNetServer();
     server.connectHandler(new TelnetHandler(socket -> new TelnetSession(socket) {
+
+      @Override
+      protected void onOpen() {
+        System.out.println("New client");
+      }
+
+      @Override
+      protected void onClose() {
+        System.out.println("Client closed");
+      }
+
       @Override
       protected void onSize(int width, int height) {
         System.out.println("Resize:(" + width + "," + height + ")");

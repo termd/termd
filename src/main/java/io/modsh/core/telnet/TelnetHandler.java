@@ -40,7 +40,7 @@ public class TelnetHandler implements Handler<NetSocket> {
   public void handle(NetSocket socket) {
     TelnetSession session = factory.apply(socket);
     socket.dataHandler(session);
-    socket.closeHandler(v -> session.destroy());
+    socket.closeHandler(v -> session.onClose());
     session.init();
   }
 }

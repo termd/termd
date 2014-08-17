@@ -69,6 +69,7 @@ public class TelnetSession implements Handler<Buffer> {
     socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_DO, Option.BINARY.code}));
     socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_WILL, Option.BINARY.code}));
     socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_DO, Option.TERMINAL_TYPE.code}));
+    onOpen();
   }
 
   @Override
@@ -76,12 +77,6 @@ public class TelnetSession implements Handler<Buffer> {
     for (int i = 0;i < data.length();i++) {
       status.handle(this, data.getByte(i));
     }
-  }
-
-  protected void onSize(int width, int height) {
-  }
-
-  protected void onTerminalType(String terminalType) {
   }
 
   protected void onByte(byte b) {
@@ -101,6 +96,10 @@ public class TelnetSession implements Handler<Buffer> {
     }
   }
 
+  protected void onOpen() {}
+  protected void onClose() {}
+  protected void onSize(int width, int height) {}
+  protected void onTerminalType(String terminalType) {}
   protected void onCommand(byte command) {}
   protected void onNAWS(boolean naws) {}
   protected void onEcho(boolean echo) {}
@@ -111,9 +110,6 @@ public class TelnetSession implements Handler<Buffer> {
   protected void onOptionDo(byte optionCode) {}
   protected void onOptionDont(byte optionCode) {}
   protected void onOptionParameters(byte optionCode, byte[] parameters) {}
-
-  protected void destroy() {
-  }
 
   enum Option {
 

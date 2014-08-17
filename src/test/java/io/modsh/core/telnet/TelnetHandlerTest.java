@@ -156,6 +156,7 @@ public class TelnetHandlerTest extends TestBase {
         serverValue.set(naws);
         testComplete();
       }
+
       @Override
       protected void onSize(int width, int height) {
         super.onSize(width, height);
@@ -186,5 +187,39 @@ public class TelnetHandlerTest extends TestBase {
     assertEquals(2, size.get().length);
     assertEquals(20, size.get()[0]);
     assertEquals(10, size.get()[1]);
+  }
+
+  @Test
+  public void testOpen() throws Exception {
+    server(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onOpen() {
+        testComplete();
+      }
+    });
+    TelnetClient client = new TelnetClient();
+    try {
+      client.connect("localhost", 4000);
+    } finally {
+      client.disconnect();
+    }
+    await();
+  }
+
+  @Test
+  public void testClose() throws Exception {
+    server(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onClose() {
+        testComplete();
+      }
+    });
+    TelnetClient client = new TelnetClient();
+    try {
+      client.connect("localhost", 4000);
+    } finally {
+      client.disconnect();
+    }
+    await();
   }
 }
