@@ -25,7 +25,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -102,17 +101,16 @@ public class TelnetSession implements Handler<Buffer> {
     }
   }
 
-  protected void onNAWS(boolean naws) {
-  }
-
-  protected void onEcho(boolean echo) {
-  }
-
-  protected void onSGA(boolean sga) {
-  }
-
-  protected void onChar(char c) {
-  }
+  protected void onCommand(byte command) {}
+  protected void onNAWS(boolean naws) {}
+  protected void onEcho(boolean echo) {}
+  protected void onSGA(boolean sga) {}
+  protected void onChar(char c) {}
+  protected void onOptionWill(byte optionCode) {}
+  protected void onOptionWont(byte optionCode) {}
+  protected void onOptionDo(byte optionCode) {}
+  protected void onOptionDont(byte optionCode) {}
+  protected void onOptionParameters(byte optionCode, byte[] parameters) {}
 
   protected void destroy() {
   }
@@ -193,11 +191,11 @@ public class TelnetSession implements Handler<Buffer> {
       this.code = code;
     }
 
-    void handleDo(TelnetSession session) { System.out.println("Option " + name() + " handleDo not implemented "); }
-    void handleDont(TelnetSession session) { System.out.println("Option " + name() + " handleDont not implemented "); }
-    void handleWill(TelnetSession session) { System.out.println("Option " + name() + " handleWill not implemented "); }
-    void handleWont(TelnetSession session) { System.out.println("Option " + name() + " handleWont not implemented "); }
-    void handleParameters(TelnetSession session, Buffer parameters) { System.out.println("Option " + name() + " handlerParameters not implemented " + Arrays.toString(parameters.getBytes())); }
+    void handleDo(TelnetSession session) { }
+    void handleDont(TelnetSession session) { }
+    void handleWill(TelnetSession session) { }
+    void handleWont(TelnetSession session) { }
+    void handleParameters(TelnetSession session, Buffer parameters) { }
 
   }
 
@@ -248,7 +246,8 @@ public class TelnetSession implements Handler<Buffer> {
           session.paramsBuffer = new Buffer(100);
           session.status = SB;
         } else {
-          super.handle(session, b);
+          session.onCommand(b);
+          session.status = DATA;
         }
       }
     },
@@ -269,7 +268,7 @@ public class TelnetSession implements Handler<Buffer> {
                     return;
                   }
                 }
-                System.out.println("No option " + session.paramsOptionCode + " for parameters " + Arrays.toString(session.paramsBuffer.getBytes()));
+                session.onOptionParameters(session.paramsOptionCode, session.paramsBuffer.getBytes());
               } finally {
                 session.paramsOptionCode = null;
                 session.paramsBuffer = null;
@@ -299,6 +298,7 @@ public class TelnetSession implements Handler<Buffer> {
               return;
             }
           }
+          session.onOptionDo(b);
           session.handle(new Buffer(new byte[]{BYTE_IAC,BYTE_WONT,b}));
         } finally {
           session.status = DATA;
@@ -316,6 +316,7 @@ public class TelnetSession implements Handler<Buffer> {
               return;
             }
           }
+          session.onOptionDont(b);
         } finally {
           session.status = DATA;
         }
@@ -332,6 +333,7 @@ public class TelnetSession implements Handler<Buffer> {
               return;
             }
           }
+          session.onOptionWill(b);
           session.handle(new Buffer(new byte[]{BYTE_IAC,BYTE_DONT,b}));
         } finally {
           session.status = DATA;
@@ -349,6 +351,7 @@ public class TelnetSession implements Handler<Buffer> {
               return;
             }
           }
+          session.onOptionWont(b);
         } finally {
           session.status = DATA;
         }
@@ -357,8 +360,6 @@ public class TelnetSession implements Handler<Buffer> {
 
     ;
 
-    void handle(TelnetSession session, byte b) {
-      System.out.println(name() + ":" + b + " not implemented");
-    }
+    abstract void handle(TelnetSession session, byte b);
   }
 }

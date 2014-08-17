@@ -23,6 +23,8 @@ import org.vertx.java.core.net.NetServer;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * A test class.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TelnetBootstrap {
@@ -50,7 +52,66 @@ public class TelnetBootstrap {
 
   public void start() {
     NetServer server = vertx.createNetServer();
-    server.connectHandler(new TelnetHandler());
+    server.connectHandler(new TelnetHandler(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onSize(int width, int height) {
+        System.out.println("Resize:(" + width + "," + height + ")");
+      }
+
+      @Override
+      protected void onTerminalType(String terminalType) {
+        System.out.println("Terminal type: " + terminalType);
+      }
+
+      @Override
+      protected void onNAWS(boolean naws) {
+        System.out.println("Option NAWS:" + naws);
+      }
+
+      @Override
+      protected void onEcho(boolean echo) {
+        System.out.println("Option echo:" + echo);
+      }
+
+      @Override
+      protected void onSGA(boolean sga) {
+        System.out.println("Option SGA:" + sga);
+      }
+
+      @Override
+      protected void onChar(char c) {
+        if (c >= 32) {
+          System.out.println("Char:" + c);
+        } else {
+          System.out.println("Char:<" +  (int)c + ">");
+        }
+      }
+
+      @Override
+      protected void onOptionWill(byte optionCode) {
+        System.out.println("Will:" + optionCode);
+      }
+
+      @Override
+      protected void onOptionWont(byte optionCode) {
+        System.out.println("Wont:" + optionCode);
+      }
+
+      @Override
+      protected void onOptionDo(byte optionCode) {
+        System.out.println("Do:" + optionCode);
+      }
+
+      @Override
+      protected void onOptionDont(byte optionCode) {
+        System.out.println("Dont:" + optionCode);
+      }
+
+      @Override
+      protected void onCommand(byte command) {
+        System.out.println("Command:" + command);
+      }
+    }));
     server.listen(port, host);
   }
 }
