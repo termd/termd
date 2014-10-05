@@ -127,6 +127,4 @@ public class TestBase {
       throw new IllegalStateException("You either forget to call testComplete() or forgot to await() for an asynchronous test");
     }
   }
-
-
 }

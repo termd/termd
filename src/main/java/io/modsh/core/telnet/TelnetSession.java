@@ -51,7 +51,7 @@ public class TelnetSession implements Handler<Buffer> {
   ByteBuffer bBuf;
   CharBuffer cBuf;
 
-  TelnetSession(NetSocket socket) {
+  public TelnetSession(NetSocket socket) {
     this.socket = socket;
     this.status = Status.DATA;
     this.options = new HashMap<>();

@@ -49,7 +49,7 @@
 
   <profiles>
     <profile>
-      <id>main</id>
+      <id>telnet</id>
       <properties>
         <skipTests>true</skipTests>
       </properties>
@@ -67,6 +67,32 @@
                 <phase>test</phase>
                 <configuration>
                   <mainClass>io.modsh.core.telnet.TelnetBootstrap</mainClass>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>readline</id>
+      <properties>
+        <skipTests>true</skipTests>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.3.2</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+                <phase>test</phase>
+                <configuration>
+                  <mainClass>io.modsh.core.readline.ReadlineBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>
