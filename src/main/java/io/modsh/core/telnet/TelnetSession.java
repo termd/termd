@@ -16,6 +16,7 @@
  */
 package io.modsh.core.telnet;
 
+import io.modsh.core.io.BinaryDecoder;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
@@ -47,9 +48,7 @@ public class TelnetSession implements Handler<Buffer> {
   Buffer paramsBuffer;
   boolean paramsIac;
   CharsetEncoder encoder;
-  CharsetDecoder decoder;
-  ByteBuffer bBuf;
-  CharBuffer cBuf;
+  BinaryDecoder decoder;
 
   public TelnetSession(NetSocket socket) {
     this.socket = socket;
@@ -81,16 +80,7 @@ public class TelnetSession implements Handler<Buffer> {
 
   protected void onByte(byte b) {
     if (decoder != null) {
-      bBuf.put(b);
-      bBuf.flip();
-      decoder.decode(bBuf, cBuf, false);
-      cBuf.flip();
-      while (cBuf.hasRemaining()) {
-        char c = cBuf.get();
-        onChar(c);
-      }
-      bBuf.compact();
-      cBuf.compact();
+      decoder.onByte(b);
     } else {
       onChar((char) b);
     }
@@ -104,7 +94,7 @@ public class TelnetSession implements Handler<Buffer> {
   protected void onNAWS(boolean naws) {}
   protected void onEcho(boolean echo) {}
   protected void onSGA(boolean sga) {}
-  protected void onChar(char c) {}
+  protected void onChar(int c) {}
   protected void onOptionWill(byte optionCode) {}
   protected void onOptionWont(byte optionCode) {}
   protected void onOptionDo(byte optionCode) {}
@@ -122,9 +112,7 @@ public class TelnetSession implements Handler<Buffer> {
 
       @Override
       void handleWill(TelnetSession session) {
-        session.decoder = UTF_8.newDecoder();
-        session.bBuf = ByteBuffer.allocate(4);
-        session.cBuf = CharBuffer.allocate(1);
+        session.decoder = new BinaryDecoder(UTF_8, (int c) -> session.onChar((char) c));
       }
     },
 

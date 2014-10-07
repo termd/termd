@@ -75,7 +75,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      protected void onChar(char c) {
+      protected void onChar(int c) {
         reader.append(c);
       }
     }));
