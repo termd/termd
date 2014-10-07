@@ -19,9 +19,9 @@ public class ReaderTest {
     assertEquals(0, reader.getActions().size());
     reader.append('b', 'c').reduce();
     assertEquals(2, reader.getActions().size());
-    Function action = (Function) reader.getActions().get(0);
+    FunctionAction action = (FunctionAction) reader.getActions().get(0);
     assertEquals("foo", action.getName());
-    Key key = (Key) reader.getActions().get(1);
+    KeyAction key = (KeyAction) reader.getActions().get(1);
     assertEquals(1, key.length());
     assertEquals('c', key.getAt(0));
   }
@@ -33,10 +33,10 @@ public class ReaderTest {
     assertEquals(0, reader.getActions().size());
     reader.append('c').reduce();
     assertEquals(2, reader.getActions().size());
-    Key key = (Key) reader.getActions().get(0);
+    KeyAction key = (KeyAction) reader.getActions().get(0);
     assertEquals(1, key.length());
     assertEquals('a', key.getAt(0));
-    key = (Key) reader.getActions().get(1);
+    key = (KeyAction) reader.getActions().get(1);
     assertEquals(1, key.length());
     assertEquals('c', key.getAt(0));
   }

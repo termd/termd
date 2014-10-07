@@ -67,7 +67,13 @@ public class ReadlineBootstrap {
         while (true) {
           Action action = reader.reduceOnce().popKey();
           if (action != null) {
-            System.out.println("Read " + action);
+            if (action instanceof KeyAction) {
+              KeyAction key = (KeyAction) action;
+              System.out.println("Key " + key);
+            } else {
+              FunctionAction fname = (FunctionAction) action;
+              System.out.println("Function " + fname.getName());
+            }
           } else {
             break;
           }

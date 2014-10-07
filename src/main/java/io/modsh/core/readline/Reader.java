@@ -38,7 +38,7 @@ public class Reader {
     InputrcHandler handler = new InputrcHandler() {
       @Override
       public void bindFunction(int[] keySequence, String functionName) {
-        actions.add(new Function() {
+        actions.add(new FunctionAction() {
           @Override
           public String getName() {
             return functionName;
@@ -69,7 +69,7 @@ public class Reader {
     this.state = new State(new int[0], new Action[0]);
   }
 
-  public Reader(Key[] keys) {
+  public Reader(KeyAction[] keys) {
     this.actions = keys;
     this.state = new State(new int[0], new Action[0]);
   }
@@ -171,7 +171,7 @@ public class Reader {
           if (prefixes == 0) {
             int c = buffer[0];
             Action[] a = Arrays.copyOf(queue, queue.length + 1);
-            a[queue.length] = new Key() {
+            a[queue.length] = new KeyAction() {
               @Override
               public int getAt(int index) throws IndexOutOfBoundsException {
                 if (index != 0) {

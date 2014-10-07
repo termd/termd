@@ -5,7 +5,7 @@ package io.modsh.core.readline;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public enum Keys implements Key {
+public enum Keys implements KeyAction {
 
   CTRL_AROBASE("ctrl-@", 0),
   CTRL_A("Ctrl-A", 1),
