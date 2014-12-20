@@ -16,6 +16,7 @@
  */
 package io.modsh.core.telnet;
 
+import io.modsh.core.telnet.vertx.TelnetHandler;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SuppressGAOptionHandler;
 import org.apache.commons.net.telnet.TelnetClient;
@@ -34,6 +35,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -51,7 +53,7 @@ public class TelnetHandlerTest extends TestBase {
     vertx = VertxFactory.newVertx();
   }
 
-  private void server(Function<NetSocket, TelnetSession> factory) {
+  private void server(Function<Consumer<byte[]>, TelnetSession> factory) {
     server = vertx.createNetServer().connectHandler(new TelnetHandler(factory));
     BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
     server.listen(4000, "localhost", latch::add);
@@ -74,7 +76,7 @@ public class TelnetHandlerTest extends TestBase {
     vertx.stop();
   }
 
-  private void testOptionValue(Function<NetSocket, TelnetSession> factory, TelnetOptionHandler optionHandler) throws Exception {
+  private void testOptionValue(Function<Consumer<byte[]>, TelnetSession> factory, TelnetOptionHandler optionHandler) throws Exception {
     server(factory);
     TelnetClient client = new TelnetClient();
     try {

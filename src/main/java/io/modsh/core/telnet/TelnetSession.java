@@ -17,21 +17,17 @@
 package io.modsh.core.telnet;
 
 import io.modsh.core.io.BinaryDecoder;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetSocket;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.function.Consumer;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class TelnetSession implements Handler<Buffer> {
+public class TelnetSession implements Consumer<byte[]> {
 
   static final byte BYTE_IAC = (byte)  0xFF;
   static final byte BYTE_DONT = (byte) 0xFE;
@@ -41,17 +37,17 @@ public class TelnetSession implements Handler<Buffer> {
   static final byte BYTE_SB = (byte)   0xFA;
   static final byte BYTE_SE = (byte)   0xF0;
   static Charset UTF_8 = Charset.forName("UTF-8");
-  final NetSocket socket;
   Status status;
   HashMap<Byte, Boolean> options;
   Byte paramsOptionCode;
-  Buffer paramsBuffer;
+  byte[] paramsBuffer;
+  int paramsLength;
   boolean paramsIac;
   CharsetEncoder encoder;
   BinaryDecoder decoder;
+  final Consumer<byte[]> output;
 
-  public TelnetSession(NetSocket socket) {
-    this.socket = socket;
+  public TelnetSession(Consumer<byte[]> output) {
     this.status = Status.DATA;
     this.options = new HashMap<>();
     this.paramsOptionCode = null;
@@ -59,22 +55,30 @@ public class TelnetSession implements Handler<Buffer> {
     this.paramsIac = false;
     this.encoder = null;
     this.decoder = null;
+    this.output = output;
   }
 
-  void init() {
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_WILL, Option.ECHO.code}));
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_WILL, Option.SGA.code}));
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_DO, Option.NAWS.code}));
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_DO, Option.BINARY.code}));
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_WILL, Option.BINARY.code}));
-    socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_DO, Option.TERMINAL_TYPE.code}));
+  private void appendToParams(byte b) {
+    while (paramsLength >= paramsBuffer.length) {
+      paramsBuffer = Arrays.copyOf(paramsBuffer, paramsBuffer.length + 100);
+    }
+    paramsBuffer[paramsLength++] = b;
+  }
+
+  public void init() {
+    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.ECHO.code});
+    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.SGA.code});
+    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.NAWS.code});
+    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.BINARY.code});
+    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.BINARY.code});
+    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.TERMINAL_TYPE.code});
     onOpen();
   }
 
   @Override
-  public void handle(Buffer data) {
-    for (int i = 0;i < data.length();i++) {
-      status.handle(this, data.getByte(i));
+  public void accept(byte[] data) {
+    for (int i = 0;i < data.length;i++) {
+      status.handle(this, data[i]);
     }
   }
 
@@ -84,6 +88,10 @@ public class TelnetSession implements Handler<Buffer> {
     } else {
       onChar((char) b);
     }
+  }
+
+  public void close() {
+    onClose();
   }
 
   protected void onOpen() {}
@@ -133,16 +141,16 @@ public class TelnetSession implements Handler<Buffer> {
 
       @Override
       void handleWill(TelnetSession session) {
-        session.socket.write(new Buffer(new byte[]{BYTE_IAC, BYTE_SB, code, BYTE_SEND, BYTE_IAC, BYTE_SE}));
+        session.output.accept(new byte[]{BYTE_IAC, BYTE_SB, code, BYTE_SEND, BYTE_IAC, BYTE_SE});
       }
       @Override
       void handleWont(TelnetSession session) {
       }
 
       @Override
-      void handleParameters(TelnetSession session, Buffer parameters) {
-        if (parameters.length() > 0 && parameters.getByte(0) == BYTE_IS) {
-          String terminalType = new String(parameters.getBytes(1, parameters.length()));
+      void handleParameters(TelnetSession session, byte[] parameters) {
+        if (parameters.length > 0 && parameters[0] == BYTE_IS) {
+          String terminalType = new String(parameters, 1, parameters.length - 1);
           session.onTerminalType(terminalType);
         }
       }
@@ -158,10 +166,10 @@ public class TelnetSession implements Handler<Buffer> {
         session.onNAWS(false);
       }
       @Override
-      void handleParameters(TelnetSession session, Buffer parameters) {
-        if (parameters.length() == 4) {
-          int width = parameters.getShort(0);
-          int height = parameters.getShort(2);
+      void handleParameters(TelnetSession session, byte[] parameters) {
+        if (parameters.length == 4) {
+          int width = (parameters[0] << 8) + parameters[1];
+          int height = (parameters[2] << 8) + parameters[3];
           session.onSize(width, height);
         }
       }
@@ -179,7 +187,7 @@ public class TelnetSession implements Handler<Buffer> {
     void handleDont(TelnetSession session) { }
     void handleWill(TelnetSession session) { }
     void handleWont(TelnetSession session) { }
-    void handleParameters(TelnetSession session, Buffer parameters) { }
+    void handleParameters(TelnetSession session, byte[] parameters) { }
 
   }
 
@@ -227,7 +235,8 @@ public class TelnetSession implements Handler<Buffer> {
         } else if (b == BYTE_WONT) {
           session.status = WONT;
         } else if (b == BYTE_SB) {
-          session.paramsBuffer = new Buffer(100);
+          session.paramsBuffer = new byte[100];
+          session.paramsLength = 0;
           session.status = SB;
         } else {
           session.onCommand(b);
@@ -248,24 +257,24 @@ public class TelnetSession implements Handler<Buffer> {
               try {
                 for (Option option : Option.values()) {
                   if (option.code == session.paramsOptionCode) {
-                    option.handleParameters(session, session.paramsBuffer);
+                    option.handleParameters(session, Arrays.copyOf(session.paramsBuffer, session.paramsLength));
                     return;
                   }
                 }
-                session.onOptionParameters(session.paramsOptionCode, session.paramsBuffer.getBytes());
+                session.onOptionParameters(session.paramsOptionCode, Arrays.copyOf(session.paramsBuffer, session.paramsLength));
               } finally {
                 session.paramsOptionCode = null;
                 session.paramsBuffer = null;
                 session.status = DATA;
               }
             } else if (b == BYTE_IAC) {
-              session.paramsBuffer.appendByte((byte) -1);
+              session.appendToParams((byte) -1);
             }
           } else {
             if (b == BYTE_IAC) {
               session.paramsIac = true;
             } else {
-              session.paramsBuffer.appendByte(b);
+              session.appendToParams(b);
             }
           }
         }
@@ -283,7 +292,7 @@ public class TelnetSession implements Handler<Buffer> {
             }
           }
           session.onOptionDo(b);
-          session.handle(new Buffer(new byte[]{BYTE_IAC,BYTE_WONT,b}));
+          session.accept(new byte[]{BYTE_IAC,BYTE_WONT,b});
         } finally {
           session.status = DATA;
         }
@@ -318,7 +327,7 @@ public class TelnetSession implements Handler<Buffer> {
             }
           }
           session.onOptionWill(b);
-          session.handle(new Buffer(new byte[]{BYTE_IAC,BYTE_DONT,b}));
+          session.accept(new byte[]{BYTE_IAC,BYTE_DONT,b});
         } finally {
           session.status = DATA;
         }

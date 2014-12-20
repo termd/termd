@@ -16,12 +16,9 @@
  */
 package io.modsh.core.readline;
 
-import io.modsh.core.telnet.TelnetHandler;
+import io.modsh.core.telnet.TelnetBootstrap;
 import io.modsh.core.telnet.TelnetSession;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetServer;
+import io.modsh.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
@@ -39,31 +36,25 @@ public class ReadlineBootstrap {
     latch.await();
   }
 
-  private final String host;
-  private final int port;
-  private final Vertx vertx;
-  private NetServer server;
+  private final TelnetBootstrap telnet;
 
   public ReadlineBootstrap(String host, int port) {
-    this(VertxFactory.newVertx(), host, port);
+    this(new VertxTelnetBootstrap(host, port));
   }
 
-  public ReadlineBootstrap(Vertx vertx, String host, int port) {
-    this.vertx = vertx;
-    this.host = host;
-    this.port = port;
+  public ReadlineBootstrap(TelnetBootstrap telnet) {
+    this.telnet = telnet;
   }
 
   public void start() {
-    NetServer server = vertx.createNetServer();
-    server.connectHandler(new TelnetHandler(socket -> new TelnetSession(socket) {
+    telnet.start(output -> new TelnetSession(output) {
 
       InputStream inputrc = ReadlineBootstrap.class.getResourceAsStream("inputrc");
       Reader reader = new Reader(inputrc);
 
       @Override
-      public void handle(Buffer data) {
-        super.handle(data);
+      public void accept(byte[] data) {
+        super.accept(data);
         while (true) {
           Action action = reader.reduceOnce().popKey();
           if (action != null) {
@@ -84,8 +75,6 @@ public class ReadlineBootstrap {
       protected void onChar(int c) {
         reader.append(c);
       }
-    }));
-    server.listen(port, host);
+    });
   }
-
 }
