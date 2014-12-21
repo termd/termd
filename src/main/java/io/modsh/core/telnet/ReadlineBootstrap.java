@@ -14,10 +14,11 @@
  * under the License.
  *
  */
-package io.modsh.core.readline;
+package io.modsh.core.telnet;
 
-import io.modsh.core.telnet.TelnetBootstrap;
-import io.modsh.core.telnet.TelnetSession;
+import io.modsh.core.readline.Action;
+import io.modsh.core.readline.Reader;
+import io.modsh.core.readline.ActionHandler;
 import io.modsh.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
@@ -47,10 +48,12 @@ public class ReadlineBootstrap {
   }
 
   public void start() {
+
+    InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
+    Reader reader = new Reader(inputrc);
+
     telnet.start(output -> new TelnetSession(output) {
 
-      InputStream inputrc = ReadlineBootstrap.class.getResourceAsStream("inputrc");
-      Reader reader = new Reader(inputrc);
 
       @Override
       public void accept(byte[] data) {
@@ -58,13 +61,7 @@ public class ReadlineBootstrap {
         while (true) {
           Action action = reader.reduceOnce().popKey();
           if (action != null) {
-            if (action instanceof KeyAction) {
-              KeyAction key = (KeyAction) action;
-              System.out.println("Key " + key);
-            } else {
-              FunctionAction fname = (FunctionAction) action;
-              System.out.println("Function " + fname.getName());
-            }
+            new ActionHandler().handle(action);
           } else {
             break;
           }

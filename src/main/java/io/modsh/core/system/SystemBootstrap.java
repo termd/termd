@@ -3,7 +3,7 @@ package io.modsh.core.system;
 import io.modsh.core.io.BinaryDecoder;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.Reader;
-import io.modsh.core.readline.ReadlineBootstrap;
+import io.modsh.core.telnet.ReadlineBootstrap;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
