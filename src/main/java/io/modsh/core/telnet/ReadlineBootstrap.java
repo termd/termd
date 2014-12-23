@@ -51,6 +51,7 @@ public class ReadlineBootstrap {
 
     InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
     Reader reader = new Reader(inputrc);
+    ActionHandler handler = new ActionHandler();
 
     telnet.start(output -> new TelnetSession(output) {
 
@@ -61,7 +62,7 @@ public class ReadlineBootstrap {
         while (true) {
           Action action = reader.reduceOnce().popKey();
           if (action != null) {
-            new ActionHandler().handle(action);
+            handler.handle(action);
           } else {
             break;
           }

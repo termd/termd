@@ -41,6 +41,7 @@ public class ReadlineBootstrap {
 
       private BinaryDecoder decoder;
       private Reader reader = new Reader(inputrc);
+      private ActionHandler handler = new ActionHandler();
 
       @Override
       public void setChannelSession(ChannelSession session) {
@@ -61,7 +62,7 @@ public class ReadlineBootstrap {
             while (true) {
               Action action = reader.reduceOnce().popKey();
               if (action != null) {
-                new ActionHandler().handle(action);
+                handler.handle(action);
               } else {
                 break;
               }
