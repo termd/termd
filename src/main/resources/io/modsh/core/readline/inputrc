@@ -5,3 +5,4 @@
 "\C-?":backward-delete-char
 "\C-h":backward-delete-char
 "\C-X\C-U":undo
+"\eb":backward-word

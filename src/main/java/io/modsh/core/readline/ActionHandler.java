@@ -27,8 +27,10 @@ public class ActionHandler {
     @Override
     public void endEscape(int delimiter) {
       escaped = false;
-      for (char c : Character.toChars(delimiter)) {
-        System.out.print(c);
+      if (delimiter != '\\') {
+        for (char c : Character.toChars(delimiter)) {
+          System.out.print(c);
+        }
       }
     }
 

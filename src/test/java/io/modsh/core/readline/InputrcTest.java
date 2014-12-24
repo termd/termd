@@ -118,6 +118,9 @@ public class InputrcTest {
     new AssertingHandler() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xFF\":b");
     new AssertingHandler() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xff\":b");
 
+    // Bind \ to \
+    new AssertingHandler() {}.assertBindFunction(new int[]{27,'/'}, "\\").parse("\"\\e/\":\\");
+
 /*
     InputrcParser.parse("#azefzef");
     InputrcParser.parse("$abc");
