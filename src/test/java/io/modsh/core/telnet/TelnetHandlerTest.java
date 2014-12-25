@@ -18,8 +18,10 @@ package io.modsh.core.telnet;
 
 import io.modsh.core.telnet.vertx.TelnetHandler;
 import org.apache.commons.net.telnet.EchoOptionHandler;
+import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.SuppressGAOptionHandler;
 import org.apache.commons.net.telnet.TelnetClient;
+import org.apache.commons.net.telnet.TelnetNotificationHandler;
 import org.apache.commons.net.telnet.TelnetOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.After;
@@ -31,6 +33,7 @@ import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 
+import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +50,7 @@ public class TelnetHandlerTest extends TestBase {
 
   private Vertx vertx;
   private NetServer server;
+  private TelnetClient client;
 
   @Before
   public void before() throws InterruptedException {
@@ -74,6 +78,12 @@ public class TelnetHandlerTest extends TestBase {
       server.close();
     }
     vertx.stop();
+    if (client != null && client.isConnected()) {
+      try {
+        client.disconnect();
+      } catch (IOException ignore) {
+      }
+    }
   }
 
   private void testOptionValue(Function<Consumer<byte[]>, TelnetSession> factory, TelnetOptionHandler optionHandler) throws Exception {
@@ -222,6 +232,36 @@ public class TelnetHandlerTest extends TestBase {
     } finally {
       client.disconnect();
     }
+    await();
+  }
+
+  @Test
+  public void testWillUnknownOption() throws Exception {
+    server(TelnetSession::new);
+    TelnetClient client = new TelnetClient();
+    client.connect("localhost", 4000);
+    client.registerNotifHandler((negotiation_code, option_code) -> {
+      if (option_code == 47) {
+        assertEquals(TelnetNotificationHandler.RECEIVED_DONT, negotiation_code);
+        testComplete();
+      }
+    });
+    client.addOptionHandler(new SimpleOptionHandler(47, true, false, false, false));
+    await();
+  }
+
+  @Test
+  public void testDoUnknownOption() throws Exception {
+    server(TelnetSession::new);
+    TelnetClient client = new TelnetClient();
+    client.connect("localhost", 4000);
+    client.registerNotifHandler((negotiation_code, option_code) -> {
+      if (option_code == 47) {
+        assertEquals(TelnetNotificationHandler.RECEIVED_WONT, negotiation_code);
+        testComplete();
+      }
+    });
+    client.addOptionHandler(new SimpleOptionHandler(47, false, true, false, false));
     await();
   }
 }

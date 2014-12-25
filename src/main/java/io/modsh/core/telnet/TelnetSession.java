@@ -292,7 +292,7 @@ public class TelnetSession implements Consumer<byte[]> {
             }
           }
           session.onOptionDo(b);
-          session.accept(new byte[]{BYTE_IAC,BYTE_WONT,b});
+          session.output.accept(new byte[]{BYTE_IAC,BYTE_WONT,b});
         } finally {
           session.status = DATA;
         }
@@ -327,7 +327,7 @@ public class TelnetSession implements Consumer<byte[]> {
             }
           }
           session.onOptionWill(b);
-          session.accept(new byte[]{BYTE_IAC,BYTE_DONT,b});
+          session.output.accept(new byte[]{BYTE_IAC,BYTE_DONT,b});
         } finally {
           session.status = DATA;
         }
