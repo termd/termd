@@ -103,11 +103,95 @@ public class TelnetSession implements Consumer<byte[]> {
   protected void onEcho(boolean echo) {}
   protected void onSGA(boolean sga) {}
   protected void onChar(int c) {}
-  protected void onOptionWill(byte optionCode) {}
-  protected void onOptionWont(byte optionCode) {}
-  protected void onOptionDo(byte optionCode) {}
-  protected void onOptionDont(byte optionCode) {}
-  protected void onOptionParameters(byte optionCode, byte[] parameters) {}
+
+  /**
+   * Handle option <code>WILL</code> call back. The implementation will try to find a matching option
+   * via the {@code Option#values()} and invoke it's {@link Option#handleWill(TelnetSession)} method
+   * otherwise a <code>DON'T</code> will be sent to the client.<p>
+   *
+   * This method can be subclassed to handle an option.
+   *
+   * @param optionCode the option code
+   */
+  protected void onOptionWill(byte optionCode) {
+    for (Option option : Option.values()) {
+      if (option.code == optionCode) {
+        option.handleWill(this);
+        return;
+      }
+    }
+    output.accept(new byte[]{BYTE_IAC,BYTE_DONT,optionCode});
+  }
+
+  /**
+   * Handle option <code>WON'T</code> call back. The implementation will try to find a matching option
+   * via the {@code Option#values()} and invoke it's {@link Option#handleWont(TelnetSession)} method.<p>
+   *
+   * This method can be subclassed to handle an option.
+   *
+   * @param optionCode the option code
+   */
+  protected void onOptionWont(byte optionCode) {
+    for (Option option : Option.values()) {
+      if (option.code == optionCode) {
+        option.handleWont(this);
+        return;
+      }
+    }
+  }
+
+  /**
+   * Handle option <code>DO</code> call back. The implementation will try to find a matching option
+   * via the {@code Option#values()} and invoke it's {@link Option#handleDo(TelnetSession)} method
+   * otherwise a <code>WON'T</code> will be sent to the client.<p>
+   *
+   * This method can be subclassed to handle an option.
+   *
+   * @param optionCode the option code
+   */
+  protected void onOptionDo(byte optionCode) {
+    for (Option option : Option.values()) {
+      if (option.code == optionCode) {
+        option.handleDo(this);
+        return;
+      }
+    }
+    output.accept(new byte[]{BYTE_IAC,BYTE_WONT,optionCode});
+  }
+
+  /**
+   * Handle option <code>DON'T</code> call back. The implementation will try to find a matching option
+   * via the {@code Option#values()} and invoke it's {@link Option#handleDont(TelnetSession)} method.<p>
+   *
+   * This method can be subclassed to handle an option.
+   *
+   * @param optionCode the option code
+   */
+  protected void onOptionDont(byte optionCode) {
+    for (Option option : Option.values()) {
+      if (option.code == optionCode) {
+        option.handleDont(this);
+        return;
+      }
+    }
+  }
+
+  /**
+   * Handle option parameters call back. The implementation will try to find a matching option
+   * via the {@code Option#values()} and invoke it's {@link Option#handleParameters(TelnetSession, byte[])} method.
+   *
+   * This method can be subclassed to handle an option.
+   *
+   * @param optionCode the option code
+   */
+  protected void onOptionParameters(byte optionCode, byte[] parameters) {
+    for (Option option : Option.values()) {
+      if (option.code == optionCode) {
+        option.handleParameters(this, parameters);
+        return;
+      }
+    }
+  }
 
   enum Option {
 
@@ -255,12 +339,6 @@ public class TelnetSession implements Consumer<byte[]> {
             session.paramsIac = false;
             if (b == BYTE_SE) {
               try {
-                for (Option option : Option.values()) {
-                  if (option.code == session.paramsOptionCode) {
-                    option.handleParameters(session, Arrays.copyOf(session.paramsBuffer, session.paramsLength));
-                    return;
-                  }
-                }
                 session.onOptionParameters(session.paramsOptionCode, Arrays.copyOf(session.paramsBuffer, session.paramsLength));
               } finally {
                 session.paramsOptionCode = null;
@@ -285,14 +363,7 @@ public class TelnetSession implements Consumer<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         try {
-          for (Option option : Option.values()) {
-            if (option.code == b) {
-              option.handleDo(session);
-              return;
-            }
-          }
           session.onOptionDo(b);
-          session.output.accept(new byte[]{BYTE_IAC,BYTE_WONT,b});
         } finally {
           session.status = DATA;
         }
@@ -303,12 +374,6 @@ public class TelnetSession implements Consumer<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         try {
-          for (Option option : Option.values()) {
-            if (option.code == b) {
-              option.handleDont(session);
-              return;
-            }
-          }
           session.onOptionDont(b);
         } finally {
           session.status = DATA;
@@ -320,14 +385,7 @@ public class TelnetSession implements Consumer<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         try {
-          for (Option option : Option.values()) {
-            if (option.code == b) {
-              option.handleWill(session);
-              return;
-            }
-          }
           session.onOptionWill(b);
-          session.output.accept(new byte[]{BYTE_IAC,BYTE_DONT,b});
         } finally {
           session.status = DATA;
         }
@@ -338,12 +396,6 @@ public class TelnetSession implements Consumer<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         try {
-          for (Option option : Option.values()) {
-            if (option.code == b) {
-              option.handleWont(session);
-              return;
-            }
-          }
           session.onOptionWont(b);
         } finally {
           session.status = DATA;
