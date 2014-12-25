@@ -19,7 +19,7 @@ public class BinaryDecoder {
   public BinaryDecoder(Charset charset, IntConsumer onChar) {
     decoder = charset.newDecoder();
     bBuf = ByteBuffer.allocate(4);
-    cBuf = CharBuffer.allocate(1);
+    cBuf = CharBuffer.allocate(2);
     this.onChar = onChar;
   }
 
@@ -28,9 +28,21 @@ public class BinaryDecoder {
     bBuf.flip();
     decoder.decode(bBuf, cBuf, false);
     cBuf.flip();
-    while (cBuf.hasRemaining()) {
-      char c = cBuf.get();
-      onChar.accept(c);
+    switch (cBuf.remaining()) {
+      case 0:
+        break;
+      case 1:
+        char c = cBuf.get();
+        onChar.accept(c);
+        break;
+      case 2:
+        char high = cBuf.get();
+        char low = cBuf.get();
+        int codepoint = Character.toCodePoint(high, low);
+        onChar.accept(codepoint);
+        break;
+      default:
+        throw new AssertionError();
     }
     bBuf.compact();
     cBuf.compact();
