@@ -89,6 +89,22 @@ public class TestBase {
     }
   }
 
+  protected void fail(Throwable message) {
+    try {
+      Assert.fail(message.getMessage());
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  protected void fail(String message) {
+    try {
+      Assert.fail(message);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
   protected void assertTrue(boolean condition) {
     try {
       Assert.assertTrue(condition);

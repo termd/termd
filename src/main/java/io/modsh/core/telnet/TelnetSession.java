@@ -17,9 +17,9 @@
 package io.modsh.core.telnet;
 
 import io.modsh.core.io.BinaryDecoder;
+import io.modsh.core.io.BinaryEncoder;
 
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Consumer;
@@ -43,8 +43,8 @@ public class TelnetSession implements Consumer<byte[]> {
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  CharsetEncoder encoder;
   BinaryDecoder decoder;
+  BinaryEncoder encoder;
   final Consumer<byte[]> output;
 
   public TelnetSession(Consumer<byte[]> output) {
@@ -66,13 +66,72 @@ public class TelnetSession implements Consumer<byte[]> {
   }
 
   public void init() {
-    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.ECHO.code});
-    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.SGA.code});
-    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.NAWS.code});
-    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.BINARY.code});
-    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, Option.BINARY.code});
-    output.accept(new byte[]{BYTE_IAC, BYTE_DO, Option.TERMINAL_TYPE.code});
+    onSendOptions();
     onOpen();
+  }
+
+  /**
+   * Write a <i>do</i> option request to the client.
+   *
+   * @param option the option to send
+   */
+  public final void writeDoOption(Option option) {
+    output.accept(new byte[]{BYTE_IAC, BYTE_DO, option.code});
+  }
+
+  /**
+   * Write a do <i>will</i> request to the client.
+   *
+   * @param option the option to send
+   */
+  public final void writeWillOption(Option option) {
+    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, option.code});
+  }
+
+  private void rawWrite(byte[] data, int offset, int length) {
+    if (length > 0) {
+      if (offset == 0 && length == data.length) {
+        output.accept(data);
+      } else {
+        byte[] chunk = new byte[length];
+        System.arraycopy(data, offset, chunk, 0, chunk.length);
+        output.accept(chunk);
+      }
+    }
+  }
+
+  /**
+   * Write data to the client, escaping data if necessary or truncating it. The original buffer can
+   * be mutated if incorrect data is provided.
+   *
+   * @param data the data to write
+   */
+  public final void write(byte[] data) {
+    if (encoder != null) {
+      int prev = 0;
+      for (int i = 0;i < data.length;i++) {
+        if (data[i] == -1) {
+          rawWrite(data, prev, i - prev);
+          output.accept(new byte[]{-1,-1});
+          prev = i + 1;
+        }
+      }
+      rawWrite(data, prev, data.length - prev);
+    } else {
+      for (int i = 0;i < data.length;i++) {
+        data[i] = (byte)(data[i] & 0x7F);
+      }
+      output.accept(data);
+    }
+  }
+
+  protected void onSendOptions() {
+    writeWillOption(Option.ECHO);
+    writeWillOption(Option.SGA);
+    writeDoOption(Option.NAWS);
+    writeDoOption(Option.BINARY);
+    writeWillOption(Option.BINARY);
+    writeDoOption(Option.TERMINAL_TYPE);
   }
 
   @Override
@@ -191,88 +250,6 @@ public class TelnetSession implements Consumer<byte[]> {
         return;
       }
     }
-  }
-
-  enum Option {
-
-    BINARY((byte) 0) {
-
-      @Override
-      void handleDo(TelnetSession session) {
-        session.encoder = UTF_8.newEncoder();
-      }
-
-      @Override
-      void handleWill(TelnetSession session) {
-        session.decoder = new BinaryDecoder(UTF_8, (int c) -> session.onChar((char) c));
-      }
-    },
-
-    ECHO((byte) 1) {
-      @Override
-      void handleDo(TelnetSession session) { session.onEcho(true); }
-      void handleDont(TelnetSession session) { session.onEcho(false); }
-    },
-
-    SGA((byte) 3) {
-      void handleDo(TelnetSession session) { session.onSGA(true); }
-      void handleDont(TelnetSession session) { session.onSGA(false); }
-    },
-
-    TERMINAL_TYPE((byte) 24) {
-
-      final byte BYTE_IS = 0, BYTE_SEND = 1;
-
-      @Override
-      void handleWill(TelnetSession session) {
-        session.output.accept(new byte[]{BYTE_IAC, BYTE_SB, code, BYTE_SEND, BYTE_IAC, BYTE_SE});
-      }
-      @Override
-      void handleWont(TelnetSession session) {
-      }
-
-      @Override
-      void handleParameters(TelnetSession session, byte[] parameters) {
-        if (parameters.length > 0 && parameters[0] == BYTE_IS) {
-          String terminalType = new String(parameters, 1, parameters.length - 1);
-          session.onTerminalType(terminalType);
-        }
-      }
-    },
-
-    NAWS((byte) 31) {
-      @Override
-      void handleWill(TelnetSession session) {
-        session.onNAWS(true);
-      }
-      @Override
-      void handleWont(TelnetSession session) {
-        session.onNAWS(false);
-      }
-      @Override
-      void handleParameters(TelnetSession session, byte[] parameters) {
-        if (parameters.length == 4) {
-          int width = (parameters[0] << 8) + parameters[1];
-          int height = (parameters[2] << 8) + parameters[3];
-          session.onSize(width, height);
-        }
-      }
-    }
-
-    ;
-
-    final byte code;
-
-    Option(byte code) {
-      this.code = code;
-    }
-
-    void handleDo(TelnetSession session) { }
-    void handleDont(TelnetSession session) { }
-    void handleWill(TelnetSession session) { }
-    void handleWont(TelnetSession session) { }
-    void handleParameters(TelnetSession session, byte[] parameters) { }
-
   }
 
   enum Status {

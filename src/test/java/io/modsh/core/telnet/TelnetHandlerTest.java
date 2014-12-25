@@ -24,6 +24,7 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.TelnetNotificationHandler;
 import org.apache.commons.net.telnet.TelnetOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
+import org.apache.mina.util.byteaccess.ByteArray;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,11 +32,17 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -263,5 +270,116 @@ public class TelnetHandlerTest extends TestBase {
     });
     client.addOptionHandler(new SimpleOptionHandler(47, false, true, false, false));
     await();
+  }
+
+  // Todo : need to test sending -1
+  @Test
+  public void testClientSendBinary() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onSendOptions() {
+        writeDoOption(Option.BINARY);
+      }
+      @Override
+      protected void onOptionWill(byte optionCode) {
+        super.onOptionWill(optionCode);
+        if (optionCode == 0) {
+          latch.countDown();
+        }
+      }
+      @Override
+      protected void onOptionDo(byte optionCode) {
+        super.onOptionDo(optionCode);
+        if (optionCode == 0) {
+          fail("Was not expecting a won't for binary option");
+        }
+      }
+      @Override
+      protected void onOptionWont(byte optionCode) {
+        super.onOptionWont(optionCode);
+        if (optionCode == 0) {
+          fail("Was not expecting a won't for binary option");
+        }
+      }
+      @Override
+      protected void onChar(int c) {
+        assertEquals((int)'\u20AC', c);
+        testComplete();
+      }
+    });
+    AtomicReference<OutputStream> out = new AtomicReference<>();
+    client = new TelnetClient() {
+      @Override
+      protected void _connectAction_() throws IOException {
+        super._connectAction_();
+        out.set(_output_);
+      }
+    };
+    client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, false));
+    client.connect("localhost", 4000);
+    latch.await();
+    new OutputStreamWriter(out.get()).append('\u20AC').flush();
+    await();
+  }
+
+  @Test
+  public void testServerSendBinary() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onSendOptions() {
+        writeWillOption(Option.BINARY);
+      }
+      @Override
+      protected void onOptionWill(byte optionCode) {
+        super.onOptionWill(optionCode);
+        if (optionCode == 0) {
+          fail("Was not expecting a won't for binary option");
+        }
+      }
+      @Override
+      protected void onOptionDo(byte optionCode) {
+        super.onOptionDo(optionCode);
+        if (optionCode == 0) {
+          write(new byte[]{'h', 'e', 'l', 'l', 'o', -1});
+          latch.countDown();
+        }
+      }
+      @Override
+      protected void onOptionDont(byte optionCode) {
+        super.onOptionWont(optionCode);
+        if (optionCode == 0) {
+          fail("Was not expecting a won't for binary option");
+        }
+      }
+    });
+    AtomicReference<InputStream> out = new AtomicReference<>();
+    client = new TelnetClient() {
+      @Override
+      protected void _connectAction_() throws IOException {
+        super._connectAction_();
+        out.set(_input_);
+      }
+    };
+    client.addOptionHandler(new SimpleOptionHandler(0, false, false, false, true));
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    client.registerSpyStream(baos);
+    client.connect("localhost", 4000);
+    latch.await();
+    Reader reader = new InputStreamReader(client.getInputStream());
+    char[] hello = new char[5];
+    int num = reader.read(hello);
+    assertEquals(5, num);
+    assertEquals("hello", new String(hello));
+    byte[] data = baos.toByteArray();
+    assertEquals(10, data.length);
+    assertEquals((byte)'h', data[3]);
+    assertEquals((byte)'e', data[4]);
+    assertEquals((byte)'l', data[5]);
+    assertEquals((byte)'l', data[6]);
+    assertEquals((byte)'o', data[7]);
+    assertEquals((byte)-1, data[8]);
+    assertEquals((byte)-1, data[9]);
   }
 }
