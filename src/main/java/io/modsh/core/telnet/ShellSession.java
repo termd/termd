@@ -13,8 +13,7 @@ public class ShellSession extends TelnetSession {
   BinaryDecoder decoder;
   BinaryEncoder encoder;
 
-  public ShellSession(Consumer<byte[]> output) {
-    super(output);
+  public ShellSession() {
   }
 
   @Override

@@ -38,16 +38,15 @@ public class TelnetSession implements Consumer<byte[]> {
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  final Consumer<byte[]> output;
+  public Consumer<byte[]> output;
   boolean sendBinary;
   boolean receiveBinary;
 
-  public TelnetSession(Consumer<byte[]> output) {
+  public TelnetSession() {
     this.status = Status.DATA;
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
     this.paramsIac = false;
-    this.output = output;
     this.sendBinary = false;
     this.receiveBinary = false;
   }

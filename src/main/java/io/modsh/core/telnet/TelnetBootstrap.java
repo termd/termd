@@ -16,6 +16,8 @@
  */
 package io.modsh.core.telnet;
 
+import io.modsh.core.Provider;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,7 +37,7 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(consumer -> new TelnetSession(consumer) {
+    start(() -> new TelnetSession() {
 
       @Override
       protected void onOpen() {
@@ -108,5 +110,5 @@ public abstract class TelnetBootstrap {
     });
   }
 
-  public abstract void start(Function<Consumer<byte[]>, TelnetSession> factory);
+  public abstract void start(Provider<TelnetSession> factory);
 }
