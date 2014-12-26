@@ -4,6 +4,7 @@ import io.modsh.core.Handler;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
@@ -12,40 +13,83 @@ import java.nio.charset.CharsetDecoder;
  */
 public class BinaryDecoder {
 
-  final CharsetDecoder decoder;
-  final ByteBuffer bBuf;
-  final CharBuffer cBuf;
-  final Handler<Integer> onChar;
+  private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
 
-  public BinaryDecoder(Charset charset, Handler<Integer> onChar) {
+  private final CharsetDecoder decoder;
+  private ByteBuffer bBuf;
+  private final CharBuffer cBuf;
+  private final Handler<int[]> onChar;
+
+  public BinaryDecoder(Charset charset, Handler<int[]> onChar) {
+    this(2, charset, onChar);
+  }
+
+  public BinaryDecoder(int initialSize, Charset charset, Handler<int[]> onChar) {
+    if (initialSize < 2) {
+      throw new IllegalArgumentException("Initial size must be at least 2");
+    }
     decoder = charset.newDecoder();
-    bBuf = ByteBuffer.allocate(4);
-    cBuf = CharBuffer.allocate(2);
+    bBuf = EMPTY;
+    cBuf = CharBuffer.allocate(initialSize); // We need at least 2
     this.onChar = onChar;
   }
 
-  public void onByte(byte b) {
-    bBuf.put(b);
+  public void write(byte[] data) {
+    write(data, 0, data.length);
+  }
+
+  public void write(byte[] data, int start, int len) {
+
+    // Fill the byte buffer
+    int remaining = bBuf.remaining();
+    if (len > remaining) {
+      // Allocate a new buffer
+      ByteBuffer tmp = bBuf;
+      int length = tmp.position() + len;
+      bBuf = ByteBuffer.allocate(length);
+      tmp.flip();
+      bBuf.put(tmp);
+    }
+    bBuf.put(data, start, len);
     bBuf.flip();
-    decoder.decode(bBuf, cBuf, false);
-    cBuf.flip();
-    switch (cBuf.remaining()) {
-      case 0:
-        break;
-      case 1:
+
+    // Drain the byte buffer
+    while (bBuf.hasRemaining()) {
+      IntBuffer iBuf = IntBuffer.allocate(bBuf.remaining());
+      decoder.decode(bBuf, cBuf, false);
+      cBuf.flip();
+      while (cBuf.hasRemaining()) {
         char c = cBuf.get();
-        onChar.handle((int) c);
-        break;
-      case 2:
-        char high = cBuf.get();
-        char low = cBuf.get();
-        int codepoint = Character.toCodePoint(high, low);
-        onChar.handle(codepoint);
-        break;
-      default:
-        throw new AssertionError();
+        if (Character.isSurrogate(c)) {
+          if (Character.isHighSurrogate(c)) {
+            if (cBuf.hasRemaining()) {
+              char low = cBuf.get();
+              if (Character.isLowSurrogate(low)) {
+                int codePoint = Character.toCodePoint(c, low);
+                if (Character.isValidCodePoint(codePoint)) {
+                  iBuf.put(codePoint);
+                } else {
+                  throw new UnsupportedOperationException("Handle me gracefully");
+                }
+              } else {
+                throw new UnsupportedOperationException("Handle me gracefully");
+              }
+            } else {
+              throw new UnsupportedOperationException("Handle me gracefully");
+            }
+          } else {
+            throw new UnsupportedOperationException("Handle me gracefully");
+          }
+        } else {
+          iBuf.put((int) c);
+        }
+      }
+      iBuf.flip();
+      int[] codePoints = new int[iBuf.limit()];
+      iBuf.get(codePoints);
+      onChar.handle(codePoints);
+      cBuf.compact();
     }
     bBuf.compact();
-    cBuf.compact();
   }
 }

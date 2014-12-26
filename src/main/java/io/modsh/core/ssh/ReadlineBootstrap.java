@@ -52,13 +52,14 @@ public class ReadlineBootstrap {
           @Override
           public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
 
-            while (len-- > 0) {
-              byte i = buf[start++]; // Not taking care of encoding
-              if (decoder != null) {
-                decoder.onByte(i);
-              } else {
-                reader.append(i);
+            if (decoder != null) {
+              decoder.write(buf, start, len);
+            } else {
+              int[] data = new int[len];
+              for (int index = 0;index < len;index++) {
+                data[index] = buf[start + index];
               }
+              reader.append(data);
             }
 
             while (true) {
@@ -105,7 +106,7 @@ public class ReadlineBootstrap {
         String lcctype = env.getEnv().get("LC_CTYPE");
         if (lcctype != null) {
           Charset charset = parseCharset(lcctype);
-          decoder = new BinaryDecoder(charset, reader.appender());
+          decoder = new BinaryDecoder(charset, reader.appender2());
         }
       }
 

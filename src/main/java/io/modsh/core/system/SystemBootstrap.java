@@ -23,9 +23,9 @@ public class SystemBootstrap {
 
     InputStream inputrc = ReadlineBootstrap.class.getResourceAsStream("inputrc");
     final Reader reader = new Reader(inputrc);
-    BinaryDecoder decoder = new BinaryDecoder(Charset.forName("UTF-8"), new Handler<Integer>() {
+    BinaryDecoder decoder = new BinaryDecoder(Charset.forName("UTF-8"), new Handler<int[]>() {
       @Override
-      public void handle(Integer event) {
+      public void handle(int[] event) {
         reader.append(event);
         while (true) {
           Action action = reader.reduceOnce().popKey();
@@ -44,18 +44,10 @@ public class SystemBootstrap {
     while (true) {
       channel.read(buff);
       buff.flip();
-
-      while (buff.hasRemaining()) {
-        byte b = buff.get();
-        decoder.onByte(b);
-      }
-
+      byte[] bytes = new byte[buff.limit()];
+      buff.get(bytes);
+      decoder.write(bytes);
       buff.compact();
     }
-
-
-
   }
-
-
 }

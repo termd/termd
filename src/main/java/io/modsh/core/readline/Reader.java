@@ -36,6 +36,12 @@ public class Reader {
       append(event);
     }
   };
+  private final Handler<int[]> appender2 = new Handler<int[]>() {
+    @Override
+    public void handle(int[] event) {
+      append(event);
+    }
+  };
 
   public Reader() {
     this(Keys.values());
@@ -84,6 +90,10 @@ public class Reader {
 
   public Handler<Integer> appender() {
     return appender;
+  }
+
+  public Handler<int[]> appender2() {
+    return appender2;
   }
 
   public Reader append(int... chars) {
