@@ -7,7 +7,7 @@ import io.modsh.core.writeline.Escaper;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ActionHandler {
+public class ActionHandler implements Handler<Action> {
 
   final Handler<int[]> output;
 
