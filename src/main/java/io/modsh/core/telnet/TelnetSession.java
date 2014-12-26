@@ -16,12 +16,8 @@
  */
 package io.modsh.core.telnet;
 
-import io.modsh.core.io.BinaryDecoder;
-import io.modsh.core.io.BinaryEncoder;
-
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.function.Consumer;
 
 /**
@@ -245,11 +241,7 @@ public class TelnetSession implements Consumer<byte[]> {
           if (session.receiveBinary) {
             session.onByte(b);
           } else {
-            if ((b & 0x80) != 0) {
-              System.out.println("Unimplemented " + b);
-            } else {
-              session.onByte(b);
-            }
+            session.onByte(b);
           }
         }
       }

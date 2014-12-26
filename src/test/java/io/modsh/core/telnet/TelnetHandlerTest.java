@@ -24,7 +24,6 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.TelnetNotificationHandler;
 import org.apache.commons.net.telnet.TelnetOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
-import org.apache.mina.util.byteaccess.ByteArray;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -254,6 +252,59 @@ public class TelnetHandlerTest extends TestBase {
     } finally {
       client.disconnect();
     }
+    await();
+  }
+
+  @Test
+  public void testSend() throws Exception {
+    server(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onOpen() {
+        write(new byte[]{0,1,2,3,127,(byte) 0x80, (byte) 0x81, -1});
+      }
+    });
+    client = new TelnetClient();
+    client.connect("localhost", 4000);
+    byte[] data = new byte[8];
+    assertEquals(8, client.getInputStream().read(data));
+    assertEquals((byte)0, data[0]);
+    assertEquals((byte)1, data[1]);
+    assertEquals((byte)2, data[2]);
+    assertEquals((byte)3, data[3]);
+    assertEquals((byte)127, data[4]);
+    assertEquals((byte)0, data[5]);
+    assertEquals((byte)1, data[6]);
+    assertEquals((byte)127, data[7]);
+  }
+
+  @Test
+  public void testReceive() throws Exception {
+    server(socket -> new TelnetSession(socket) {
+      byte[] data = new byte[7];
+      int index = 0;
+      @Override
+      protected void onByte(byte b) {
+        if (index < 7) {
+          data[index++] = b;
+          if (index == 7) {
+            assertEquals((byte)0, data[0]);
+            assertEquals((byte)1, data[1]);
+            assertEquals((byte)2, data[2]);
+            assertEquals((byte)3, data[3]);
+            assertEquals((byte)127, data[4]);
+            assertEquals((byte)0x80, data[5]);
+            assertEquals((byte)0x81, data[6]);
+            testComplete();
+          }
+        } else {
+          fail("Invalid index " + index);
+        }
+      }
+    });
+    client = new TelnetClient();
+    client.connect("localhost", 4000);
+    client.getOutputStream().write(new byte[]{0,1,2,3,127,(byte) 0x80, (byte) 0x81});
+    client.getOutputStream().flush();
     await();
   }
 
