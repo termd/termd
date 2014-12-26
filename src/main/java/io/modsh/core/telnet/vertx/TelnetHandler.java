@@ -34,11 +34,26 @@ public class TelnetHandler implements Handler<NetSocket> {
   }
 
   @Override
-  public void handle(NetSocket socket) {
-    TelnetSession session = factory.provide();
-    session.output = data -> socket.write(new Buffer(data));
-    socket.dataHandler(data -> session.accept(data.getBytes()));
-    socket.closeHandler(v -> session.close());
+  public void handle(final NetSocket socket) {
+    final TelnetSession session = factory.provide();
+    session.output = new io.modsh.core.Handler<byte[]>() {
+      @Override
+      public void handle(byte[] event) {
+        socket.write(new Buffer(event));
+      }
+    };
+    socket.dataHandler(new Handler<Buffer>() {
+      @Override
+      public void handle(Buffer event) {
+        session.handle(event.getBytes());
+      }
+    });
+    socket.closeHandler(new Handler<Void>() {
+      @Override
+      public void handle(Void event) {
+        session.close();
+      }
+    });
     session.init();
   }
 }

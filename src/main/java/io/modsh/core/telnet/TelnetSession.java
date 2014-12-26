@@ -16,14 +16,15 @@
  */
 package io.modsh.core.telnet;
 
+import io.modsh.core.Handler;
+
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class TelnetSession implements Consumer<byte[]> {
+public class TelnetSession implements Handler<byte[]> {
 
   static final byte BYTE_IAC = (byte)  0xFF;
   static final byte BYTE_DONT = (byte) 0xFE;
@@ -38,7 +39,7 @@ public class TelnetSession implements Consumer<byte[]> {
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  public Consumer<byte[]> output;
+  public Handler<byte[]> output;
   boolean sendBinary;
   boolean receiveBinary;
 
@@ -68,7 +69,7 @@ public class TelnetSession implements Consumer<byte[]> {
    * @param option the option to send
    */
   public final void writeDoOption(Option option) {
-    output.accept(new byte[]{BYTE_IAC, BYTE_DO, option.code});
+    output.handle(new byte[]{BYTE_IAC, BYTE_DO, option.code});
   }
 
   /**
@@ -77,17 +78,17 @@ public class TelnetSession implements Consumer<byte[]> {
    * @param option the option to send
    */
   public final void writeWillOption(Option option) {
-    output.accept(new byte[]{BYTE_IAC, BYTE_WILL, option.code});
+    output.handle(new byte[]{BYTE_IAC, BYTE_WILL, option.code});
   }
 
   private void rawWrite(byte[] data, int offset, int length) {
     if (length > 0) {
       if (offset == 0 && length == data.length) {
-        output.accept(data);
+        output.handle(data);
       } else {
         byte[] chunk = new byte[length];
         System.arraycopy(data, offset, chunk, 0, chunk.length);
-        output.accept(chunk);
+        output.handle(chunk);
       }
     }
   }
@@ -104,7 +105,7 @@ public class TelnetSession implements Consumer<byte[]> {
       for (int i = 0;i < data.length;i++) {
         if (data[i] == -1) {
           rawWrite(data, prev, i - prev);
-          output.accept(new byte[]{-1,-1});
+          output.handle(new byte[]{-1, -1});
           prev = i + 1;
         }
       }
@@ -113,12 +114,12 @@ public class TelnetSession implements Consumer<byte[]> {
       for (int i = 0;i < data.length;i++) {
         data[i] = (byte)(data[i] & 0x7F);
       }
-      output.accept(data);
+      output.handle(data);
     }
   }
 
   @Override
-  public void accept(byte[] data) {
+  public void handle(byte[] data) {
     for (int i = 0;i < data.length;i++) {
       status.handle(this, data[i]);
     }
@@ -156,7 +157,7 @@ public class TelnetSession implements Consumer<byte[]> {
         return;
       }
     }
-    output.accept(new byte[]{BYTE_IAC,BYTE_DONT,optionCode});
+    output.handle(new byte[]{BYTE_IAC, BYTE_DONT, optionCode});
   }
 
   /**
@@ -192,7 +193,7 @@ public class TelnetSession implements Consumer<byte[]> {
         return;
       }
     }
-    output.accept(new byte[]{BYTE_IAC,BYTE_WONT,optionCode});
+    output.handle(new byte[]{BYTE_IAC, BYTE_WONT, optionCode});
   }
 
   /**

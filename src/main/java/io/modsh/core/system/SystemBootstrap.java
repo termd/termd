@@ -1,5 +1,6 @@
 package io.modsh.core.system;
 
+import io.modsh.core.Handler;
 import io.modsh.core.io.BinaryDecoder;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.Reader;
@@ -21,15 +22,18 @@ public class SystemBootstrap {
   public static void main(String[] args) throws IOException {
 
     InputStream inputrc = ReadlineBootstrap.class.getResourceAsStream("inputrc");
-    Reader reader = new Reader(inputrc);
-    BinaryDecoder decoder = new BinaryDecoder(Charset.forName("UTF-8"), (int c) -> {
-      reader.append(c);
-      while (true) {
-        Action action = reader.reduceOnce().popKey();
-        if (action != null) {
-          System.out.println("Read " + action);
-        } else {
-          break;
+    final Reader reader = new Reader(inputrc);
+    BinaryDecoder decoder = new BinaryDecoder(Charset.forName("UTF-8"), new Handler<Integer>() {
+      @Override
+      public void handle(Integer event) {
+        reader.append(event);
+        while (true) {
+          Action action = reader.reduceOnce().popKey();
+          if (action != null) {
+            System.out.println("Read " + action);
+          } else {
+            break;
+          }
         }
       }
     });

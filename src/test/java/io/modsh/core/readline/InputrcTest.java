@@ -6,21 +6,21 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class InputrcTest {
 
-  static class FailingHandler implements InputrcHandler {
+  static class FailingHandler extends InputrcHandler {
     @Override public void bindMacro(String keyName, String macro) { throw new AssertionError(); }
     @Override public void bindFunction(String keyName, String functionName) { throw new AssertionError(); }
     @Override public void bindMacro(int[] keySequence, String macro) { throw new AssertionError(); }
     @Override public void bindFunction(int[] keySequence, String functionName) { throw new AssertionError(); }
   }
 
-  static class AssertingHandler implements InputrcHandler {
+  static class AssertingHandler extends InputrcHandler {
 
     @Override public void bindMacro(String keyName, String macro) { nextParser().bindMacro(keyName, macro); }
     @Override public void bindFunction(String keyName, String functionName) { nextParser().bindFunction(keyName, functionName); }
@@ -43,7 +43,7 @@ public class InputrcTest {
       return this;
     }
 
-    AssertingHandler assertBindMacro(String keyName, String macro) {
+    AssertingHandler assertBindMacro(final String keyName, final String macro) {
       return append(new FailingHandler() {
         @Override
         public void bindMacro(String k, String m) {
@@ -53,7 +53,7 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindMacro(int[] keyName, String macro) {
+    AssertingHandler assertBindMacro(final int[] keyName, final String macro) {
       return append(new FailingHandler() {
         @Override
         public void bindMacro(int[] k, String m) {
@@ -63,7 +63,7 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindFunction(String keyName, String macro) {
+    AssertingHandler assertBindFunction(final String keyName, final String macro) {
       return append (new FailingHandler() {
         @Override
         public void bindFunction(String k, String m) {
@@ -73,7 +73,7 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindFunction(int[] keySequence, String macro) {
+    AssertingHandler assertBindFunction(final int[] keySequence, final String macro) {
       return append(new FailingHandler() {
         @Override
         public void bindFunction(int[] k, String m) {

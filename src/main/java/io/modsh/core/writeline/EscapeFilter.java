@@ -1,11 +1,11 @@
 package io.modsh.core.writeline;
 
-import java.util.function.IntConsumer;
+import io.modsh.core.Handler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EscapeFilter implements IntConsumer {
+public class EscapeFilter implements Handler<Integer> {
 
   private EscStatus status = EscStatus.NORMAL;
   private final Escaper escaper;
@@ -15,10 +15,10 @@ public class EscapeFilter implements IntConsumer {
   }
 
   @Override
-  public void accept(int code) {
+  public void handle(Integer code) {
     switch (status) {
       case NORMAL:
-        switch (code) {
+        switch ((int)code) {
           case '\'':
             escaper.beginEscape('\'');
             status = EscStatus.IN_QUOTE;
@@ -32,7 +32,7 @@ public class EscapeFilter implements IntConsumer {
             status = EscStatus.IN_BACKSLASH;
             break;
           default:
-            escaper.accept(code);
+            escaper.handle(code);
             break;
         }
         break;
@@ -41,7 +41,7 @@ public class EscapeFilter implements IntConsumer {
           escaper.endEscape('\'');
           status = EscStatus.NORMAL;
         } else {
-          escaper.accept(code);
+          escaper.handle(code);
         }
         break;
       case IN_DOUBLE_QUOTE:
@@ -49,11 +49,11 @@ public class EscapeFilter implements IntConsumer {
           escaper.endEscape('\"');
           status = EscStatus.NORMAL;
         } else {
-          escaper.accept(code);
+          escaper.handle(code);
         }
         break;
       case IN_BACKSLASH:
-        escaper.accept(code);
+        escaper.handle(code);
         escaper.endEscape('\\');
         status = EscStatus.NORMAL;
         break;

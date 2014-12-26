@@ -16,9 +16,10 @@
  */
 package io.modsh.core.telnet;
 
+import io.modsh.core.Provider;
 import io.modsh.core.readline.Action;
-import io.modsh.core.readline.Reader;
 import io.modsh.core.readline.ActionHandler;
+import io.modsh.core.readline.Reader;
 import io.modsh.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
@@ -50,28 +51,32 @@ public class ReadlineBootstrap {
   public void start() {
 
     InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
-    Reader reader = new Reader(inputrc);
-    ActionHandler handler = new ActionHandler();
+    final Reader reader = new Reader(inputrc);
+    final ActionHandler handler = new ActionHandler();
 
-    telnet.start(() -> new ShellSession() {
-
-
+    telnet.start(new Provider<TelnetSession>() {
       @Override
-      public void accept(byte[] data) {
-        super.accept(data);
-        while (true) {
-          Action action = reader.reduceOnce().popKey();
-          if (action != null) {
-            handler.handle(action);
-          } else {
-            break;
+      public TelnetSession provide() {
+        return new ShellSession() {
+
+          @Override
+          public void handle(byte[] data) {
+            super.handle(data);
+            while (true) {
+              Action action = reader.reduceOnce().popKey();
+              if (action != null) {
+                handler.handle(action);
+              } else {
+                break;
+              }
+            }
           }
-        }
-      }
 
-      @Override
-      protected void onChar(int c) {
-        reader.append(c);
+          @Override
+          protected void onChar(int c) {
+            reader.append(c);
+          }
+        };
       }
     });
   }

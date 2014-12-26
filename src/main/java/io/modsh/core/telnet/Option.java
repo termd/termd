@@ -1,8 +1,5 @@
 package io.modsh.core.telnet;
 
-import io.modsh.core.io.BinaryDecoder;
-import io.modsh.core.io.BinaryEncoder;
-
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
@@ -48,7 +45,7 @@ public enum Option {
 
     @Override
     void handleWill(TelnetSession session) {
-      session.output.accept(new byte[]{TelnetSession.BYTE_IAC, TelnetSession.BYTE_SB, code, BYTE_SEND, TelnetSession.BYTE_IAC, TelnetSession.BYTE_SE});
+      session.output.handle(new byte[]{TelnetSession.BYTE_IAC, TelnetSession.BYTE_SB, code, BYTE_SEND, TelnetSession.BYTE_IAC, TelnetSession.BYTE_SE});
     }
     @Override
     void handleWont(TelnetSession session) {

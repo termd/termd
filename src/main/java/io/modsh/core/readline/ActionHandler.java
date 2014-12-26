@@ -35,7 +35,7 @@ public class ActionHandler {
     }
 
     @Override
-    public void accept(int value) {
+    public void handle(Integer value) {
       if (value == '\r') {
         if (escaped) {
           System.out.println();
@@ -56,7 +56,7 @@ public class ActionHandler {
     if (action instanceof KeyAction) {
       KeyAction key = (KeyAction) action;
       for (int i = 0;i < key.length();i++) {
-        escapeFilter.accept(key.getAt(i));
+        escapeFilter.handle(key.getAt(i));
       }
     } else {
       FunctionAction fname = (FunctionAction) action;

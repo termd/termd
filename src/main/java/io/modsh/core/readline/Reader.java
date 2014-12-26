@@ -16,6 +16,8 @@
  */
 package io.modsh.core.readline;
 
+import io.modsh.core.Handler;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,16 +30,22 @@ public class Reader {
 
   private final Action[] actions;
   private State state;
+  private final Handler<Integer> appender = new Handler<Integer>() {
+    @Override
+    public void handle(Integer event) {
+      append(event);
+    }
+  };
 
   public Reader() {
     this(Keys.values());
   }
 
   public Reader(InputStream inputrc) {
-    ArrayList<Action> actions = new ArrayList<>();
+    final ArrayList<Action> actions = new ArrayList<>();
     InputrcHandler handler = new InputrcHandler() {
       @Override
-      public void bindFunction(int[] keySequence, String functionName) {
+      public void bindFunction(final int[] keySequence, final String functionName) {
         actions.add(new FunctionAction() {
           @Override
           public String getName() {
@@ -72,6 +80,10 @@ public class Reader {
   public Reader(KeyAction[] keys) {
     this.actions = keys;
     this.state = new State(new int[0], new Action[0]);
+  }
+
+  public Handler<Integer> appender() {
+    return appender;
   }
 
   public Reader append(int... chars) {
@@ -169,7 +181,7 @@ public class Reader {
         }
         if (candidate == null) {
           if (prefixes == 0) {
-            int c = buffer[0];
+            final int c = buffer[0];
             Action[] a = Arrays.copyOf(queue, queue.length + 1);
             a[queue.length] = new KeyAction() {
               @Override

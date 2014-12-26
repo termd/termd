@@ -1,9 +1,8 @@
 package io.modsh.core.telnet;
 
+import io.modsh.core.Handler;
 import io.modsh.core.io.BinaryDecoder;
 import io.modsh.core.io.BinaryEncoder;
-
-import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -20,14 +19,24 @@ public class ShellSession extends TelnetSession {
   protected void onSendBinary(boolean binary) {
     super.onSendBinary(binary);
     if (binary) {
-      encoder = new BinaryEncoder(TelnetSession.UTF_8, b -> write(new byte[]{b}));
+      encoder = new BinaryEncoder(TelnetSession.UTF_8, new Handler<Byte>() {
+        @Override
+        public void handle(Byte event) {
+          write(new byte[]{event});
+        }
+      });
     }
   }
 
   @Override
   protected void onReceiveBinary(boolean binary) {
     super.onReceiveBinary(binary);
-    decoder = new BinaryDecoder(TelnetSession.UTF_8, (int c) -> onChar((char) c));
+    decoder = new BinaryDecoder(TelnetSession.UTF_8, new Handler<Integer>() {
+      @Override
+      public void handle(Integer event) {
+        onChar(event);
+      }
+    });
   }
 
   @Override

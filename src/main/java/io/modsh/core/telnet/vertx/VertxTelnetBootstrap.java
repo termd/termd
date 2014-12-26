@@ -8,8 +8,6 @@ import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.net.NetServer;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

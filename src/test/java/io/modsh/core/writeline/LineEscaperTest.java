@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -60,11 +62,14 @@ public class LineEscaperTest {
   }
 
   private List<String> escape(String line) {
-    StringBuilder buffer = new StringBuilder();
-    ArrayList<String> lines = new ArrayList<>();
-    Runnable next = () -> {
-      lines.add(buffer.toString());
-      buffer.setLength(0);
+    final StringBuilder buffer = new StringBuilder();
+    final ArrayList<String> lines = new ArrayList<>();
+    final Runnable next = new Runnable() {
+      @Override
+      public void run() {
+        lines.add(buffer.toString());
+        buffer.setLength(0);
+      }
     };
     EscapeFilter escaper = new EscapeFilter(new Escaper() {
       boolean escaped;
@@ -81,11 +86,15 @@ public class LineEscaperTest {
         next.run();
       }
       @Override
-      public void accept(int value) {
+      public void handle(Integer value) {
         buffer.appendCodePoint(value);
       }
     });
-    line.codePoints().forEach(escaper::accept);
+    for (int offset = 0;offset < line.length();) {
+      int cp = line.codePointAt(offset);
+      escaper.handle(cp);
+      offset += Character.charCount(cp);
+    }
     lines.add(buffer.toString());
     return lines;
   }

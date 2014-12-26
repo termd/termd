@@ -18,9 +18,6 @@ package io.modsh.core.telnet;
 
 import io.modsh.core.Provider;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 /**
  * A test class.
  *
@@ -37,78 +34,84 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(() -> new TelnetSession() {
-
+    start(new Provider<TelnetSession>() {
       @Override
-      protected void onOpen() {
-        System.out.println("New client");
-      }
+      public TelnetSession provide() {
+        return new TelnetSession() {
 
-      @Override
-      protected void onClose() {
-        System.out.println("Client closed");
-      }
+          @Override
+          protected void onOpen() {
+            System.out.println("New client");
+          }
 
-      @Override
-      protected void onSize(int width, int height) {
-        System.out.println("Resize:(" + width + "," + height + ")");
-      }
+          @Override
+          protected void onClose() {
+            System.out.println("Client closed");
+          }
 
-      @Override
-      protected void onTerminalType(String terminalType) {
-        System.out.println("Terminal type: " + terminalType);
-      }
+          @Override
+          protected void onSize(int width, int height) {
+            System.out.println("Resize:(" + width + "," + height + ")");
+          }
 
-      @Override
-      protected void onNAWS(boolean naws) {
-        System.out.println("Option NAWS:" + naws);
-      }
+          @Override
+          protected void onTerminalType(String terminalType) {
+            System.out.println("Terminal type: " + terminalType);
+          }
 
-      @Override
-      protected void onEcho(boolean echo) {
-        System.out.println("Option echo:" + echo);
-      }
+          @Override
+          protected void onNAWS(boolean naws) {
+            System.out.println("Option NAWS:" + naws);
+          }
 
-      @Override
-      protected void onSGA(boolean sga) {
-        System.out.println("Option SGA:" + sga);
-      }
+          @Override
+          protected void onEcho(boolean echo) {
+            System.out.println("Option echo:" + echo);
+          }
 
-      @Override
-      protected void onByte(byte b) {
-        if (b >= 32) {
-          System.out.println("Char:" + (char)b);
-        } else {
-          System.out.println("Char:<" + b + ">");
-        }
-      }
+          @Override
+          protected void onSGA(boolean sga) {
+            System.out.println("Option SGA:" + sga);
+          }
 
-      @Override
-      protected void onOptionWill(byte optionCode) {
-        System.out.println("Will:" + optionCode);
-      }
+          @Override
+          protected void onByte(byte b) {
+            if (b >= 32) {
+              System.out.println("Char:" + (char)b);
+            } else {
+              System.out.println("Char:<" + b + ">");
+            }
+          }
 
-      @Override
-      protected void onOptionWont(byte optionCode) {
-        System.out.println("Wont:" + optionCode);
-      }
+          @Override
+          protected void onOptionWill(byte optionCode) {
+            System.out.println("Will:" + optionCode);
+          }
 
-      @Override
-      protected void onOptionDo(byte optionCode) {
-        System.out.println("Do:" + optionCode);
-      }
+          @Override
+          protected void onOptionWont(byte optionCode) {
+            System.out.println("Wont:" + optionCode);
+          }
 
-      @Override
-      protected void onOptionDont(byte optionCode) {
-        System.out.println("Dont:" + optionCode);
-      }
+          @Override
+          protected void onOptionDo(byte optionCode) {
+            System.out.println("Do:" + optionCode);
+          }
 
-      @Override
-      protected void onCommand(byte command) {
-        System.out.println("Command:" + command);
+          @Override
+          protected void onOptionDont(byte optionCode) {
+            System.out.println("Dont:" + optionCode);
+          }
+
+          @Override
+          protected void onCommand(byte command) {
+            System.out.println("Command:" + command);
+          }
+        };
       }
     });
   }
 
   public abstract void start(Provider<TelnetSession> factory);
+
 }

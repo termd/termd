@@ -2,13 +2,15 @@ package io.modsh.core.ssh;
 
 import io.modsh.core.io.BinaryDecoder;
 import io.modsh.core.readline.Action;
-import io.modsh.core.readline.Reader;
 import io.modsh.core.readline.ActionHandler;
+import io.modsh.core.readline.Reader;
 import org.apache.sshd.SshServer;
+import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.SessionAware;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
@@ -35,7 +37,7 @@ public class ReadlineBootstrap {
 
     SshServer sshd = SshServer.setUpDefaultServer();
 
-    InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
+    final InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
 
     class MyCommand implements Command, SessionAware, ChannelSessionAware {
 
@@ -55,7 +57,7 @@ public class ReadlineBootstrap {
               if (decoder != null) {
                 decoder.onByte(i);
               } else {
-                onChar(i);
+                reader.append(i);
               }
             }
 
@@ -98,16 +100,12 @@ public class ReadlineBootstrap {
       public void setExitCallback(ExitCallback callback) {
       }
 
-      private void onChar(int c) {
-        reader.append(c);
-      }
-
       @Override
       public void start(Environment env) throws IOException {
         String lcctype = env.getEnv().get("LC_CTYPE");
         if (lcctype != null) {
           Charset charset = parseCharset(lcctype);
-          decoder = new BinaryDecoder(charset, this::onChar);
+          decoder = new BinaryDecoder(charset, reader.appender());
         }
       }
 
@@ -116,11 +114,21 @@ public class ReadlineBootstrap {
       }
     }
 
-    sshd.setShellFactory(MyCommand::new);
+    sshd.setShellFactory(new Factory<Command>() {
+      @Override
+      public Command create() {
+        return new MyCommand();
+      }
+    });
 
     sshd.setPort(5000);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
-    sshd.setPasswordAuthenticator((username, password, session) -> true);
+    sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
+      @Override
+      public boolean authenticate(String username, String password, ServerSession session) {
+        return true;
+      }
+    });
     sshd.start();
 
   }

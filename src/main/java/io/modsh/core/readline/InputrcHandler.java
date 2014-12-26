@@ -3,22 +3,22 @@ package io.modsh.core.readline;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface InputrcHandler {
+public abstract class InputrcHandler {
 
-  Pattern COMMENT = Pattern.compile("#.*");
-  Pattern CONDITIONAL = Pattern.compile("\\$.*");
-  Pattern SET_VARIABLE = Pattern.compile("set\\s+(\\S)+\\s+(\\S)+\\s*");
-  Pattern BIND = Pattern.compile("(?:(?:\"(.*)\")|(.*))" + ":\\s*" + "(?:(?:\"(.*)\")|(?:'(.*)')|(\\S+))" + "\\s*");
-  Pattern A = Pattern.compile("^\\\\([0-9]{1,3})");
-  Pattern B = Pattern.compile("^\\\\x([0-9,A-F,a-f]{1,2})");
+  public static final Pattern COMMENT = Pattern.compile("#.*");
+  public static final Pattern CONDITIONAL = Pattern.compile("\\$.*");
+  public static final Pattern SET_VARIABLE = Pattern.compile("set\\s+(\\S)+\\s+(\\S)+\\s*");
+  public static final Pattern BIND = Pattern.compile("(?:(?:\"(.*)\")|(.*))" + ":\\s*" + "(?:(?:\"(.*)\")|(?:'(.*)')|(\\S+))" + "\\s*");
+  public static final Pattern A = Pattern.compile("^\\\\([0-9]{1,3})");
+  public static final Pattern B = Pattern.compile("^\\\\x([0-9,A-F,a-f]{1,2})");
 
   public static void parse(String s, InputrcHandler handler) throws UnsupportedEncodingException {
     parse(new ByteArrayInputStream(s.getBytes("US-ASCII")), handler);
@@ -48,7 +48,7 @@ public interface InputrcHandler {
             String macro2 = matcher.group(4);
             String functionname = matcher.group(5);
             if (keyseq != null) {
-              IntStream.Builder builder = IntStream.builder();
+              ArrayList<Integer> builder = new ArrayList<>();
               while (keyseq.length() > 0) {
                 if (keyseq.startsWith("\\C-") && keyseq.length() > 3) {
                   int c = (Character.toUpperCase(keyseq.charAt(3)) - '@') & 0x7F;
@@ -56,7 +56,8 @@ public interface InputrcHandler {
                   keyseq = keyseq.substring(4);
                 } else if (keyseq.startsWith("\\M-") && keyseq.length() > 3) {
                   int c = (Character.toUpperCase(keyseq.charAt(3)) - '@') & 0x7F;
-                  builder.add(27).add(c);
+                  builder.add(27);
+                  builder.add(c);
                   keyseq = keyseq.substring(4);
                 } else if (keyseq.startsWith("\\e")) {
                   builder.add(27);
@@ -111,7 +112,10 @@ public interface InputrcHandler {
                   }
                 }
               }
-              int[] f = builder.build().toArray();
+              int[] f = new int[builder.size()];
+              for (int i = 0;i < builder.size();i++) {
+                f[i] = builder.get(i);
+              }
               if (functionname != null) {
                 handler.bindFunction(f, functionname);
               } else if (macro1 != null) {
@@ -134,15 +138,15 @@ public interface InputrcHandler {
     }
   }
 
-  default void bindMacro(String keyName, String macro) {
+  public void bindMacro(String keyName, String macro) {
   }
 
-  default void bindFunction(String keyName, String functionName) {
+  public void bindFunction(String keyName, String functionName) {
   }
 
-  default void bindMacro(int[] keySequence, String macro) {
+  public void bindMacro(int[] keySequence, String macro) {
   }
 
-  default void bindFunction(int[] keySequence, String functionName) {
+  public void bindFunction(int[] keySequence, String functionName) {
   }
 }
