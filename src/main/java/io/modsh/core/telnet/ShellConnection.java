@@ -7,12 +7,12 @@ import io.modsh.core.io.BinaryEncoder;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ShellSession extends TelnetSession {
+public class ShellConnection extends TelnetConnection {
 
   BinaryDecoder decoder;
   BinaryEncoder encoder;
 
-  public ShellSession(Handler<byte[]> output) {
+  public ShellConnection(Handler<byte[]> output) {
     super(output);
   }
 
@@ -20,7 +20,7 @@ public class ShellSession extends TelnetSession {
   protected void onSendBinary(boolean binary) {
     super.onSendBinary(binary);
     if (binary) {
-      encoder = new BinaryEncoder(TelnetSession.UTF_8, new Handler<byte[]>() {
+      encoder = new BinaryEncoder(TelnetConnection.UTF_8, new Handler<byte[]>() {
         @Override
         public void handle(byte[] event) {
           write(event);
@@ -32,7 +32,7 @@ public class ShellSession extends TelnetSession {
   @Override
   protected void onReceiveBinary(boolean binary) {
     super.onReceiveBinary(binary);
-    decoder = new BinaryDecoder(TelnetSession.UTF_8, new Handler<int[]>() {
+    decoder = new BinaryDecoder(TelnetConnection.UTF_8, new Handler<int[]>() {
       @Override
       public void handle(int[] event) {
         for (int i : event) {

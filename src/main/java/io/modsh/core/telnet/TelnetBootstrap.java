@@ -35,10 +35,10 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(new Function<Handler<byte[]>, TelnetSession>() {
+    start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> output) {
-        return new TelnetSession(output) {
+      public TelnetConnection call(Handler<byte[]> output) {
+        return new TelnetConnection(output) {
 
           @Override
           protected void onOpen() {
@@ -115,6 +115,6 @@ public abstract class TelnetBootstrap {
     });
   }
 
-  public abstract void start(Function<Handler<byte[]>, TelnetSession> factory);
+  public abstract void start(Function<Handler<byte[]>, TelnetConnection> factory);
 
 }

@@ -56,10 +56,10 @@ public class ReadlineBootstrap {
     InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
     final Reader reader = new Reader(inputrc);
 
-    telnet.start(new Function<Handler<byte[]>, TelnetSession>() {
+    telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> output) {
-        return new ShellSession(output) {
+      public TelnetConnection call(Handler<byte[]> output) {
+        return new ShellConnection(output) {
 
           final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
 

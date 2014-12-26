@@ -62,7 +62,7 @@ public class TelnetHandlerTest extends TestBase {
     vertx = VertxFactory.newVertx();
   }
 
-  private void server(Function<Handler<byte[]>, TelnetSession> factory) {
+  private void server(Function<Handler<byte[]>, TelnetConnection> factory) {
     server = vertx.createNetServer().connectHandler(new TelnetHandler(factory));
     final BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
     server.listen(4000, "localhost", new org.vertx.java.core.Handler<AsyncResult<NetServer>>() {
@@ -96,7 +96,7 @@ public class TelnetHandlerTest extends TestBase {
     }
   }
 
-  private void testOptionValue(Function<Handler<byte[]>, TelnetSession> factory, TelnetOptionHandler optionHandler) throws Exception {
+  private void testOptionValue(Function<Handler<byte[]>, TelnetConnection> factory, TelnetOptionHandler optionHandler) throws Exception {
     server(factory);
     client = new TelnetClient();
     client.addOptionHandler(optionHandler);
@@ -108,10 +108,10 @@ public class TelnetHandlerTest extends TestBase {
   public void testRejectEcho() throws Exception {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     EchoOptionHandler optionHandler = new EchoOptionHandler(false, false, false, false);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeWillOption(Option.ECHO);
@@ -132,10 +132,10 @@ public class TelnetHandlerTest extends TestBase {
   public void testAcceptEcho() throws Exception {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     EchoOptionHandler optionHandler = new EchoOptionHandler(false, false, false, true);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeWillOption(Option.ECHO);
@@ -156,10 +156,10 @@ public class TelnetHandlerTest extends TestBase {
   public void testRejectSGA() throws Exception {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     SuppressGAOptionHandler optionHandler = new SuppressGAOptionHandler(false, false, false, false);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeWillOption(Option.SGA);
@@ -180,10 +180,10 @@ public class TelnetHandlerTest extends TestBase {
   public void testAcceptSGA() throws Exception {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     SuppressGAOptionHandler optionHandler = new SuppressGAOptionHandler(false, false, false, true);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeWillOption(Option.SGA);
@@ -204,10 +204,10 @@ public class TelnetHandlerTest extends TestBase {
   public void testRejectNAWS() throws Exception {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, false, false);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeDoOption(Option.NAWS);
@@ -233,10 +233,10 @@ public class TelnetHandlerTest extends TestBase {
     final AtomicReference<Boolean> serverValue = new AtomicReference<>();
     final AtomicReference<int[]> size = new AtomicReference<>();
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
-    testOptionValue(new Function<Handler<byte[]>, TelnetSession>() {
+    testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeDoOption(Option.NAWS);
@@ -262,10 +262,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testOpen() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             testComplete();
@@ -280,10 +280,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testClose() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onClose() {
             testComplete();
@@ -302,10 +302,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testSend() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             write(new byte[]{0,1,2,3,127,(byte) 0x80, (byte) 0x81, -1});
@@ -329,10 +329,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testReceive() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           byte[] data = new byte[7];
           int index = 0;
 
@@ -360,10 +360,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testWillUnknownOption() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument);
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument);
       }
     });
     client = new TelnetClient();
@@ -383,10 +383,10 @@ public class TelnetHandlerTest extends TestBase {
 
   @Test
   public void testDoUnknownOption() throws Exception {
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument);
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument);
       }
     });
     client = new TelnetClient();
@@ -407,10 +407,10 @@ public class TelnetHandlerTest extends TestBase {
   @Test
   public void testReceiveBinary() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeDoOption(Option.BINARY);
@@ -465,10 +465,10 @@ public class TelnetHandlerTest extends TestBase {
   @Test
   public void testSendBinary() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Function<Handler<byte[]>, TelnetSession>() {
+    server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
-      public TelnetSession call(Handler<byte[]> argument) {
-        return new TelnetSession(argument) {
+      public TelnetConnection call(Handler<byte[]> argument) {
+        return new TelnetConnection(argument) {
           @Override
           protected void onOpen() {
             writeWillOption(Option.BINARY);

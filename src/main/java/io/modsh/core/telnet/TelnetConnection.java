@@ -24,7 +24,7 @@ import java.util.Arrays;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class TelnetSession implements Handler<byte[]> {
+public class TelnetConnection implements Handler<byte[]> {
 
   static final byte BYTE_IAC = (byte)  0xFF;
   static final byte BYTE_DONT = (byte) 0xFE;
@@ -46,7 +46,7 @@ public class TelnetSession implements Handler<byte[]> {
   boolean sendBinary;
   boolean receiveBinary;
 
-  public TelnetSession(Handler<byte[]> output) {
+  public TelnetConnection(Handler<byte[]> output) {
     this.status = Status.DATA;
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
@@ -154,7 +154,7 @@ public class TelnetSession implements Handler<byte[]> {
 
   /**
    * Handle option <code>WILL</code> call back. The implementation will try to find a matching option
-   * via the {@code Option#values()} and invoke it's {@link Option#handleWill(TelnetSession)} method
+   * via the {@code Option#values()} and invoke it's {@link Option#handleWill(TelnetConnection)} method
    * otherwise a <code>DON'T</code> will be sent to the client.<p>
    *
    * This method can be subclassed to handle an option.
@@ -173,7 +173,7 @@ public class TelnetSession implements Handler<byte[]> {
 
   /**
    * Handle option <code>WON'T</code> call back. The implementation will try to find a matching option
-   * via the {@code Option#values()} and invoke it's {@link Option#handleWont(TelnetSession)} method.<p>
+   * via the {@code Option#values()} and invoke it's {@link Option#handleWont(TelnetConnection)} method.<p>
    *
    * This method can be subclassed to handle an option.
    *
@@ -190,7 +190,7 @@ public class TelnetSession implements Handler<byte[]> {
 
   /**
    * Handle option <code>DO</code> call back. The implementation will try to find a matching option
-   * via the {@code Option#values()} and invoke it's {@link Option#handleDo(TelnetSession)} method
+   * via the {@code Option#values()} and invoke it's {@link Option#handleDo(TelnetConnection)} method
    * otherwise a <code>WON'T</code> will be sent to the client.<p>
    *
    * This method can be subclassed to handle an option.
@@ -209,7 +209,7 @@ public class TelnetSession implements Handler<byte[]> {
 
   /**
    * Handle option <code>DON'T</code> call back. The implementation will try to find a matching option
-   * via the {@code Option#values()} and invoke it's {@link Option#handleDont(TelnetSession)} method.<p>
+   * via the {@code Option#values()} and invoke it's {@link Option#handleDont(TelnetConnection)} method.<p>
    *
    * This method can be subclassed to handle an option.
    *
@@ -226,7 +226,7 @@ public class TelnetSession implements Handler<byte[]> {
 
   /**
    * Handle option parameters call back. The implementation will try to find a matching option
-   * via the {@code Option#values()} and invoke it's {@link Option#handleParameters(TelnetSession, byte[])} method.
+   * via the {@code Option#values()} and invoke it's {@link Option#handleParameters(TelnetConnection, byte[])} method.
    *
    * This method can be subclassed to handle an option.
    *
@@ -279,7 +279,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     DATA() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         if (b == BYTE_IAC) {
           if (session.receiveBinary) {
             session.status = ESC;
@@ -295,7 +295,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     ESC() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         if (b == BYTE_IAC) {
           session.appendData((byte)-1);
         } else {
@@ -307,7 +307,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     IAC() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         if (b == BYTE_DO) {
           session.status = DO;
         } else if (b == BYTE_DONT) {
@@ -329,7 +329,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     SB() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         if (session.paramsOptionCode == null) {
           session.paramsOptionCode = b;
         } else {
@@ -359,7 +359,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     DO() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         try {
           session.onOptionDo(b);
         } finally {
@@ -370,7 +370,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     DONT() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         try {
           session.onOptionDont(b);
         } finally {
@@ -381,7 +381,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     WILL() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         try {
           session.onOptionWill(b);
         } finally {
@@ -392,7 +392,7 @@ public class TelnetSession implements Handler<byte[]> {
 
     WONT() {
       @Override
-      void handle(TelnetSession session, byte b) {
+      void handle(TelnetConnection session, byte b) {
         try {
           session.onOptionWont(b);
         } finally {
@@ -403,6 +403,6 @@ public class TelnetSession implements Handler<byte[]> {
 
     ;
 
-    abstract void handle(TelnetSession session, byte b);
+    abstract void handle(TelnetConnection session, byte b);
   }
 }
