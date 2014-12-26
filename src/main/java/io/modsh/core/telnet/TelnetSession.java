@@ -149,8 +149,8 @@ public class TelnetSession implements Handler<byte[]> {
   protected void onNAWS(boolean naws) {}
   protected void onEcho(boolean echo) {}
   protected void onSGA(boolean sga) {}
-  protected void onSendBinary(boolean binary) { sendBinary = binary; }
-  protected void onReceiveBinary(boolean binary) { receiveBinary = binary; }
+  protected void onSendBinary(boolean binary) { }
+  protected void onReceiveBinary(boolean binary) { }
 
   /**
    * Handle option <code>WILL</code> call back. The implementation will try to find a matching option
