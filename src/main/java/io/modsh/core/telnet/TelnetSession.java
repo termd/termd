@@ -64,7 +64,6 @@ public class TelnetSession implements Consumer<byte[]> {
   }
 
   public void init() {
-    onSendOptions();
     onOpen();
   }
 
@@ -121,15 +120,6 @@ public class TelnetSession implements Consumer<byte[]> {
       }
       output.accept(data);
     }
-  }
-
-  protected void onSendOptions() {
-    writeWillOption(Option.ECHO);
-    writeWillOption(Option.SGA);
-    writeDoOption(Option.NAWS);
-    writeDoOption(Option.BINARY);
-    writeWillOption(Option.BINARY);
-    writeDoOption(Option.TERMINAL_TYPE);
   }
 
   @Override

@@ -40,6 +40,16 @@ public class ShellSession extends TelnetSession {
     }
   }
 
+  @Override
+  protected void onOpen() {
+    writeWillOption(Option.ECHO);
+    writeWillOption(Option.SGA);
+    writeDoOption(Option.NAWS);
+    writeDoOption(Option.BINARY);
+    writeWillOption(Option.BINARY);
+    writeDoOption(Option.TERMINAL_TYPE);
+  }
+
   protected void onChar(int c) {}
 
 }

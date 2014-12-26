@@ -95,14 +95,10 @@ public class TelnetHandlerTest extends TestBase {
 
   private void testOptionValue(Function<Consumer<byte[]>, TelnetSession> factory, TelnetOptionHandler optionHandler) throws Exception {
     server(factory);
-    TelnetClient client = new TelnetClient();
-    try {
-      client.addOptionHandler(optionHandler);
-      client.connect("localhost", 4000);
-      await();
-    } finally {
-      client.disconnect();
-    }
+    client = new TelnetClient();
+    client.addOptionHandler(optionHandler);
+    client.connect("localhost", 4000);
+    await();
   }
 
   @Test
@@ -110,6 +106,10 @@ public class TelnetHandlerTest extends TestBase {
     AtomicReference<Boolean> serverValue = new AtomicReference<>();
     EchoOptionHandler optionHandler = new EchoOptionHandler(false, false, false, false);
     testOptionValue(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onOpen() {
+        writeWillOption(Option.ECHO);
+      }
       @Override
       protected void onEcho(boolean echo) {
         serverValue.set(echo);
@@ -126,6 +126,10 @@ public class TelnetHandlerTest extends TestBase {
     EchoOptionHandler optionHandler = new EchoOptionHandler(false, false, false, true);
     testOptionValue(socket -> new TelnetSession(socket) {
       @Override
+      protected void onOpen() {
+        writeWillOption(Option.ECHO);
+      }
+      @Override
       protected void onEcho(boolean echo) {
         serverValue.set(echo);
         testComplete();
@@ -140,6 +144,10 @@ public class TelnetHandlerTest extends TestBase {
     AtomicReference<Boolean> serverValue = new AtomicReference<>();
     SuppressGAOptionHandler optionHandler = new SuppressGAOptionHandler(false, false, false, false);
     testOptionValue(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onOpen() {
+        writeWillOption(Option.SGA);
+      }
       @Override
       protected void onSGA(boolean sga) {
         serverValue.set(sga);
@@ -156,6 +164,10 @@ public class TelnetHandlerTest extends TestBase {
     SuppressGAOptionHandler optionHandler = new SuppressGAOptionHandler(false, false, false, true);
     testOptionValue(socket -> new TelnetSession(socket) {
       @Override
+      protected void onOpen() {
+        writeWillOption(Option.SGA);
+      }
+      @Override
       protected void onSGA(boolean sga) {
         serverValue.set(sga);
         testComplete();
@@ -171,11 +183,14 @@ public class TelnetHandlerTest extends TestBase {
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, false, false);
     testOptionValue(socket -> new TelnetSession(socket) {
       @Override
+      protected void onOpen() {
+        writeDoOption(Option.NAWS);
+      }
+      @Override
       protected void onNAWS(boolean naws) {
         serverValue.set(naws);
         testComplete();
       }
-
       @Override
       protected void onSize(int width, int height) {
         super.onSize(width, height);
@@ -191,6 +206,10 @@ public class TelnetHandlerTest extends TestBase {
     AtomicReference<int[]> size = new AtomicReference<>();
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
     testOptionValue(socket -> new TelnetSession(socket) {
+      @Override
+      protected void onOpen() {
+        writeDoOption(Option.NAWS);
+      }
       @Override
       protected void onNAWS(boolean naws) {
         serverValue.set(naws);
@@ -216,12 +235,8 @@ public class TelnetHandlerTest extends TestBase {
         testComplete();
       }
     });
-    TelnetClient client = new TelnetClient();
-    try {
-      client.connect("localhost", 4000);
-    } finally {
-      client.disconnect();
-    }
+    client = new TelnetClient();
+    client.connect("localhost", 4000);
     await();
   }
 
@@ -233,7 +248,7 @@ public class TelnetHandlerTest extends TestBase {
         testComplete();
       }
     });
-    TelnetClient client = new TelnetClient();
+    client = new TelnetClient();
     try {
       client.connect("localhost", 4000);
     } finally {
@@ -245,7 +260,7 @@ public class TelnetHandlerTest extends TestBase {
   @Test
   public void testWillUnknownOption() throws Exception {
     server(TelnetSession::new);
-    TelnetClient client = new TelnetClient();
+    client = new TelnetClient();
     client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
       if (option_code == 47) {
@@ -260,7 +275,7 @@ public class TelnetHandlerTest extends TestBase {
   @Test
   public void testDoUnknownOption() throws Exception {
     server(TelnetSession::new);
-    TelnetClient client = new TelnetClient();
+    client = new TelnetClient();
     client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
       if (option_code == 47) {
@@ -273,11 +288,11 @@ public class TelnetHandlerTest extends TestBase {
   }
 
   @Test
-  public void testClientSendBinary() throws Exception {
+  public void testReceiveBinary() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server(socket -> new TelnetSession(socket) {
       @Override
-      protected void onSendOptions() {
+      protected void onOpen() {
         writeDoOption(Option.BINARY);
       }
       @Override
@@ -304,7 +319,7 @@ public class TelnetHandlerTest extends TestBase {
 
       @Override
       protected void onByte(byte b) {
-        assertEquals((byte)-1, b);
+        assertEquals((byte) -1, b);
         testComplete();
       }
     });
@@ -326,11 +341,11 @@ public class TelnetHandlerTest extends TestBase {
   }
 
   @Test
-  public void testServerSendBinary() throws Exception {
+  public void testSendBinary() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server(socket -> new TelnetSession(socket) {
       @Override
-      protected void onSendOptions() {
+      protected void onOpen() {
         writeWillOption(Option.BINARY);
       }
       @Override
