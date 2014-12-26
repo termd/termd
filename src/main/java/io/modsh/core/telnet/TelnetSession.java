@@ -34,6 +34,9 @@ public class TelnetSession implements Handler<byte[]> {
   static final byte BYTE_SB = (byte)   0xFA;
   static final byte BYTE_SE = (byte)   0xF0;
   static Charset UTF_8 = Charset.forName("UTF-8");
+
+  private byte[] pendingBuffer = new byte[256];
+  private int pendingLength = 0;
   Status status;
   Byte paramsOptionCode;
   byte[] paramsBuffer;
@@ -121,9 +124,10 @@ public class TelnetSession implements Handler<byte[]> {
 
   @Override
   public void handle(byte[] data) {
-    for (int i = 0;i < data.length;i++) {
-      status.handle(this, data[i]);
+    for (byte b : data) {
+      status.handle(this, b);
     }
+    flushDataIfNecessary();
   }
 
   public void close() {
@@ -132,7 +136,13 @@ public class TelnetSession implements Handler<byte[]> {
 
   protected void onOpen() {}
   protected void onClose() {}
-  protected void onByte(byte b) {}
+
+  /**
+   * Process data sent by the client.
+   *
+   * @param data the data
+   */
+  protected void onData(byte[] data) {}
   protected void onSize(int width, int height) {}
   protected void onTerminalType(String terminalType) {}
   protected void onCommand(byte command) {}
@@ -231,19 +241,54 @@ public class TelnetSession implements Handler<byte[]> {
     }
   }
 
+  /**
+   * Append a byte in the {@link #pendingBuffer} buffer. When the {@link #pendingBuffer} buffer is full, data
+   * is flushed.
+   *
+   * @param b the byte
+   * @see #flushData()
+   */
+  private void appendData(byte b) {
+    if (pendingLength >= pendingBuffer.length) {
+      flushData();
+    }
+    pendingBuffer[pendingLength++] = b;
+  }
+
+  /**
+   * Flush the {@link #pendingBuffer} buffer when it is not empty.
+   *
+   * @see #flushData()
+   */
+  private void flushDataIfNecessary() {
+    if (pendingLength > 0) {
+      flushData();
+    }
+  }
+
+  /**
+   * Flush the {@link #pendingBuffer} buffer to {@link #onData(byte[])}.
+   */
+  private void flushData() {
+    byte[] data = Arrays.copyOf(pendingBuffer, pendingLength);
+    pendingLength = 0;
+    onData(data);
+  }
+
   enum Status {
 
     DATA() {
       @Override
       void handle(TelnetSession session, byte b) {
         if (b == BYTE_IAC) {
-          session.status = session.receiveBinary ? ESC : IAC;
-        } else {
           if (session.receiveBinary) {
-            session.onByte(b);
+            session.status = ESC;
           } else {
-            session.onByte(b);
+            session.flushDataIfNecessary();
+            session.status = IAC;
           }
+        } else {
+          session.appendData(b);
         }
       }
     },
@@ -252,8 +297,9 @@ public class TelnetSession implements Handler<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         if (b == BYTE_IAC) {
-          session.onByte((byte) - 1);
+          session.appendData((byte)-1);
         } else {
+          session.flushDataIfNecessary();
           IAC.handle(session, b);
         }
       }

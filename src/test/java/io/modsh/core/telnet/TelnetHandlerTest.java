@@ -335,23 +335,18 @@ public class TelnetHandlerTest extends TestBase {
         return new TelnetSession(argument) {
           byte[] data = new byte[7];
           int index = 0;
+
           @Override
-          protected void onByte(byte b) {
-            if (index < 7) {
-              data[index++] = b;
-              if (index == 7) {
-                assertEquals((byte)0, data[0]);
-                assertEquals((byte)1, data[1]);
-                assertEquals((byte)2, data[2]);
-                assertEquals((byte)3, data[3]);
-                assertEquals((byte)127, data[4]);
-                assertEquals((byte)0x80, data[5]);
-                assertEquals((byte)0x81, data[6]);
-                testComplete();
-              }
-            } else {
-              fail("Invalid index " + index);
-            }
+          protected void onData(byte[] data) {
+            assertEquals(7, data.length);
+            assertEquals((byte)0, data[0]);
+            assertEquals((byte)1, data[1]);
+            assertEquals((byte)2, data[2]);
+            assertEquals((byte)3, data[3]);
+            assertEquals((byte)127, data[4]);
+            assertEquals((byte)0x80, data[5]);
+            assertEquals((byte)0x81, data[6]);
+            testComplete();
           }
         };
       }
@@ -442,8 +437,9 @@ public class TelnetHandlerTest extends TestBase {
             }
           }
           @Override
-          protected void onByte(byte b) {
-            assertEquals((byte) -1, b);
+          protected void onData(byte[] data) {
+            assertEquals(1, data.length);
+            assertEquals((byte) -1, data[0]);
             testComplete();
           }
         };

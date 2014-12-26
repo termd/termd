@@ -41,11 +41,13 @@ public class ShellSession extends TelnetSession {
   }
 
   @Override
-  protected void onByte(byte b) {
-    if (decoder != null) {
-      decoder.onByte(b);
-    } else {
-      onChar((char) b);
+  protected void onData(byte[] data) {
+    for (byte b : data) {
+      if (decoder != null) {
+        decoder.onByte(b);
+      } else {
+        onChar((char) b);
+      }
     }
   }
 

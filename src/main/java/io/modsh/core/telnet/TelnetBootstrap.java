@@ -76,11 +76,13 @@ public abstract class TelnetBootstrap {
           }
 
           @Override
-          protected void onByte(byte b) {
-            if (b >= 32) {
-              System.out.println("Char:" + (char)b);
-            } else {
-              System.out.println("Char:<" + b + ">");
+          protected void onData(byte[] data) {
+            for (byte b : data) {
+              if (b >= 32) {
+                System.out.println("Char:" + (char)b);
+              } else {
+                System.out.println("Char:<" + b + ">");
+              }
             }
           }
 
