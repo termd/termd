@@ -18,12 +18,14 @@ package io.modsh.core.telnet;
 
 import io.modsh.core.Function;
 import io.modsh.core.Handler;
+import io.modsh.core.io.BinaryEncoder;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.ActionHandler;
 import io.modsh.core.readline.Reader;
 import io.modsh.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -53,12 +55,13 @@ public class ReadlineBootstrap {
 
     InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
     final Reader reader = new Reader(inputrc);
-    final ActionHandler handler = new ActionHandler();
 
     telnet.start(new Function<Handler<byte[]>, TelnetSession>() {
       @Override
       public TelnetSession call(Handler<byte[]> output) {
         return new ShellSession(output) {
+
+          final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
 
           @Override
           public void handle(byte[] data) {

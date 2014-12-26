@@ -1,6 +1,8 @@
 package io.modsh.core.ssh;
 
+import io.modsh.core.Handler;
 import io.modsh.core.io.BinaryDecoder;
+import io.modsh.core.io.BinaryEncoder;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.ActionHandler;
 import io.modsh.core.readline.Reader;
@@ -41,36 +43,34 @@ public class ReadlineBootstrap {
 
     class MyCommand implements Command, SessionAware, ChannelSessionAware {
 
+      private Charset charset;
       private BinaryDecoder decoder;
       private Reader reader = new Reader(inputrc);
-      private ActionHandler handler = new ActionHandler();
+      private Handler<byte[]> out;
+      private ActionHandler handler;
 
       @Override
-      public void setChannelSession(ChannelSession session) {
+      public void setChannelSession(final ChannelSession session) {
 
+
+        // Set data receiver at this moment to prevent setting a blocking input stream
         session.setDataReceiver(new ChannelDataReceiver() {
           @Override
           public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
 
-            if (decoder != null) {
+            if (handler != null) {
               decoder.write(buf, start, len);
+              while (true) {
+                Action action = reader.reduceOnce().popKey();
+                if (action != null) {
+                  handler.handle(action);
+                } else {
+                  break;
+                }
+              }
             } else {
-              int[] data = new int[len];
-              for (int index = 0;index < len;index++) {
-                data[index] = buf[start + index];
-              }
-              reader.append(data);
+              // Data send too early ?
             }
-
-            while (true) {
-              Action action = reader.reduceOnce().popKey();
-              if (action != null) {
-                handler.handle(action);
-              } else {
-                break;
-              }
-            }
-
             return len;
           }
 
@@ -90,7 +90,19 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void setOutputStream(OutputStream out) {
+      public void setOutputStream(final OutputStream out) {
+        this.out = new Handler<byte[]>() {
+          @Override
+          public void handle(byte[] event) {
+            // beware : this might be blocking
+            try {
+              out.write(event);
+              out.flush();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        };
       }
 
       @Override
@@ -105,9 +117,13 @@ public class ReadlineBootstrap {
       public void start(Environment env) throws IOException {
         String lcctype = env.getEnv().get("LC_CTYPE");
         if (lcctype != null) {
-          Charset charset = parseCharset(lcctype);
-          decoder = new BinaryDecoder(charset, reader.appender2());
+          charset = parseCharset(lcctype);
         }
+        if (charset == null) {
+          charset = Charset.forName("UTF-8");
+        }
+        decoder = new BinaryDecoder(charset, reader.appender2());
+        handler = new ActionHandler(new BinaryEncoder(charset, out));
       }
 
       @Override
