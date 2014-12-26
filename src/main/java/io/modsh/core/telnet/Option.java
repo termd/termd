@@ -12,12 +12,22 @@ public enum Option {
 
     @Override
     void handleDo(TelnetSession session) {
-      session.encoder = new BinaryEncoder(TelnetSession.UTF_8, b -> session.output.accept(new byte[]{b}));
+      session.onSendBinary(true);
+    }
+
+    @Override
+    void handleDont(TelnetSession session) {
+      session.onSendBinary(false);
     }
 
     @Override
     void handleWill(TelnetSession session) {
-      session.decoder = new BinaryDecoder(TelnetSession.UTF_8, (int c) -> session.onChar((char) c));
+      session.onReceiveBinary(true);
+    }
+
+    @Override
+    void handleWont(TelnetSession session) {
+      session.onReceiveBinary(false);
     }
   },
 

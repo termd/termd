@@ -272,7 +272,6 @@ public class TelnetHandlerTest extends TestBase {
     await();
   }
 
-  // Todo : need to test sending -1
   @Test
   public void testClientSendBinary() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
@@ -302,9 +301,10 @@ public class TelnetHandlerTest extends TestBase {
           fail("Was not expecting a won't for binary option");
         }
       }
+
       @Override
-      protected void onChar(int c) {
-        assertEquals((int)'\u20AC', c);
+      protected void onByte(byte b) {
+        assertEquals((byte)-1, b);
         testComplete();
       }
     });
@@ -319,7 +319,9 @@ public class TelnetHandlerTest extends TestBase {
     client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, false));
     client.connect("localhost", 4000);
     latch.await();
-    new OutputStreamWriter(out.get()).append('\u20AC').flush();
+    out.get().write(-1);
+    out.get().write(-1);
+    out.get().flush();
     await();
   }
 

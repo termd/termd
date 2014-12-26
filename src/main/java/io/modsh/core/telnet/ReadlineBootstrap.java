@@ -53,7 +53,7 @@ public class ReadlineBootstrap {
     Reader reader = new Reader(inputrc);
     ActionHandler handler = new ActionHandler();
 
-    telnet.start(output -> new TelnetSession(output) {
+    telnet.start(output -> new ShellSession(output) {
 
 
       @Override

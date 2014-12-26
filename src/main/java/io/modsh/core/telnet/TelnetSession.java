@@ -38,24 +38,22 @@ public class TelnetSession implements Consumer<byte[]> {
   static final byte BYTE_SE = (byte)   0xF0;
   static Charset UTF_8 = Charset.forName("UTF-8");
   Status status;
-  HashMap<Byte, Boolean> options;
   Byte paramsOptionCode;
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  BinaryDecoder decoder;
-  BinaryEncoder encoder;
   final Consumer<byte[]> output;
+  boolean sendBinary;
+  boolean receiveBinary;
 
   public TelnetSession(Consumer<byte[]> output) {
     this.status = Status.DATA;
-    this.options = new HashMap<>();
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
     this.paramsIac = false;
-    this.encoder = null;
-    this.decoder = null;
     this.output = output;
+    this.sendBinary = false;
+    this.receiveBinary = false;
   }
 
   private void appendToParams(byte b) {
@@ -107,7 +105,7 @@ public class TelnetSession implements Consumer<byte[]> {
    * @param data the data to write
    */
   public final void write(byte[] data) {
-    if (encoder != null) {
+    if (sendBinary) {
       int prev = 0;
       for (int i = 0;i < data.length;i++) {
         if (data[i] == -1) {
@@ -141,27 +139,21 @@ public class TelnetSession implements Consumer<byte[]> {
     }
   }
 
-  protected void onByte(byte b) {
-    if (decoder != null) {
-      decoder.onByte(b);
-    } else {
-      onChar((char) b);
-    }
-  }
-
   public void close() {
     onClose();
   }
 
   protected void onOpen() {}
   protected void onClose() {}
+  protected void onByte(byte b) {}
   protected void onSize(int width, int height) {}
   protected void onTerminalType(String terminalType) {}
   protected void onCommand(byte command) {}
   protected void onNAWS(boolean naws) {}
   protected void onEcho(boolean echo) {}
   protected void onSGA(boolean sga) {}
-  protected void onChar(int c) {}
+  protected void onSendBinary(boolean binary) { sendBinary = binary; }
+  protected void onReceiveBinary(boolean binary) { receiveBinary = binary; }
 
   /**
    * Handle option <code>WILL</code> call back. The implementation will try to find a matching option
@@ -258,16 +250,16 @@ public class TelnetSession implements Consumer<byte[]> {
       @Override
       void handle(TelnetSession session, byte b) {
         if (b == BYTE_IAC) {
-          session.status = session.decoder == null ? IAC : ESC;
+          session.status = session.receiveBinary ? ESC : IAC;
         } else {
-          if (session.decoder == null) {
+          if (session.receiveBinary) {
+            session.onByte(b);
+          } else {
             if ((b & 0x80) != 0) {
               System.out.println("Unimplemented " + b);
             } else {
               session.onByte(b);
             }
-          } else {
-            session.onByte(b);
           }
         }
       }
