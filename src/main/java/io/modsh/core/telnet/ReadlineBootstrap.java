@@ -16,7 +16,8 @@
  */
 package io.modsh.core.telnet;
 
-import io.modsh.core.Provider;
+import io.modsh.core.Function;
+import io.modsh.core.Handler;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.ActionHandler;
 import io.modsh.core.readline.Reader;
@@ -54,10 +55,10 @@ public class ReadlineBootstrap {
     final Reader reader = new Reader(inputrc);
     final ActionHandler handler = new ActionHandler();
 
-    telnet.start(new Provider<TelnetSession>() {
+    telnet.start(new Function<Handler<byte[]>, TelnetSession>() {
       @Override
-      public TelnetSession provide() {
-        return new ShellSession() {
+      public TelnetSession call(Handler<byte[]> output) {
+        return new ShellSession(output) {
 
           @Override
           public void handle(byte[] data) {

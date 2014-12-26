@@ -1,5 +1,7 @@
 package io.modsh.core.telnet.vertx;
 
+import io.modsh.core.Function;
+import io.modsh.core.Handler;
 import io.modsh.core.Provider;
 import io.modsh.core.telnet.TelnetBootstrap;
 import io.modsh.core.telnet.TelnetSession;
@@ -32,7 +34,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(Provider<TelnetSession> factory) {
+  public void start(Function<Handler<byte[]>, TelnetSession> factory) {
     NetServer server = vertx.createNetServer();
     server.connectHandler(new TelnetHandler(factory));
     server.listen(port, host);

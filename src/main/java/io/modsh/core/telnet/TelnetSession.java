@@ -39,17 +39,18 @@ public class TelnetSession implements Handler<byte[]> {
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  public Handler<byte[]> output;
+  final Handler<byte[]> output;
   boolean sendBinary;
   boolean receiveBinary;
 
-  public TelnetSession() {
+  public TelnetSession(Handler<byte[]> output) {
     this.status = Status.DATA;
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
     this.paramsIac = false;
     this.sendBinary = false;
     this.receiveBinary = false;
+    this.output = output;
   }
 
   private void appendToParams(byte b) {

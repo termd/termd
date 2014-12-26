@@ -16,7 +16,8 @@
  */
 package io.modsh.core.telnet;
 
-import io.modsh.core.Provider;
+import io.modsh.core.Function;
+import io.modsh.core.Handler;
 
 /**
  * A test class.
@@ -34,10 +35,10 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(new Provider<TelnetSession>() {
+    start(new Function<Handler<byte[]>, TelnetSession>() {
       @Override
-      public TelnetSession provide() {
-        return new TelnetSession() {
+      public TelnetSession call(Handler<byte[]> output) {
+        return new TelnetSession(output) {
 
           @Override
           protected void onOpen() {
@@ -112,6 +113,6 @@ public abstract class TelnetBootstrap {
     });
   }
 
-  public abstract void start(Provider<TelnetSession> factory);
+  public abstract void start(Function<Handler<byte[]>, TelnetSession> factory);
 
 }

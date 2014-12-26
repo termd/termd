@@ -16,7 +16,7 @@
  */
 package io.modsh.core.telnet.vertx;
 
-import io.modsh.core.Provider;
+import io.modsh.core.Function;
 import io.modsh.core.telnet.TelnetSession;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -27,21 +27,20 @@ import org.vertx.java.core.net.NetSocket;
  */
 public class TelnetHandler implements Handler<NetSocket> {
 
-  final Provider<TelnetSession> factory;
+  final Function<io.modsh.core.Handler<byte[]>, TelnetSession> factory;
 
-  public TelnetHandler(Provider<TelnetSession> factory) {
+  public TelnetHandler(Function<io.modsh.core.Handler<byte[]>, TelnetSession> factory) {
     this.factory = factory;
   }
 
   @Override
   public void handle(final NetSocket socket) {
-    final TelnetSession session = factory.provide();
-    session.output = new io.modsh.core.Handler<byte[]>() {
+    final TelnetSession session = factory.call(new io.modsh.core.Handler<byte[]>() {
       @Override
       public void handle(byte[] event) {
         socket.write(new Buffer(event));
       }
-    };
+    });
     socket.dataHandler(new Handler<Buffer>() {
       @Override
       public void handle(Buffer event) {
