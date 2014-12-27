@@ -59,7 +59,7 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        return new ShellConnection(output) {
+        return new TelnetTermConnection(output) {
 
           final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
 

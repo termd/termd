@@ -7,12 +7,12 @@ import io.modsh.core.io.BinaryEncoder;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ShellConnection extends TelnetConnection {
+public class TelnetTermConnection extends TelnetConnection {
 
   BinaryDecoder decoder;
   BinaryEncoder encoder;
 
-  public ShellConnection(Handler<byte[]> output) {
+  public TelnetTermConnection(Handler<byte[]> output) {
     super(output);
   }
 
