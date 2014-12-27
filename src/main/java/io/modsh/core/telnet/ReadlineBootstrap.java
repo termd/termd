@@ -26,6 +26,7 @@ import io.modsh.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -73,6 +74,12 @@ public class ReadlineBootstrap {
                 break;
               }
             }
+          }
+        });
+        conn.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
+          @Override
+          public void handle(Map.Entry<Integer, Integer> event) {
+            System.out.println("Window size changed width=" + event.getKey() + " height=" + event.getValue());
           }
         });
         return conn;
