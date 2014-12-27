@@ -18,5 +18,11 @@ public interface TermConnection {
    */
   void sizeHandler(Handler<Map.Entry<Integer, Integer>> handler);
 
+  /**
+   * Set an handler for receiving chars events.
+   *
+   * @param handler the chars handler
+   */
+  void charsHandler(Handler<int[]> handler);
 
 }

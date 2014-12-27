@@ -59,13 +59,12 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        return new TelnetTermConnection(output) {
-
-          final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
-
+        final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
+        TelnetTermConnection conn = new TelnetTermConnection(output);
+        conn.charsHandler(new Handler<int[]>() {
           @Override
-          public void handle(byte[] data) {
-            super.handle(data);
+          public void handle(int[] event) {
+            reader.append(event);
             while (true) {
               Action action = reader.reduceOnce().popKey();
               if (action != null) {
@@ -75,12 +74,8 @@ public class ReadlineBootstrap {
               }
             }
           }
-
-          @Override
-          protected void onChar(int c) {
-            reader.append(c);
-          }
-        };
+        });
+        return conn;
       }
     });
   }

@@ -18,6 +18,7 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   BinaryEncoder encoder;
   Handler<Map.Entry<Integer, Integer>> sizeHandler;
   HashMap.SimpleEntry<Integer, Integer> size;
+  Handler<int[]> charsHandler;
 
   public TelnetTermConnection(Handler<byte[]> output) {
     super(output);
@@ -42,8 +43,8 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
     decoder = new BinaryDecoder(TelnetConnection.UTF_8, new Handler<int[]>() {
       @Override
       public void handle(int[] event) {
-        for (int i : event) {
-          onChar(i);
+        if (charsHandler != null) {
+          charsHandler.handle(event);
         }
       }
     });
@@ -53,11 +54,12 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   protected void onData(byte[] data) {
     if (decoder != null) {
       decoder.write(data);
-    } else {
-      // ???
-      for (byte b : data) {
-        onChar((char) b);
+    } else if (charsHandler != null) {
+      int[] chars = new int[data.length];
+      for (int i = 0;i < data.length;i++) {
+        chars[i] = data[i];
       }
+      charsHandler.handle(chars);
     }
   }
 
@@ -87,6 +89,8 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
     }
   }
 
-  protected void onChar(int c) {}
-
+  @Override
+  public void charsHandler(Handler<int[]> handler) {
+    charsHandler = handler;
+  }
 }
