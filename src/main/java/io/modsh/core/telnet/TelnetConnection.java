@@ -26,13 +26,13 @@ import java.util.Arrays;
 */
 public class TelnetConnection implements Handler<byte[]> {
 
-  static final byte BYTE_IAC = (byte)  0xFF;
-  static final byte BYTE_DONT = (byte) 0xFE;
-  static final byte BYTE_DO = (byte)   0xFD;
-  static final byte BYTE_WONT = (byte) 0xFC;
-  static final byte BYTE_WILL = (byte) 0xFB;
-  static final byte BYTE_SB = (byte)   0xFA;
-  static final byte BYTE_SE = (byte)   0xF0;
+  public static final byte BYTE_IAC = (byte)  0xFF;
+  public static final byte BYTE_DONT = (byte) 0xFE;
+  public static final byte BYTE_DO = (byte)   0xFD;
+  public static final byte BYTE_WONT = (byte) 0xFC;
+  public static final byte BYTE_WILL = (byte) 0xFB;
+  public static final byte BYTE_SB = (byte)   0xFA;
+  public static final byte BYTE_SE = (byte)   0xF0;
   static Charset UTF_8 = Charset.forName("UTF-8");
 
   private byte[] pendingBuffer = new byte[256];

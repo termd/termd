@@ -51,50 +51,8 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetHandlerTest extends TestBase {
+public class TelnetHandlerTest extends TelnetTestBase {
 
-  private Vertx vertx;
-  private NetServer server;
-  private TelnetClient client;
-
-  @Before
-  public void before() throws InterruptedException {
-    vertx = VertxFactory.newVertx();
-  }
-
-  private void server(Function<Handler<byte[]>, TelnetConnection> factory) {
-    server = vertx.createNetServer().connectHandler(new TelnetHandler(factory));
-    final BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
-    server.listen(4000, "localhost", new org.vertx.java.core.Handler<AsyncResult<NetServer>>() {
-      @Override
-      public void handle(AsyncResult<NetServer> event) {
-        latch.add(event);
-      }
-    });
-    AsyncResult<NetServer> result;
-    try {
-      result = latch.poll(2, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw failure(e);
-    }
-    if (result.failed()) {
-      throw failure(result.cause());
-    }
-  }
-
-  @After
-  public void after() {
-    if (server != null) {
-      server.close();
-    }
-    vertx.stop();
-    if (client != null && client.isConnected()) {
-      try {
-        client.disconnect();
-      } catch (IOException ignore) {
-      }
-    }
-  }
 
   private void testOptionValue(Function<Handler<byte[]>, TelnetConnection> factory, TelnetOptionHandler optionHandler) throws Exception {
     server(factory);
