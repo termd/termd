@@ -6,6 +6,7 @@ import io.modsh.core.io.BinaryEncoder;
 import io.modsh.core.readline.Action;
 import io.modsh.core.readline.ActionHandler;
 import io.modsh.core.readline.Reader;
+import io.modsh.core.term.TermConnection;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.ChannelSessionAware;
@@ -14,6 +15,8 @@ import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.Signal;
+import org.apache.sshd.server.SignalListener;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
@@ -23,6 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.AbstractMap;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,13 +48,27 @@ public class ReadlineBootstrap {
 
     final InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
 
-    class MyCommand implements Command, SessionAware, ChannelSessionAware {
+    class MyCommand implements Command, SessionAware, ChannelSessionAware, TermConnection {
 
       private Charset charset;
       private BinaryDecoder decoder;
-      private Reader reader = new Reader(inputrc);
       private Handler<byte[]> out;
-      private ActionHandler handler;
+      private HashMap.SimpleEntry<Integer, Integer> size;
+      private Handler<Map.Entry<Integer, Integer>> sizeHandler;
+      private Handler<int[]> charsHandler;
+
+      @Override
+      public void sizeHandler(Handler<Map.Entry<Integer, Integer>> handler) {
+        sizeHandler = handler;
+        if (size != null && handler != null) {
+          handler.handle(new AbstractMap.SimpleEntry<>(size));
+        }
+      }
+
+      @Override
+      public void charsHandler(Handler<int[]> handler) {
+        charsHandler = handler;
+      }
 
       @Override
       public void setChannelSession(final ChannelSession session) {
@@ -57,17 +78,8 @@ public class ReadlineBootstrap {
         session.setDataReceiver(new ChannelDataReceiver() {
           @Override
           public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
-
-            if (handler != null) {
+            if (decoder != null) {
               decoder.write(buf, start, len);
-              while (true) {
-                Action action = reader.reduceOnce().popKey();
-                if (action != null) {
-                  handler.handle(action);
-                } else {
-                  break;
-                }
-              }
             } else {
               // Data send too early ?
             }
@@ -114,7 +126,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void start(Environment env) throws IOException {
+      public void start(final Environment env) throws IOException {
         String lcctype = env.getEnv().get("LC_CTYPE");
         if (lcctype != null) {
           charset = parseCharset(lcctype);
@@ -122,8 +134,72 @@ public class ReadlineBootstrap {
         if (charset == null) {
           charset = Charset.forName("UTF-8");
         }
-        decoder = new BinaryDecoder(charset, reader.appender2());
-        handler = new ActionHandler(new BinaryEncoder(charset, out));
+        env.addSignalListener(new SignalListener() {
+          @Override
+          public void signal(Signal signal) {
+            updateSize(env);
+          }
+        }, EnumSet.of(Signal.WINCH));
+        updateSize(env);
+        decoder = new BinaryDecoder(charset, new Handler<int[]>() {
+          @Override
+          public void handle(int[] event) {
+            if (charsHandler != null) {
+              charsHandler.handle(event);
+            }
+          }
+        });
+
+        //
+        configure();
+      }
+
+      private void configure() {
+        this.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
+          @Override
+          public void handle(Map.Entry<Integer, Integer> event) {
+            System.out.println("Window size changed width=" + event.getKey() + " height=" + event.getValue());
+          }
+        });
+        final Reader reader = new Reader(inputrc);
+        final ActionHandler handler = new ActionHandler(new BinaryEncoder(charset, out));
+        this.charsHandler(new Handler<int[]>() {
+          @Override
+          public void handle(int[] event) {
+            reader.append(event);
+            while (true) {
+              Action action = reader.reduceOnce().popKey();
+              if (action != null) {
+                handler.handle(action);
+              } else {
+                break;
+              }
+            }
+
+          }
+        });
+      }
+
+      public void updateSize(Environment env) {
+        String columns = env.getEnv().get(Environment.ENV_COLUMNS);
+        String lines = env.getEnv().get(Environment.ENV_LINES);
+        if (lines != null && columns != null) {
+          AbstractMap.SimpleEntry<Integer, Integer> size;
+          try {
+            int width = Integer.parseInt(columns);
+            int height = Integer.parseInt(lines);
+            size = new AbstractMap.SimpleEntry<>(width, height);
+          }
+          catch (Exception ignore) {
+            size = null;
+          }
+          if (size != null) {
+            this.size = size;
+            if (sizeHandler != null) {
+              sizeHandler.handle(new AbstractMap.SimpleEntry<>(size));
+            }
+          }
+        }
       }
 
       @Override
