@@ -60,7 +60,7 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        final ActionHandler handler = new ActionHandler(new BinaryEncoder(Charset.forName("UTF-8"), output));
+        final ActionHandler handler = new ActionHandler(new BinaryEncoder(512, Charset.forName("UTF-8"), output));
         TelnetTermConnection conn = new TelnetTermConnection(output);
         conn.charsHandler(new Handler<int[]>() {
           @Override

@@ -141,7 +141,7 @@ public class ReadlineBootstrap {
           }
         }, EnumSet.of(Signal.WINCH));
         updateSize(env);
-        decoder = new BinaryDecoder(charset, new Handler<int[]>() {
+        decoder = new BinaryDecoder(512, charset, new Handler<int[]>() {
           @Override
           public void handle(int[] event) {
             if (charsHandler != null) {
@@ -162,7 +162,7 @@ public class ReadlineBootstrap {
           }
         });
         final Reader reader = new Reader(inputrc);
-        final ActionHandler handler = new ActionHandler(new BinaryEncoder(charset, out));
+        final ActionHandler handler = new ActionHandler(new BinaryEncoder(512, charset, out));
         this.charsHandler(new Handler<int[]>() {
           @Override
           public void handle(int[] event) {

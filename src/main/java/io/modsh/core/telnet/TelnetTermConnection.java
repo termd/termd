@@ -40,7 +40,7 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   @Override
   protected void onReceiveBinary(boolean binary) {
     super.onReceiveBinary(binary);
-    decoder = new BinaryDecoder(TelnetConnection.UTF_8, new Handler<int[]>() {
+    decoder = new BinaryDecoder(512, TelnetConnection.UTF_8, new Handler<int[]>() {
       @Override
       public void handle(int[] event) {
         if (charsHandler != null) {
