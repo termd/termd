@@ -40,6 +40,9 @@ public enum Keys implements KeyAction {
   CTRL_CARRET("Ctrl-^", 30), // ^
   CTRL_UNDERSCORE("Ctrl-_", 31),
 
+  A("A", 'A'), B("B", 'B'),
+  BACKSLASH("\\", '\\'),
+
   UP("up", 27, '[', 'A'),
   DOWN("down", 27, '[', 'B'),
   RIGHT("right", 27, '[', 'C'),

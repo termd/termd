@@ -1,10 +1,8 @@
-package io.modsh.core.writeline;
+package io.modsh.core.readline;
 
+import io.modsh.core.readline.EscapeFilter;
+import io.modsh.core.readline.Escaper;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

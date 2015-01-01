@@ -1,4 +1,4 @@
-package io.modsh.core.writeline;
+package io.modsh.core.readline;
 
 import io.modsh.core.Handler;
 
