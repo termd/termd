@@ -20,15 +20,15 @@ public class EscapeFilter implements Handler<Integer> {
       case NORMAL:
         switch ((int)code) {
           case '\'':
-            escaper.beginEscape('\'');
+            escaper.beginQuotes('\'');
             status = EscStatus.IN_QUOTE;
             break;
           case '"':
-            escaper.beginEscape('\"');
+            escaper.beginQuotes('\"');
             status = EscStatus.IN_DOUBLE_QUOTE;
             break;
           case '\\':
-            escaper.beginEscape('\\');
+            escaper.escaping();
             status = EscStatus.IN_BACKSLASH;
             break;
           default:
@@ -38,7 +38,7 @@ public class EscapeFilter implements Handler<Integer> {
         break;
       case IN_QUOTE:
         if (code == '\'') {
-          escaper.endEscape('\'');
+          escaper.endQuotes('\'');
           status = EscStatus.NORMAL;
         } else {
           escaper.handle(code);
@@ -46,15 +46,14 @@ public class EscapeFilter implements Handler<Integer> {
         break;
       case IN_DOUBLE_QUOTE:
         if (code == '"') {
-          escaper.endEscape('\"');
+          escaper.endQuotes('\"');
           status = EscStatus.NORMAL;
         } else {
           escaper.handle(code);
         }
         break;
       case IN_BACKSLASH:
-        escaper.handle(code);
-        escaper.endEscape('\\');
+        escaper.escaped(code);
         status = EscStatus.NORMAL;
         break;
       default:

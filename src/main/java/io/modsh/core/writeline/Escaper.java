@@ -7,8 +7,12 @@ import io.modsh.core.Handler;
  */
 public interface Escaper extends Handler<Integer> {
 
-  void beginEscape(int delimiter);
+  void escaping();
 
-  void endEscape(int delimiter);
+  void escaped(int ch);
+
+  void beginQuotes(int delim);
+
+  void endQuotes(int delim);
 
 }

@@ -25,69 +25,70 @@ public class LineEscaperTest {
 
   @Test
   public void testQuote() {
-    assertEscape("'", "", "");
-    assertEscape("'a", "", "a");
-    assertEscape("'a'", "", "a", "");
-    assertEscape("'\"'", "", "\"", "");
-    assertEscape("'\n'", "", "\n", "");
-    assertEscape("'a\nb'", "", "a\nb", "");
-    assertEscape("'a'\n", "", "a", "\n");
+    assertEscape("'", "<'>");
+    assertEscape("'a", "<'>a");
+    assertEscape("'a'", "<'>a</'>");
+    assertEscape("'\"'", "<'>\"</'>");
+    assertEscape("'\n'", "<'>\n</'>");
+    assertEscape("'\\'", "<'>\\</'>");
+    assertEscape("'a\nb'", "<'>a\nb</'>");
+    assertEscape("'a'\n", "<'>a</'>\n");
   }
 
   @Test
   public void testDoubleQuote() {
-    assertEscape("\"", "", "");
-    assertEscape("\"a", "", "a");
-    assertEscape("\"a\"", "", "a", "");
-    assertEscape("\"'\"", "", "'", "");
-    assertEscape("\"\n\"", "", "\n", "");
-    assertEscape("\"a\nb\"", "", "a\nb", "");
-    assertEscape("\"a\"\n", "", "a", "\n");
+    assertEscape("\"", "<\">");
+    assertEscape("\"a", "<\">a");
+    assertEscape("\"a\"", "<\">a</\">");
+    assertEscape("\"'\"", "<\">'</\">");
+    assertEscape("\"\n\"", "<\">\n</\">");
+    assertEscape("\"\\\"", "<\">\\</\">");
+    assertEscape("\"a\nb\"", "<\">a\nb</\">");
+    assertEscape("\"a\"\n", "<\">a</\">\n");
   }
 
   @Test
   public void testBackslash() {
-    assertEscape("\\", "", "");
-    assertEscape("\\a", "", "a", "");
-    assertEscape("\\ab", "", "a", "b");
-    assertEscape("\\\\", "", "\\", "");
-    assertEscape("\\'", "", "'", "");
-    assertEscape("\\\"", "", "\"", "");
-    assertEscape("\\\n", "", "\n", "");
+    assertEscape("\\", "[");
+    assertEscape("\\a", "[a]");
+    assertEscape("\\ab", "[a]b");
+    assertEscape("\\\\", "[\\]");
+    assertEscape("\\'", "[']");
+    assertEscape("\\\"", "[\"]");
+    assertEscape("\\\n", "[\n]");
   }
 
-  private void assertEscape(String line, String... expected) {
-    List<String> actual = escape(line);
-    assertEquals(new ArrayList<>(Arrays.asList(expected)), actual);
+  private void assertEscape(String line, String expected) {
+    String actual = escape(line);
+    assertEquals(expected, actual);
   }
 
-  private List<String> escape(String line) {
-    final StringBuilder buffer = new StringBuilder();
-    final ArrayList<String> lines = new ArrayList<>();
-    final Runnable next = new Runnable() {
-      @Override
-      public void run() {
-        lines.add(buffer.toString());
-        buffer.setLength(0);
-      }
-    };
+  private String escape(String line) {
+    final StringBuilder builder = new StringBuilder();
     EscapeFilter escaper = new EscapeFilter(new Escaper() {
-      boolean escaped;
+      Integer delimiter;
       @Override
-      public void beginEscape(int delimiter) {
-        assertFalse(escaped);
-        escaped = true;
-        next.run();
+      public void beginQuotes(int delim) {
+        builder.append("<").appendCodePoint(delim).append(">");
+        this.delimiter = delim;
       }
       @Override
-      public void endEscape(int delimiter) {
-        assertTrue(escaped);
-        escaped = false;
-        next.run();
+      public void escaping() {
+        builder.append('[');
+      }
+      @Override
+      public void escaped(int ch) {
+        builder.appendCodePoint(ch).appendCodePoint(']');
+      }
+      @Override
+      public void endQuotes(int delim) {
+        assertEquals((int)this.delimiter, delim);
+        builder.append("</").appendCodePoint(delim).append(">");
+        this.delimiter = null;
       }
       @Override
       public void handle(Integer value) {
-        buffer.appendCodePoint(value);
+        builder.appendCodePoint(value);
       }
     });
     for (int offset = 0;offset < line.length();) {
@@ -95,8 +96,7 @@ public class LineEscaperTest {
       escaper.handle(cp);
       offset += Character.charCount(cp);
     }
-    lines.add(buffer.toString());
-    return lines;
+    return builder.toString();
   }
 
 }
