@@ -3,10 +3,7 @@ package io.termd.core.ssh;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
-import io.termd.core.Helper;
-import io.termd.core.readline.Event;
-import io.termd.core.readline.EventHandler;
-import io.termd.core.readline.Reader;
+import io.termd.core.term.ReadlineTerm;
 import io.termd.core.term.TermConnection;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
@@ -157,7 +154,7 @@ public class ReadlineBootstrap {
         encoder = new BinaryEncoder(512, charset, out);
 
         //
-        configure(this);
+        new ReadlineTerm(this);
       }
 
       public void updateSize(Environment env) {
@@ -216,35 +213,5 @@ public class ReadlineBootstrap {
       }
     }
     return null;
-  }
-
-  private static void configure(TermConnection conn) {
-    InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
-    conn.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
-      @Override
-      public void handle(Map.Entry<Integer, Integer> event) {
-        System.out.println("Window size changed width=" + event.getKey() + " height=" + event.getValue());
-      }
-    });
-    final Reader reader = new Reader(inputrc);
-    final EventHandler handler = new EventHandler(conn.charsHandler());
-    for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
-      handler.addFunction(function);
-    }
-    conn.charsHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        reader.append(event);
-        while (true) {
-          Event action = reader.reduceOnce().popEvent();
-          if (action != null) {
-            handler.handle(action);
-          } else {
-            break;
-          }
-        }
-
-      }
-    });
   }
 }

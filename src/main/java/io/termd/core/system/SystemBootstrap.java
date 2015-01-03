@@ -4,7 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.readline.Event;
 import io.termd.core.readline.Reader;
-import io.termd.core.telnet.ReadlineBootstrap;
+import io.termd.core.telnet.netty.ReadlineBootstrap;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;

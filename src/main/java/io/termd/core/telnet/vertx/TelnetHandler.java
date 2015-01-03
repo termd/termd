@@ -35,7 +35,7 @@ public class TelnetHandler implements Handler<NetSocket> {
 
   @Override
   public void handle(final NetSocket socket) {
-    final TelnetConnection session = factory.call(new io.termd.core.Handler<byte[]>() {
+    final TelnetConnection connection = factory.call(new io.termd.core.Handler<byte[]>() {
       @Override
       public void handle(byte[] event) {
         socket.write(new Buffer(event));
@@ -44,15 +44,15 @@ public class TelnetHandler implements Handler<NetSocket> {
     socket.dataHandler(new Handler<Buffer>() {
       @Override
       public void handle(Buffer event) {
-        session.handle(event.getBytes());
+        connection.handle(event.getBytes());
       }
     });
     socket.closeHandler(new Handler<Void>() {
       @Override
       public void handle(Void event) {
-        session.close();
+        connection.close();
       }
     });
-    session.init();
+    connection.init();
   }
 }
