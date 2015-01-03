@@ -7,8 +7,8 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.modsh</groupId>
-  <artifactId>shell</artifactId>
+  <groupId>io.termd</groupId>
+  <artifactId>termd-core</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
   <dependencies>
@@ -105,7 +105,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.modsh.core.telnet.ReadlineBootstrap</mainClass>
+                  <mainClass>io.termd.core.telnet.ReadlineBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -131,7 +131,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.modsh.core.system.SystemBootstrap</mainClass>
+                  <mainClass>io.termd.core.system.SystemBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -157,7 +157,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.modsh.core.ssh.ReadlineBootstrap</mainClass>
+                  <mainClass>io.termd.core.ssh.ReadlineBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>
