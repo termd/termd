@@ -2,13 +2,16 @@ package io.termd.core.readline;
 
 import io.termd.core.Handler;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ActionHandler implements Handler<Action> {
 
+  final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
   final LinkedList<int[]> lines = new LinkedList<>();
   final LineBuffer buffer = new LineBuffer();
@@ -28,6 +31,11 @@ public class ActionHandler implements Handler<Action> {
     output.handle(new int[]{'%', ' '});
     this.output = output;
     this.handler = handler;
+  }
+
+  public ActionHandler addFunction(Function function) {
+    functions.put(function.getName(), function);
+    return this;
   }
 
   private LinkedList<Integer> escaped = new LinkedList<>();
@@ -108,12 +116,9 @@ public class ActionHandler implements Handler<Action> {
       }
     } else {
       FunctionAction fname = (FunctionAction) action;
-      if (fname.getName().equals("backward-delete-char")) {
-        buffer.deleteAt(-1);
-      } else if (fname.getName().equals("backward-char")) {
-        buffer.moveCursor(-1);
-      } else if (fname.getName().equals("forward-char")) {
-        buffer.moveCursor(1);
+      Function function = functions.get(fname.getName());
+      if (function != null) {
+        function.call(buffer);
       } else {
         System.out.println("Unimplemented function " + fname.getName());
       }

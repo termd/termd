@@ -3,6 +3,7 @@ package io.termd.core.ssh;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
+import io.termd.core.io.CodePoint;
 import io.termd.core.readline.Action;
 import io.termd.core.readline.ActionHandler;
 import io.termd.core.readline.Reader;
@@ -163,6 +164,9 @@ public class ReadlineBootstrap {
         });
         final Reader reader = new Reader(inputrc);
         final ActionHandler handler = new ActionHandler(new BinaryEncoder(512, charset, out));
+        for (io.termd.core.readline.Function function : CodePoint.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
+          handler.addFunction(function);
+        }
         this.charsHandler(new Handler<int[]>() {
           @Override
           public void handle(int[] event) {

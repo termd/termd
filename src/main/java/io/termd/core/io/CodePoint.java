@@ -1,5 +1,11 @@
 package io.termd.core.io;
 
+import javax.xml.ws.Service;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -28,4 +34,17 @@ public class CodePoint {
     return codePoints;
   }
 
+  public static <S> List<S> loadServices(ClassLoader loader, Class<S> serviceClass) {
+    ArrayList<S> services = new ArrayList<>();
+    Iterator<S> i = ServiceLoader.load(serviceClass, loader).iterator();
+    while (i.hasNext()) {
+      try {
+        S service = i.next();
+        services.add(service);
+      } catch (Exception ignore) {
+        // Log me
+      }
+    }
+    return services;
+  }
 }

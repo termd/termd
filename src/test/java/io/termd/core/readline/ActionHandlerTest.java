@@ -1,6 +1,9 @@
 package io.termd.core.readline;
 
 import io.termd.core.Handler;
+import io.termd.core.readline.functions.BackwardChar;
+import io.termd.core.readline.functions.BackwardDeleteChar;
+import io.termd.core.readline.functions.ForwardChar;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -99,7 +102,10 @@ public class ActionHandlerTest {
         }
       }
     };
-    final ActionHandler handler = new ActionHandler(adapter);
+    final ActionHandler handler = new ActionHandler(adapter).
+        addFunction(new BackwardDeleteChar()).
+        addFunction(new BackwardChar()).
+        addFunction(new ForwardChar());
 
     private List<String> render() {
       List<String> lines = new ArrayList<>();

@@ -1,0 +1,3 @@
+io.termd.core.readline.functions.BackwardChar
+io.termd.core.readline.functions.ForwardChar
+io.termd.core.readline.functions.BackwardDeleteChar
