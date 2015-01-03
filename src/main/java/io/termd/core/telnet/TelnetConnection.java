@@ -33,7 +33,6 @@ public class TelnetConnection implements Handler<byte[]> {
   public static final byte BYTE_WILL = (byte) 0xFB;
   public static final byte BYTE_SB = (byte)   0xFA;
   public static final byte BYTE_SE = (byte)   0xF0;
-  static Charset UTF_8 = Charset.forName("UTF-8");
 
   private byte[] pendingBuffer = new byte[256];
   private int pendingLength = 0;

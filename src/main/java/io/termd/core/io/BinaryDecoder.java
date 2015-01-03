@@ -15,7 +15,7 @@ public class BinaryDecoder {
 
   private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
 
-  private final CharsetDecoder decoder;
+  private CharsetDecoder decoder;
   private ByteBuffer bBuf;
   private final CharBuffer cBuf;
   private final Handler<int[]> onChar;
@@ -32,6 +32,15 @@ public class BinaryDecoder {
     bBuf = EMPTY;
     cBuf = CharBuffer.allocate(initialSize); // We need at least 2
     this.onChar = onChar;
+  }
+
+  /**
+   * Set a new charset on the decoder.
+   *
+   * @param charset the new charset
+   */
+  public void setCharset(Charset charset) {
+    decoder = charset.newDecoder();
   }
 
   public void write(byte[] data) {

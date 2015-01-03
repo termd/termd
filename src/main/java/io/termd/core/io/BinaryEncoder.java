@@ -13,7 +13,7 @@ import java.nio.charset.CoderResult;
  */
 public class BinaryEncoder implements Handler<int[]> {
 
-  final CharsetEncoder decoder;
+  private CharsetEncoder encoder;
   final ByteBuffer bBuf;
   final CharBuffer cBuf;
   final Handler<byte[]> onByte;
@@ -24,24 +24,33 @@ public class BinaryEncoder implements Handler<int[]> {
   }
 
   public BinaryEncoder(int bufferSize, Charset charset, Handler<byte[]> onByte) {
-    decoder = charset.newEncoder();
+    encoder = charset.newEncoder();
     int estimated;
     if (charset.name().equals("UTF-8")) {
       estimated = 4; // See justification here http://bugs.java.com/view_bug.do?bug_id=6957230
     } else {
-      estimated = (int) (decoder.maxBytesPerChar() * 2);
+      estimated = (int) (encoder.maxBytesPerChar() * 2);
     }
     if (bufferSize <= 0) {
       bufferSize = estimated;
     } else {
       if (bufferSize < estimated) {
-        throw new IllegalArgumentException("Invalid byte buffer size " + bufferSize + " < max byte per char " + decoder.maxBytesPerChar());
+        throw new IllegalArgumentException("Invalid byte buffer size " + bufferSize + " < max byte per char " + encoder.maxBytesPerChar());
       }
     }
     bBuf = ByteBuffer.allocate(bufferSize);
     cBuf = CharBuffer.allocate(2);
     tmp = new char[2];
     this.onByte = onByte;
+  }
+
+  /**
+   * Set a new charset on the encoder.
+   *
+   * @param charset the new charset
+   */
+  public void setCharset(Charset charset) {
+    encoder = charset.newEncoder();
   }
 
   @Override
@@ -53,7 +62,7 @@ public class BinaryEncoder implements Handler<int[]> {
         cBuf.put(tmp, 0, len);
         cBuf.flip();
         while (true) {
-          CoderResult result = decoder.encode(cBuf, bBuf, false);
+          CoderResult result = encoder.encode(cBuf, bBuf, false);
           if (result.isUnderflow()) {
             break;
           } else if (result.isOverflow()) {

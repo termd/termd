@@ -25,4 +25,9 @@ public interface TermConnection {
    */
   void charsHandler(Handler<int[]> handler);
 
+  /**
+   * @return the chars handler of this connection
+   */
+  Handler<int[]> charsHandler();
+
 }

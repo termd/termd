@@ -5,6 +5,7 @@ import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.term.TermConnection;
 
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +15,6 @@ import java.util.Map;
  */
 public class TelnetTermConnection extends TelnetConnection implements TermConnection {
 
-  BinaryDecoder decoder;
-  BinaryEncoder encoder;
   Handler<Map.Entry<Integer, Integer>> sizeHandler;
   HashMap.SimpleEntry<Integer, Integer> size;
   Handler<int[]> charsHandler;
@@ -24,30 +23,33 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
     super(output);
   }
 
+  private final BinaryDecoder decoder = new BinaryDecoder(512, StandardCharsets.US_ASCII, new Handler<int[]>() {
+    @Override
+    public void handle(int[] event) {
+      if (charsHandler != null) {
+        charsHandler.handle(event);
+      }
+    }
+  });
+  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Handler<byte[]>() {
+    @Override
+    public void handle(byte[] event) {
+      write(event);
+    }
+  });
+
   @Override
   protected void onSendBinary(boolean binary) {
     super.onSendBinary(binary);
     if (binary) {
-      encoder = new BinaryEncoder(TelnetConnection.UTF_8, new Handler<byte[]>() {
-        @Override
-        public void handle(byte[] event) {
-          write(event);
-        }
-      });
+      encoder.setCharset(StandardCharsets.UTF_8);
     }
   }
 
   @Override
   protected void onReceiveBinary(boolean binary) {
     super.onReceiveBinary(binary);
-    decoder = new BinaryDecoder(512, TelnetConnection.UTF_8, new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        if (charsHandler != null) {
-          charsHandler.handle(event);
-        }
-      }
-    });
+    decoder.setCharset(StandardCharsets.UTF_8);
   }
 
   @Override
@@ -92,5 +94,10 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   @Override
   public void charsHandler(Handler<int[]> handler) {
     charsHandler = handler;
+  }
+
+  @Override
+  public Handler<int[]> charsHandler() {
+    return encoder;
   }
 }

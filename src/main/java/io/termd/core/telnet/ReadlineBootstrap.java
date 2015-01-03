@@ -18,7 +18,6 @@ package io.termd.core.telnet;
 
 import io.termd.core.Function;
 import io.termd.core.Handler;
-import io.termd.core.io.BinaryEncoder;
 import io.termd.core.Helper;
 import io.termd.core.readline.Event;
 import io.termd.core.readline.EventHandler;
@@ -26,7 +25,6 @@ import io.termd.core.readline.Reader;
 import io.termd.core.telnet.vertx.VertxTelnetBootstrap;
 
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -61,11 +59,11 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        final EventHandler handler = new EventHandler(new BinaryEncoder(512, Charset.forName("UTF-8"), output));
+        TelnetTermConnection conn = new TelnetTermConnection(output);
+        final EventHandler handler = new EventHandler(conn.charsHandler());
         for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
           handler.addFunction(function);
         }
-        TelnetTermConnection conn = new TelnetTermConnection(output);
         conn.charsHandler(new Handler<int[]>() {
           @Override
           public void handle(int[] event) {
