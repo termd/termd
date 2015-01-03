@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ActionHandler implements Handler<Action> {
+public class EventHandler implements Handler<Event> {
 
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
@@ -17,7 +17,7 @@ public class ActionHandler implements Handler<Action> {
   final LineBuffer buffer = new LineBuffer();
   final Handler<RequestContext> handler;
 
-  public ActionHandler(Handler<int[]> output) {
+  public EventHandler(Handler<int[]> output) {
     this(output, new Handler<RequestContext>() {
       @Override
       public void handle(RequestContext event) {
@@ -27,13 +27,13 @@ public class ActionHandler implements Handler<Action> {
     });
   }
 
-  public ActionHandler(Handler<int[]> output, Handler<RequestContext> handler) {
+  public EventHandler(Handler<int[]> output, Handler<RequestContext> handler) {
     output.handle(new int[]{'%', ' '});
     this.output = output;
     this.handler = handler;
   }
 
-  public ActionHandler addFunction(Function function) {
+  public EventHandler addFunction(Function function) {
     functions.put(function.getName(), function);
     return this;
   }
@@ -69,10 +69,10 @@ public class ActionHandler implements Handler<Action> {
     }
   });
 
-  public void handle(Action action) {
+  public void handle(Event action) {
     LineBuffer copy = new LineBuffer(buffer);
-    if (action instanceof KeyAction) {
-      KeyAction key = (KeyAction) action;
+    if (action instanceof KeyEvent) {
+      KeyEvent key = (KeyEvent) action;
       for (int i = 0;i < key.length();i++) {
         int codePoint = key.getAt(i);
         if (codePoint == '\r') {
@@ -115,7 +115,7 @@ public class ActionHandler implements Handler<Action> {
         }
       }
     } else {
-      FunctionAction fname = (FunctionAction) action;
+      FunctionEvent fname = (FunctionEvent) action;
       Function function = functions.get(fname.getName());
       if (function != null) {
         function.call(buffer);

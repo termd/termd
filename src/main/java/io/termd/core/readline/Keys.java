@@ -5,7 +5,7 @@ package io.termd.core.readline;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public enum Keys implements KeyAction {
+public enum Keys implements KeyEvent {
 
   CTRL_AROBASE("ctrl-@", 0),
   CTRL_A("Ctrl-A", 1),

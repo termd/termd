@@ -16,12 +16,12 @@ public class ReaderTest {
   public void testDecodeKeySeq() {
     Reader reader = new Reader(new ByteArrayInputStream("\"ab\":foo".getBytes()));
     reader.append('a').reduce();
-    assertEquals(0, reader.getActions().size());
+    assertEquals(0, reader.getEvents().size());
     reader.append('b', 'c').reduce();
-    assertEquals(2, reader.getActions().size());
-    FunctionAction action = (FunctionAction) reader.getActions().get(0);
+    assertEquals(2, reader.getEvents().size());
+    FunctionEvent action = (FunctionEvent) reader.getEvents().get(0);
     assertEquals("foo", action.getName());
-    KeyAction key = (KeyAction) reader.getActions().get(1);
+    KeyEvent key = (KeyEvent) reader.getEvents().get(1);
     assertEquals(1, key.length());
     assertEquals('c', key.getAt(0));
   }
@@ -30,13 +30,13 @@ public class ReaderTest {
   public void testDecodeKeySeqPrefix() {
     Reader reader = new Reader(new ByteArrayInputStream("\"ab\":foo".getBytes()));
     reader.append('a').reduce();
-    assertEquals(0, reader.getActions().size());
+    assertEquals(0, reader.getEvents().size());
     reader.append('c').reduce();
-    assertEquals(2, reader.getActions().size());
-    KeyAction key = (KeyAction) reader.getActions().get(0);
+    assertEquals(2, reader.getEvents().size());
+    KeyEvent key = (KeyEvent) reader.getEvents().get(0);
     assertEquals(1, key.length());
     assertEquals('a', key.getAt(0));
-    key = (KeyAction) reader.getActions().get(1);
+    key = (KeyEvent) reader.getEvents().get(1);
     assertEquals(1, key.length());
     assertEquals('c', key.getAt(0));
   }
@@ -47,8 +47,8 @@ public class ReaderTest {
     reader.append(27, 91, 65);
     reader.append(65);
     reader.reduceOnce();
-    assertEquals(1, reader.getActions().size());
-    assertEquals(Collections.<Action>singletonList(Keys.UP), reader.getActions());
+    assertEquals(1, reader.getEvents().size());
+    assertEquals(Collections.<Event>singletonList(Keys.UP), reader.getEvents());
   }
 
   @Test
@@ -57,8 +57,8 @@ public class ReaderTest {
     reader.append(27, 91);
     reader.append(66);
     reader.reduceOnce();
-    assertEquals(1, reader.getActions().size());
-    assertEquals(Collections.<Action>singletonList(Keys.DOWN), reader.getActions());
+    assertEquals(1, reader.getEvents().size());
+    assertEquals(Collections.<Event>singletonList(Keys.DOWN), reader.getEvents());
   }
 
   @Test
@@ -66,9 +66,10 @@ public class ReaderTest {
     Reader reader = new Reader();
     reader.append('a');
     reader.reduceOnce();
-    assertEquals(1, reader.getActions().size());
-    assertEquals(1, reader.getActions().get(0).length());
-    assertEquals('a', reader.getActions().get(0).getAt(0));
+    assertEquals(1, reader.getEvents().size());
+    KeyEvent key = (KeyEvent) reader.getEvents().get(0);
+    assertEquals(1, key.length());
+    assertEquals('a', key.getAt(0));
   }
 
   @Test
@@ -78,6 +79,6 @@ public class ReaderTest {
     reader.append(65);
     reader.reduceOnce();
     reader.reduceOnce();
-    assertEquals(2, reader.getActions().size());
+    assertEquals(2, reader.getEvents().size());
   }
 }

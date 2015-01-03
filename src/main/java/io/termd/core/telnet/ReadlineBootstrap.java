@@ -20,8 +20,8 @@ import io.termd.core.Function;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.Helper;
-import io.termd.core.readline.Action;
-import io.termd.core.readline.ActionHandler;
+import io.termd.core.readline.Event;
+import io.termd.core.readline.EventHandler;
 import io.termd.core.readline.Reader;
 import io.termd.core.telnet.vertx.VertxTelnetBootstrap;
 
@@ -61,7 +61,7 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        final ActionHandler handler = new ActionHandler(new BinaryEncoder(512, Charset.forName("UTF-8"), output));
+        final EventHandler handler = new EventHandler(new BinaryEncoder(512, Charset.forName("UTF-8"), output));
         for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
           handler.addFunction(function);
         }
@@ -71,7 +71,7 @@ public class ReadlineBootstrap {
           public void handle(int[] event) {
             reader.append(event);
             while (true) {
-              Action action = reader.reduceOnce().popKey();
+              Event action = reader.reduceOnce().popEvent();
               if (action != null) {
                 handler.handle(action);
               } else {

@@ -28,7 +28,23 @@ import java.util.List;
  */
 public class Reader {
 
-  private final Action[] actions;
+  static class EventMapping {
+    final int[] seq;
+    final Event event;
+    public EventMapping(KeyEvent event) {
+      this.seq = new int[event.length()];
+      for (int i = 0;i < seq.length;i++) {
+        seq[i] = event.getAt(i);
+      }
+      this.event = event;
+    }
+    public EventMapping(int[] seq, Event event) {
+      this.seq = seq;
+      this.event = event;
+    }
+  }
+
+  private final EventMapping[] mappings;
   private State state;
   private final Handler<Integer> appender = new Handler<Integer>() {
     @Override
@@ -48,44 +64,33 @@ public class Reader {
   }
 
   public Reader(InputStream inputrc) {
-    final ArrayList<Action> actions = new ArrayList<>();
+    final ArrayList<EventMapping> actions = new ArrayList<>();
     InputrcHandler handler = new InputrcHandler() {
       @Override
       public void bindFunction(final int[] keySequence, final String functionName) {
-        actions.add(new FunctionAction() {
+        actions.add(new EventMapping(keySequence, new FunctionEvent() {
           @Override
           public String getName() {
             return functionName;
           }
-
-          @Override
-          public int getAt(int index) throws IndexOutOfBoundsException {
-            if (index < 0 || index > keySequence.length) {
-              throw new IndexOutOfBoundsException("Wrong index not in the range [0, " + keySequence.length + "[");
-            }
-            return keySequence[index];
-          }
-
-          @Override
-          public int length() {
-            return keySequence.length;
-          }
-
           @Override
           public String toString() {
             return functionName;
           }
-        });
+        }));
       }
     };
     InputrcHandler.parse(inputrc, handler);
-    this.actions = actions.toArray(new Action[actions.size()]);
-    this.state = new State(new int[0], new Action[0]);
+    this.mappings = actions.toArray(new EventMapping[actions.size()]);
+    this.state = new State(new int[0], new Event[0]);
   }
 
-  public Reader(KeyAction[] keys) {
-    this.actions = keys;
-    this.state = new State(new int[0], new Action[0]);
+  public Reader(KeyEvent[] keys) {
+    this.mappings = new EventMapping[keys.length];
+    for (int i = 0;i < keys.length;i++) {
+      mappings[i] = new EventMapping(keys[i]);
+    }
+    this.state = new State(new int[0], new Event[0]);
   }
 
   public Handler<Integer> appender() {
@@ -121,29 +126,34 @@ public class Reader {
   }
 
   /**
-   * Pop the next key, returns null if no key is present.
+   * Pop the next event, returns null if no event is present.
    *
-   * @return the next key
+   * @return the next event
    */
-  public Action popKey() {
+  public Event popEvent() {
     if (state.queue.length > 0) {
-      Action key = state.queue[0];
+      Event event = state.queue[0];
       state = state.next();
-      return key;
+      return event;
     }
     return null;
   }
 
-  public List<Action> getActions() {
+  /**
+   * Returns the list of events in the queue.
+   *
+   * @return the event list
+   */
+  public List<Event> getEvents() {
     return Arrays.asList(state.queue);
   }
 
   public class State {
 
     private final int[] buffer;
-    private final Action[] queue;
+    private final Event[] queue;
 
-    private State(int[] buffer, Action[] queue) {
+    private State(int[] buffer, Event[] queue) {
       this.buffer = buffer;
       this.queue = queue;
     }
@@ -164,24 +174,24 @@ public class Reader {
 
     State reduceOnce() {
       if (buffer.length > 0) {
-        Action candidate = null;
+        EventMapping candidate = null;
         int prefixes = 0;
         next:
-        for (Action action : Reader.this.actions) {
-          if (action.length() > 0) {
-            if (action.length() <= buffer.length) {
-              for (int i = 0;i < action.length();i++) {
-                if (action.getAt(i) != buffer[i]) {
+        for (EventMapping action : Reader.this.mappings) {
+          if (action.seq.length > 0) {
+            if (action.seq.length <= buffer.length) {
+              for (int i = 0;i < action.seq.length;i++) {
+                if (action.seq[i] != buffer[i]) {
                   continue next;
                 }
               }
-              if (candidate != null && candidate.length() > action.length()) {
+              if (candidate != null && candidate.seq.length > action.seq.length) {
                 continue next;
               }
               candidate = action;
             } else {
               for (int i = 0;i < buffer.length;i++) {
-                if (action.getAt(i) != buffer[i]) {
+                if (action.seq[i] != buffer[i]) {
                   continue next;
                 }
               }
@@ -192,8 +202,8 @@ public class Reader {
         if (candidate == null) {
           if (prefixes == 0) {
             final int c = buffer[0];
-            Action[] a = Arrays.copyOf(queue, queue.length + 1);
-            a[queue.length] = new KeyAction() {
+            Event[] a = Arrays.copyOf(queue, queue.length + 1);
+            a[queue.length] = new KeyEvent() {
               @Override
               public int getAt(int index) throws IndexOutOfBoundsException {
                 if (index != 0) {
@@ -213,9 +223,9 @@ public class Reader {
             return new State(Arrays.copyOfRange(buffer, 1, buffer.length), a);
           }
         } else {
-          Action[] a = Arrays.copyOf(queue, queue.length + 1);
-          a[queue.length] = candidate;
-          return new State(Arrays.copyOfRange(buffer, candidate.length(), buffer.length), a);
+          Event[] a = Arrays.copyOf(queue, queue.length + 1);
+          a[queue.length] = candidate.event;
+          return new State(Arrays.copyOfRange(buffer, candidate.seq.length, buffer.length), a);
         }
       }
       return this;

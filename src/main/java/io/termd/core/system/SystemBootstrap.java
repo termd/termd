@@ -2,7 +2,7 @@ package io.termd.core.system;
 
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
-import io.termd.core.readline.Action;
+import io.termd.core.readline.Event;
 import io.termd.core.readline.Reader;
 import io.termd.core.telnet.ReadlineBootstrap;
 
@@ -28,7 +28,7 @@ public class SystemBootstrap {
       public void handle(int[] event) {
         reader.append(event);
         while (true) {
-          Action action = reader.reduceOnce().popKey();
+          Event action = reader.reduceOnce().popEvent();
           if (action != null) {
             System.out.println("Read " + action);
           } else {

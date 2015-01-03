@@ -17,54 +17,24 @@ import static org.junit.Assert.*;
  */
 public class ActionHandlerTest {
 
-  public static final FunctionAction BACKWARD_DELETE_CHAR = new FunctionAction() {
+  public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent() {
     @Override
     public String getName() {
       return "backward-delete-char";
     }
-
-    @Override
-    public int getAt(int index) throws IndexOutOfBoundsException {
-      throw new IndexOutOfBoundsException();
-    }
-
-    @Override
-    public int length() {
-      return 0;
-    }
   };
 
-  public static final FunctionAction BACKWARD_CHAR = new FunctionAction() {
+  public static final FunctionEvent BACKWARD_CHAR = new FunctionEvent() {
     @Override
     public String getName() {
       return "backward-char";
     }
-
-    @Override
-    public int getAt(int index) throws IndexOutOfBoundsException {
-      throw new IndexOutOfBoundsException();
-    }
-
-    @Override
-    public int length() {
-      return 0;
-    }
   };
 
-  public static final FunctionAction FORWARD_CHAR = new FunctionAction() {
+  public static final FunctionEvent FORWARD_CHAR = new FunctionEvent() {
     @Override
     public String getName() {
       return "forward-char";
-    }
-
-    @Override
-    public int getAt(int index) throws IndexOutOfBoundsException {
-      throw new IndexOutOfBoundsException();
-    }
-
-    @Override
-    public int length() {
-      return 0;
     }
   };
 
@@ -102,7 +72,7 @@ public class ActionHandlerTest {
         }
       }
     };
-    final ActionHandler handler = new ActionHandler(adapter).
+    final EventHandler handler = new EventHandler(adapter).
         addFunction(new BackwardDeleteChar()).
         addFunction(new BackwardChar()).
         addFunction(new ForwardChar());
