@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ActionHandlerTest {
+public class EventHandlerTest {
 
   public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent() {
     @Override
