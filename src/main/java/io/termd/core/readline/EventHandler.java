@@ -73,44 +73,45 @@ public class EventHandler implements Handler<Event> {
     LineBuffer copy = new LineBuffer(buffer);
     if (action instanceof KeyEvent) {
       KeyEvent key = (KeyEvent) action;
-      for (int i = 0;i < key.length();i++) {
-        int codePoint = key.getAt(i);
-        if (codePoint == '\r') {
-          for (int j : buffer) {
-            filter.handle(j);
+      if (key.length() == 1 && key.getAt(0) == '\r') {
+        for (int j : buffer) {
+          filter.handle(j);
+        }
+        if (status == 1) {
+          filter.handle((int)'\r'); // Correct status
+          output.handle(new int[]{'\r', '\n', '>', ' '});
+        } else {
+          int[] l = new int[this.escaped.size()];
+          for (int index = 0;index < l.length;index++) {
+            l[index] = this.escaped.get(index);
           }
-          if (status == 1) {
-            filter.handle((int)'\r'); // Correct status
+          escaped.clear();
+          lines.add(l);
+          if (status == 2) {
             output.handle(new int[]{'\r', '\n', '>', ' '});
           } else {
-            int[] l = new int[this.escaped.size()];
-            for (int index = 0;index < l.length;index++) {
-              l[index] = this.escaped.get(index);
-            }
-            escaped.clear();
-            lines.add(l);
-            if (status == 2) {
-              output.handle(new int[]{'\r', '\n', '>', ' '});
-            } else {
-              StringBuilder raw = new StringBuilder();
-              for (int index = 0;index < lines.size();index++) {
-                int[] a = lines.get(index);
-                if (index > 0) {
-                  raw.append('\n'); // Use \n for processing
-                }
-                for (int b : a) {
-                  raw.appendCodePoint(b);
-                }
+            StringBuilder raw = new StringBuilder();
+            for (int index = 0;index < lines.size();index++) {
+              int[] a = lines.get(index);
+              if (index > 0) {
+                raw.append('\n'); // Use \n for processing
               }
-              lines.clear();
-              handler.handle(new RequestContext(raw.toString()));
-              escaped.clear();
-              output.handle(new int[]{'\r', '\n', '%', ' '});
+              for (int b : a) {
+                raw.appendCodePoint(b);
+              }
             }
+            lines.clear();
+            handler.handle(new RequestContext(raw.toString()));
+            escaped.clear();
+            output.handle(new int[]{'\r', '\n'});
+            output.handle(new int[]{'%', ' '});
           }
-          buffer.setSize(0);
-          copy.setSize(0);
-        } else {
+        }
+        buffer.setSize(0);
+        copy.setSize(0);
+      } else {
+        for (int i = 0;i < key.length();i++) {
+          int codePoint = key.getAt(i);
           buffer.insert(codePoint);
         }
       }
