@@ -246,4 +246,29 @@ public class EventHandlerTest {
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
+
+  @Test
+  public void testQuotedMultiline() {
+    Term term = new Term();
+    term.handler.handle(Keys.A);
+    term.handler.handle(Keys.QUOTE);
+    term.handler.handle(Keys.CTRL_M);
+    term.assertScreen(
+        "% A\"",
+        "> ");
+    term.handler.handle(Keys.B);
+    term.handler.handle(Keys.CTRL_M);
+    term.assertScreen(
+        "% A\"",
+        "> B",
+        "> ");
+    term.handler.handle(Keys.C);
+    term.handler.handle(Keys.QUOTE);
+    term.handler.handle(Keys.CTRL_M);
+    term.assertScreen(
+        "% A\"",
+        "> B",
+        "> C\"",
+        "% ");
+  }
 }

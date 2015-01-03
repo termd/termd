@@ -40,7 +40,7 @@ public enum Keys implements KeyEvent {
   CTRL_CARRET("Ctrl-^", 30), // ^
   CTRL_UNDERSCORE("Ctrl-_", 31),
 
-  A("A", 'A'), B("B", 'B'),
+  A("A", 'A'), B("B", 'B'), C("C", 'C'), QUOTE("\"", '"'),
   BACKSLASH("\\", '\\'),
 
   UP("up", 27, '[', 'A'),
