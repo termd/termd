@@ -1,6 +1,7 @@
 package io.termd.core.io;
 
 import io.termd.core.Handler;
+import io.termd.core.Helper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class BinaryEncodingTest {
         }
       }
     });
-    encoder.handle(CodePoint.toCodePoints(s));
+    encoder.handle(Helper.toCodePoints(s));
     ArrayList<Byte> expectedBytes = new ArrayList<>();
     for (int b : expected) {
       expectedBytes.add((byte) b);
@@ -116,7 +117,7 @@ public class BinaryEncodingTest {
         abc.add(def);
       }
     });
-    decoder.handle(CodePoint.toCodePoints(chars));
+    decoder.handle(Helper.toCodePoints(chars));
     assertEquals(bytes.length, abc.size());
     for (int i = 0;i < bytes.length;i++) {
       assertArrayEquals(bytes[i], abc.get(i));

@@ -1,6 +1,5 @@
-package io.termd.core.io;
+package io.termd.core;
 
-import javax.xml.ws.Service;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -9,7 +8,7 @@ import java.util.ServiceLoader;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CodePoint {
+public class Helper {
 
   /**
    * Convert the string to an array of codepoints.

@@ -19,7 +19,7 @@ package io.termd.core.telnet;
 import io.termd.core.Function;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryEncoder;
-import io.termd.core.io.CodePoint;
+import io.termd.core.Helper;
 import io.termd.core.readline.Action;
 import io.termd.core.readline.ActionHandler;
 import io.termd.core.readline.Reader;
@@ -62,7 +62,7 @@ public class ReadlineBootstrap {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
         final ActionHandler handler = new ActionHandler(new BinaryEncoder(512, Charset.forName("UTF-8"), output));
-        for (io.termd.core.readline.Function function : CodePoint.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
+        for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
           handler.addFunction(function);
         }
         TelnetTermConnection conn = new TelnetTermConnection(output);
