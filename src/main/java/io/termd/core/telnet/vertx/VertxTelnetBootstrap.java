@@ -35,7 +35,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   @Override
   public void start(Function<Handler<byte[]>, TelnetConnection> factory) {
     NetServer server = vertx.createNetServer();
-    server.connectHandler(new TelnetHandler(factory));
+    server.connectHandler(new TelnetNetSocketHandler(factory));
     server.listen(port, host);
   }
 }

@@ -11,13 +11,13 @@ import io.termd.core.telnet.TelnetConnection;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetHandler extends ChannelInboundHandlerAdapter implements Handler<byte[]> {
+public class TelnetChannelHandler extends ChannelInboundHandlerAdapter implements Handler<byte[]> {
 
   private final Function<Handler<byte[]>, TelnetConnection> factory;
   private TelnetConnection conn;
   private ChannelHandlerContext ctx;
 
-  public TelnetHandler(Function<Handler<byte[]>, TelnetConnection> factory) {
+  public TelnetChannelHandler(Function<Handler<byte[]>, TelnetConnection> factory) {
     this.factory = factory;
   }
 

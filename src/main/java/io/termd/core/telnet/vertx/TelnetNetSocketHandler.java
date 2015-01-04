@@ -25,11 +25,11 @@ import org.vertx.java.core.net.NetSocket;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetHandler implements Handler<NetSocket> {
+public class TelnetNetSocketHandler implements Handler<NetSocket> {
 
   final Function<io.termd.core.Handler<byte[]>, TelnetConnection> factory;
 
-  public TelnetHandler(Function<io.termd.core.Handler<byte[]>, TelnetConnection> factory) {
+  public TelnetNetSocketHandler(Function<io.termd.core.Handler<byte[]>, TelnetConnection> factory) {
     this.factory = factory;
   }
 

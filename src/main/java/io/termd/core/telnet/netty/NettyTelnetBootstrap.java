@@ -46,7 +46,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
           @Override
           public void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline p = ch.pipeline();
-            TelnetHandler handler = new TelnetHandler(factory);
+            TelnetChannelHandler handler = new TelnetChannelHandler(factory);
             p.addLast(handler);
           }
         });
