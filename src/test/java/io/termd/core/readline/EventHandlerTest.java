@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -37,6 +38,14 @@ public class EventHandlerTest {
       return "forward-char";
     }
   };
+
+  static class Counter implements Handler<Void> {
+    int value = 0;
+    @Override
+    public void handle(Void event) {
+      value++;
+    }
+  }
 
   static class Term {
 
@@ -72,10 +81,23 @@ public class EventHandlerTest {
         }
       }
     };
-    final EventHandler handler = new EventHandler(adapter).
-        addFunction(new BackwardDeleteChar()).
-        addFunction(new BackwardChar()).
-        addFunction(new ForwardChar());
+    final EventHandler handler;
+
+    public Term() {
+      this(new Handler<RequestContext>() {
+        @Override
+        public void handle(RequestContext event) {
+          event.end();
+        }
+      });
+    }
+
+    public Term(Handler<RequestContext> requestHandler) {
+      handler = new EventHandler(adapter, requestHandler).
+          addFunction(new BackwardDeleteChar()).
+          addFunction(new BackwardChar()).
+          addFunction(new ForwardChar());
+    }
 
     private List<String> render() {
       List<String> lines = new ArrayList<>();
@@ -127,7 +149,9 @@ public class EventHandlerTest {
   @Test
   public void testInsertChar() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
+    Counter counter = new Counter();
+    term.handler.handle(Keys.A, counter);
+    assertEquals(1, counter.value);
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
@@ -157,12 +181,14 @@ public class EventHandlerTest {
     Term term = new Term();
     term.handler.handle(Keys.BACKSLASH);
     term.assertScreen("% \\");
-    term.handler.handle(Keys.CTRL_M);
+    Counter counter = new Counter();
+    term.handler.handle(Keys.CTRL_M, counter);
     term.assertScreen(
         "% \\",
         "> "
     );
     term.assertAt(1, 2);
+    assertEquals(1, counter.value);
   }
 
   @Test
@@ -252,10 +278,12 @@ public class EventHandlerTest {
     Term term = new Term();
     term.handler.handle(Keys.A);
     term.handler.handle(Keys.QUOTE);
-    term.handler.handle(Keys.CTRL_M);
+    Counter counter = new Counter();
+    term.handler.handle(Keys.CTRL_M, counter);
     term.assertScreen(
         "% A\"",
         "> ");
+    assertEquals(1, counter.value);
     term.handler.handle(Keys.B);
     term.handler.handle(Keys.CTRL_M);
     term.assertScreen(
@@ -270,5 +298,38 @@ public class EventHandlerTest {
         "> B",
         "> C\"",
         "% ");
+  }
+
+  @Test
+  public void testBlocking() {
+    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<RequestContext>() {
+      @Override
+      public void handle(RequestContext event) {
+        ctx.set(event);
+      }
+    });
+    Counter counter = new Counter();
+    term.handler.handle(Keys.CTRL_M, counter);
+    assertNotNull(ctx);
+    term.assertScreen("% ");
+    term.assertAt(1, 0);
+    assertEquals(0, counter.value);
+    try {
+      term.handler.handle(Keys.A);
+      fail();
+    } catch (IllegalStateException ignore) {
+    }
+    ctx.get().end();
+    term.assertScreen(
+        "% ",
+        "% ");
+    term.assertAt(1, 2);
+    assertEquals(1, counter.value);
+    term.handler.handle(Keys.A);
+    term.assertScreen(
+        "% ",
+        "% A");
+    term.assertAt(1, 3);
   }
 }

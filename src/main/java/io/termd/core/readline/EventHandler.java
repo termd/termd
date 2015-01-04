@@ -21,7 +21,7 @@ public class EventHandler implements Handler<Event> {
     this(output, new Handler<RequestContext>() {
       @Override
       public void handle(RequestContext event) {
-        System.out.println("Line " + event.raw);
+        System.out.println("Line " + event.getRaw());
         event.end();
       }
     });
@@ -38,6 +38,7 @@ public class EventHandler implements Handler<Event> {
     return this;
   }
 
+  private boolean handling;
   private LinkedList<Integer> escaped = new LinkedList<>();
   private int status = 0;
   private EscapeFilter filter = new EscapeFilter(new Escaper() {
@@ -69,17 +70,27 @@ public class EventHandler implements Handler<Event> {
     }
   });
 
-  public void handle(Event action) {
+  public void handle(Event event) {
+    handle(event, null);
+  }
+
+  public void handle(Event event, final Handler<Void> doneHandler) {
+    if (handling) {
+      throw new IllegalStateException();
+    }
+    handling = true;
     LineBuffer copy = new LineBuffer(buffer);
-    if (action instanceof KeyEvent) {
-      KeyEvent key = (KeyEvent) action;
+    if (event instanceof KeyEvent) {
+      KeyEvent key = (KeyEvent) event;
       if (key.length() == 1 && key.getAt(0) == '\r') {
         for (int j : buffer) {
           filter.handle(j);
         }
         if (status == 1) {
-          filter.handle((int)'\r'); // Correct status
+          filter.handle((int) '\r'); // Correct status
           output.handle(new int[]{'\r', '\n', '>', ' '});
+          buffer.setSize(0);
+          copy.setSize(0);
         } else {
           int[] l = new int[this.escaped.size()];
           for (int index = 0;index < l.length;index++) {
@@ -89,8 +100,10 @@ public class EventHandler implements Handler<Event> {
           lines.add(l);
           if (status == 2) {
             output.handle(new int[]{'\r', '\n', '>', ' '});
+            buffer.setSize(0);
+            copy.setSize(0);
           } else {
-            StringBuilder raw = new StringBuilder();
+            final StringBuilder raw = new StringBuilder();
             for (int index = 0;index < lines.size();index++) {
               int[] a = lines.get(index);
               if (index > 0) {
@@ -101,14 +114,26 @@ public class EventHandler implements Handler<Event> {
               }
             }
             lines.clear();
-            handler.handle(new RequestContext(raw.toString()));
             escaped.clear();
             output.handle(new int[]{'\r', '\n'});
-            output.handle(new int[]{'%', ' '});
+            buffer.setSize(0);
+            handler.handle(new RequestContext() {
+              @Override
+              public String getRaw() {
+                return raw.toString();
+              }
+              @Override
+              public void end() {
+                output.handle(new int[]{'%', ' '});
+                handling = false;
+                if (doneHandler != null) {
+                  doneHandler.handle(null);
+                }
+              }
+            });
+            return;
           }
         }
-        buffer.setSize(0);
-        copy.setSize(0);
       } else {
         for (int i = 0;i < key.length();i++) {
           int codePoint = key.getAt(i);
@@ -116,7 +141,7 @@ public class EventHandler implements Handler<Event> {
         }
       }
     } else {
-      FunctionEvent fname = (FunctionEvent) action;
+      FunctionEvent fname = (FunctionEvent) event;
       Function function = functions.get(fname.getName());
       if (function != null) {
         function.call(buffer);
@@ -130,5 +155,9 @@ public class EventHandler implements Handler<Event> {
       t[index] = a.get(index);
     }
     output.handle(t);
+    handling = false;
+    if (doneHandler != null) {
+      doneHandler.handle(null);
+    }
   }
 }

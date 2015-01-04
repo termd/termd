@@ -28,12 +28,12 @@ public class ReadlineTerm {
     }
     conn.charsHandler(new Handler<int[]>() {
       @Override
-      public void handle(int[] event) {
-        reader.append(event);
+      public void handle(int[] chars) {
+        reader.append(chars);
         while (true) {
-          Event action = reader.reduceOnce().popEvent();
-          if (action != null) {
-            handler.handle(action);
+          Event event = reader.reduceOnce().popEvent();
+          if (event != null) {
+            handler.handle(event);
           } else {
             break;
           }
