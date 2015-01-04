@@ -38,10 +38,10 @@ public abstract class TelnetBootstrap {
     start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        return new TelnetConnection(output) {
+        return new TelnetConnection(output, new TelnetHandler() {
 
           @Override
-          protected void onOpen() {
+          protected void onOpen(TelnetConnection conn) {
             System.out.println("New client");
           }
 
@@ -87,30 +87,10 @@ public abstract class TelnetBootstrap {
           }
 
           @Override
-          protected void onOptionWill(byte optionCode) {
-            System.out.println("Will:" + optionCode);
-          }
-
-          @Override
-          protected void onOptionWont(byte optionCode) {
-            System.out.println("Wont:" + optionCode);
-          }
-
-          @Override
-          protected void onOptionDo(byte optionCode) {
-            System.out.println("Do:" + optionCode);
-          }
-
-          @Override
-          protected void onOptionDont(byte optionCode) {
-            System.out.println("Dont:" + optionCode);
-          }
-
-          @Override
           protected void onCommand(byte command) {
             System.out.println("Command:" + command);
           }
-        };
+        });
       }
     });
   }

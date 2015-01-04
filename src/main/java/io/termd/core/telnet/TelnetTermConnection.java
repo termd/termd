@@ -13,15 +13,12 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetTermConnection extends TelnetConnection implements TermConnection {
+public class TelnetTermConnection extends TelnetHandler implements TermConnection {
 
-  Handler<Map.Entry<Integer, Integer>> sizeHandler;
-  HashMap.SimpleEntry<Integer, Integer> size;
-  Handler<int[]> charsHandler;
-
-  public TelnetTermConnection(Handler<byte[]> output) {
-    super(output);
-  }
+  private Handler<Map.Entry<Integer, Integer>> sizeHandler;
+  private HashMap.SimpleEntry<Integer, Integer> size;
+  private Handler<int[]> charsHandler;
+  private TelnetConnection conn;
 
   private final BinaryDecoder decoder = new BinaryDecoder(512, StandardCharsets.US_ASCII, new Handler<int[]>() {
     @Override
@@ -34,13 +31,12 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Handler<byte[]>() {
     @Override
     public void handle(byte[] event) {
-      write(event);
+      conn.write(event);
     }
   });
 
   @Override
   protected void onSendBinary(boolean binary) {
-    super.onSendBinary(binary);
     if (binary) {
       encoder.setCharset(StandardCharsets.UTF_8);
     }
@@ -48,7 +44,6 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
 
   @Override
   protected void onReceiveBinary(boolean binary) {
-    super.onReceiveBinary(binary);
     decoder.setCharset(StandardCharsets.UTF_8);
   }
 
@@ -66,13 +61,13 @@ public class TelnetTermConnection extends TelnetConnection implements TermConnec
   }
 
   @Override
-  protected void onOpen() {
-    writeWillOption(Option.ECHO);
-    writeWillOption(Option.SGA);
-    writeDoOption(Option.NAWS);
-    writeDoOption(Option.BINARY);
-    writeWillOption(Option.BINARY);
-    writeDoOption(Option.TERMINAL_TYPE);
+  protected void onOpen(TelnetConnection conn) {
+    conn.writeWillOption(Option.ECHO);
+    conn.writeWillOption(Option.SGA);
+    conn.writeDoOption(Option.NAWS);
+    conn.writeDoOption(Option.BINARY);
+    conn.writeWillOption(Option.BINARY);
+    conn.writeDoOption(Option.TERMINAL_TYPE);
   }
 
   @Override

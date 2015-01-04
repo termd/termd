@@ -15,25 +15,25 @@ public enum Option {
     @Override
     void handleDo(TelnetConnection session) {
       session.sendBinary = true;
-      session.onSendBinary(true);
+      session.handler.onSendBinary(true);
     }
 
     @Override
     void handleDont(TelnetConnection session) {
       session.sendBinary = false;
-      session.onSendBinary(false);
+      session.handler.onSendBinary(false);
     }
 
     @Override
     void handleWill(TelnetConnection session) {
       session.receiveBinary = true;
-      session.onReceiveBinary(true);
+      session.handler.onReceiveBinary(true);
     }
 
     @Override
     void handleWont(TelnetConnection session) {
       session.receiveBinary = false;
-      session.onReceiveBinary(false);
+      session.handler.onReceiveBinary(false);
     }
   },
 
@@ -42,16 +42,16 @@ public enum Option {
    */
   ECHO((byte) 1) {
     @Override
-    void handleDo(TelnetConnection session) { session.onEcho(true); }
-    void handleDont(TelnetConnection session) { session.onEcho(false); }
+    void handleDo(TelnetConnection session) { session.handler.onEcho(true); }
+    void handleDont(TelnetConnection session) { session.handler.onEcho(false); }
   },
 
   /**
    * Telnet Suppress Go Ahead Option (<a href="https://tools.ietf.org/html/rfc858">RFC858</a>).
    */
   SGA((byte) 3) {
-    void handleDo(TelnetConnection session) { session.onSGA(true); }
-    void handleDont(TelnetConnection session) { session.onSGA(false); }
+    void handleDo(TelnetConnection session) { session.handler.onSGA(true); }
+    void handleDont(TelnetConnection session) { session.handler.onSGA(false); }
   },
 
   /**
@@ -73,7 +73,7 @@ public enum Option {
     void handleParameters(TelnetConnection session, byte[] parameters) {
       if (parameters.length > 0 && parameters[0] == BYTE_IS) {
         String terminalType = new String(parameters, 1, parameters.length - 1);
-        session.onTerminalType(terminalType);
+        session.handler.onTerminalType(terminalType);
       }
     }
   },
@@ -84,18 +84,18 @@ public enum Option {
   NAWS((byte) 31) {
     @Override
     void handleWill(TelnetConnection session) {
-      session.onNAWS(true);
+      session.handler.onNAWS(true);
     }
     @Override
     void handleWont(TelnetConnection session) {
-      session.onNAWS(false);
+      session.handler.onNAWS(false);
     }
     @Override
     void handleParameters(TelnetConnection session, byte[] parameters) {
       if (parameters.length == 4) {
         int width = (parameters[0] << 8) + parameters[1];
         int height = (parameters[2] << 8) + parameters[3];
-        session.onSize(width, height);
+        session.handler.onSize(width, height);
       }
     }
   }

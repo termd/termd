@@ -18,7 +18,6 @@ package io.termd.core.telnet;
 
 import io.termd.core.Handler;
 
-import java.nio.charset.Charset;
 import java.util.Arrays;
 
 /**
@@ -44,8 +43,9 @@ public class TelnetConnection implements Handler<byte[]> {
   final Handler<byte[]> output;
   boolean sendBinary;
   boolean receiveBinary;
+  final TelnetHandler handler;
 
-  public TelnetConnection(Handler<byte[]> output) {
+  public TelnetConnection(Handler<byte[]> output, TelnetHandler handler) {
     this.status = Status.DATA;
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
@@ -53,6 +53,7 @@ public class TelnetConnection implements Handler<byte[]> {
     this.sendBinary = false;
     this.receiveBinary = false;
     this.output = output;
+    this.handler = handler;
   }
 
   private void appendToParams(byte b) {
@@ -63,7 +64,7 @@ public class TelnetConnection implements Handler<byte[]> {
   }
 
   public void init() {
-    onOpen();
+    handler.onOpen(this);
   }
 
   /**
@@ -130,26 +131,8 @@ public class TelnetConnection implements Handler<byte[]> {
   }
 
   public void close() {
-    onClose();
+    handler.onClose();
   }
-
-  protected void onOpen() {}
-  protected void onClose() {}
-
-  /**
-   * Process data sent by the client.
-   *
-   * @param data the data
-   */
-  protected void onData(byte[] data) {}
-  protected void onSize(int width, int height) {}
-  protected void onTerminalType(String terminalType) {}
-  protected void onCommand(byte command) {}
-  protected void onNAWS(boolean naws) {}
-  protected void onEcho(boolean echo) {}
-  protected void onSGA(boolean sga) {}
-  protected void onSendBinary(boolean binary) { }
-  protected void onReceiveBinary(boolean binary) { }
 
   /**
    * Handle option <code>WILL</code> call back. The implementation will try to find a matching option
@@ -266,12 +249,12 @@ public class TelnetConnection implements Handler<byte[]> {
   }
 
   /**
-   * Flush the {@link #pendingBuffer} buffer to {@link #onData(byte[])}.
+   * Flush the {@link #pendingBuffer} buffer to {@link TelnetHandler#onData(byte[])}.
    */
   private void flushData() {
     byte[] data = Arrays.copyOf(pendingBuffer, pendingLength);
     pendingLength = 0;
-    onData(data);
+    handler.onData(data);
   }
 
   enum Status {
@@ -320,7 +303,7 @@ public class TelnetConnection implements Handler<byte[]> {
           session.paramsLength = 0;
           session.status = SB;
         } else {
-          session.onCommand(b);
+          session.handler.onCommand(b);
           session.status = DATA;
         }
       }

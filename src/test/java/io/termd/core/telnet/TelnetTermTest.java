@@ -26,7 +26,7 @@ public class TelnetTermTest extends TelnetTestBase {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
         final AtomicInteger count = new AtomicInteger();
-        final TelnetTermConnection connection = new TelnetTermConnection(argument);
+        final TelnetTermConnection connection = new TelnetTermConnection();
         connection.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
           @Override
           public void handle(Map.Entry<Integer, Integer> event) {
@@ -54,7 +54,7 @@ public class TelnetTermTest extends TelnetTestBase {
             }
           }
         });
-        return connection;
+        return new TelnetConnection(argument, connection);
       }
     });
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);

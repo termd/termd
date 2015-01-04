@@ -52,9 +52,9 @@ public class ReadlineBootstrap {
     telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> output) {
-        TelnetTermConnection conn = new TelnetTermConnection(output);
+        TelnetTermConnection conn = new TelnetTermConnection();
         new ReadlineTerm(conn);
-        return conn;
+        return new TelnetConnection(output, conn);
       }
     });
   }

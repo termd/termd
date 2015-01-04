@@ -59,17 +59,17 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeWillOption(Option.ECHO);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeWillOption(Option.ECHO);
           }
           @Override
           protected void onEcho(boolean echo) {
             serverValue.set(echo);
             testComplete();
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(false, serverValue.get());
@@ -83,17 +83,17 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeWillOption(Option.ECHO);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeWillOption(Option.ECHO);
           }
           @Override
           protected void onEcho(boolean echo) {
             serverValue.set(echo);
             testComplete();
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(true, serverValue.get());
@@ -107,17 +107,17 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeWillOption(Option.SGA);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeWillOption(Option.SGA);
           }
           @Override
           protected void onSGA(boolean sga) {
             serverValue.set(sga);
             testComplete();
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(false, serverValue.get());
@@ -131,17 +131,17 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeWillOption(Option.SGA);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeWillOption(Option.SGA);
           }
           @Override
           protected void onSGA(boolean sga) {
             serverValue.set(sga);
             testComplete();
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(true, serverValue.get());
@@ -155,10 +155,10 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeDoOption(Option.NAWS);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeDoOption(Option.NAWS);
           }
           @Override
           protected void onNAWS(boolean naws) {
@@ -169,7 +169,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
           protected void onSize(int width, int height) {
             super.onSize(width, height);
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(false, serverValue.get());
@@ -184,10 +184,10 @@ public class TelnetHandlerTest extends TelnetTestBase {
     testOptionValue(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeDoOption(Option.NAWS);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeDoOption(Option.NAWS);
           }
           @Override
           protected void onNAWS(boolean naws) {
@@ -198,7 +198,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
             size.set(new int[]{width, height});
             testComplete();
           }
-        };
+        });
       }
     }, optionHandler);
     assertEquals(true, serverValue.get());
@@ -213,12 +213,12 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
+          protected void onOpen(TelnetConnection conn) {
             testComplete();
           }
-        };
+        });
       }
     });
     client = new TelnetClient();
@@ -231,12 +231,12 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
           protected void onClose() {
             testComplete();
           }
-        };
+        });
       }
     });
     client = new TelnetClient();
@@ -253,12 +253,12 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            write(new byte[]{0,1,2,3,127,(byte) 0x80, (byte) 0x81, -1});
+          protected void onOpen(TelnetConnection conn) {
+            conn.write(new byte[]{0, 1, 2, 3, 127, (byte) 0x80, (byte) 0x81, -1});
           }
-        };
+        });
       }
     });
     client = new TelnetClient();
@@ -280,10 +280,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
-          byte[] data = new byte[7];
-          int index = 0;
-
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
           protected void onData(byte[] data) {
             assertEquals(7, data.length);
@@ -296,7 +293,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
             assertEquals((byte)0x81, data[6]);
             testComplete();
           }
-        };
+        });
       }
     });
     client = new TelnetClient();
@@ -311,7 +308,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument);
+        return new TelnetConnection(argument, new TelnetHandler());
       }
     });
     client = new TelnetClient();
@@ -334,7 +331,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument);
+        return new TelnetConnection(argument, new TelnetHandler());
       }
     });
     client = new TelnetClient();
@@ -358,29 +355,22 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
           @Override
-          protected void onOpen() {
-            writeDoOption(Option.BINARY);
+          protected void onOpen(TelnetConnection conn) {
+            conn.writeDoOption(Option.BINARY);
           }
           @Override
-          protected void onOptionWill(byte optionCode) {
-            super.onOptionWill(optionCode);
-            if (optionCode == 0) {
+          protected void onSendBinary(boolean binary) {
+            if (binary) {
+              fail("Was not expecting a do for binary option");
+            }
+          }
+          @Override
+          protected void onReceiveBinary(boolean binary) {
+            if (binary) {
               latch.countDown();
-            }
-          }
-          @Override
-          protected void onOptionDo(byte optionCode) {
-            super.onOptionDo(optionCode);
-            if (optionCode == 0) {
-              fail("Was not expecting a won't for binary option");
-            }
-          }
-          @Override
-          protected void onOptionWont(byte optionCode) {
-            super.onOptionWont(optionCode);
-            if (optionCode == 0) {
+            } else {
               fail("Was not expecting a won't for binary option");
             }
           }
@@ -390,7 +380,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
             assertEquals((byte) -1, data[0]);
             testComplete();
           }
-        };
+        });
       }
     });
     final AtomicReference<OutputStream> out = new AtomicReference<>();
@@ -416,34 +406,29 @@ public class TelnetHandlerTest extends TelnetTestBase {
     server(new Function<Handler<byte[]>, TelnetConnection>() {
       @Override
       public TelnetConnection call(Handler<byte[]> argument) {
-        return new TelnetConnection(argument) {
+        return new TelnetConnection(argument, new TelnetHandler() {
+          private TelnetConnection conn;
           @Override
-          protected void onOpen() {
-            writeWillOption(Option.BINARY);
+          protected void onOpen(TelnetConnection conn) {
+            this.conn = conn;
+            conn.writeWillOption(Option.BINARY);
           }
           @Override
-          protected void onOptionWill(byte optionCode) {
-            super.onOptionWill(optionCode);
-            if (optionCode == 0) {
-              fail("Was not expecting a won't for binary option");
-            }
-          }
-          @Override
-          protected void onOptionDo(byte optionCode) {
-            super.onOptionDo(optionCode);
-            if (optionCode == 0) {
-              write(new byte[]{'h', 'e', 'l', 'l', 'o', -1});
+          protected void onSendBinary(boolean binary) {
+            if (binary) {
+              conn.write(new byte[]{'h', 'e', 'l', 'l', 'o', -1});
               latch.countDown();
+            } else {
+              fail("Was not expecting a don't for binary option");
             }
           }
           @Override
-          protected void onOptionDont(byte optionCode) {
-            super.onOptionWont(optionCode);
-            if (optionCode == 0) {
-              fail("Was not expecting a won't for binary option");
+          protected void onReceiveBinary(boolean binary) {
+            if (binary) {
+              fail("Was not expecting a will for binary option");
             }
           }
-        };
+        });
       }
     });
     final AtomicReference<InputStream> out = new AtomicReference<>();
