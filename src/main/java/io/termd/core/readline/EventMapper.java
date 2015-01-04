@@ -17,12 +17,15 @@
 package io.termd.core.readline;
 
 import java.io.InputStream;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * The event mapper is a state machine that consumes chars and produces events.
+ *
+ * todo : use a Trie for the mapping instead of using a lookup
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -87,6 +90,20 @@ public class EventMapper {
       }
     }
     return this;
+  }
+
+  /**
+   * @return the buffer chars as a read-only int buffer
+   */
+  public IntBuffer getBuffer() {
+    return IntBuffer.wrap(state.buffer).asReadOnlyBuffer();
+  }
+
+  /**
+   * @return true when the mapper can deliver at least one event
+   */
+  public boolean hasEvents() {
+    return state.queue.length > 0;
   }
 
   /**

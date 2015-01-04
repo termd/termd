@@ -2,6 +2,7 @@ package io.termd.core.telnet;
 
 import io.termd.core.Handler;
 import io.termd.core.Provider;
+import io.termd.core.telnet.vertx.VertxTermConnection;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class TelnetTermTest extends TelnetTestBase {
       @Override
       public TelnetHandler provide() {
         final AtomicInteger count = new AtomicInteger();
-        final TelnetTermConnection connection = new TelnetTermConnection();
+        final TelnetTermConnection connection = new VertxTermConnection();
         connection.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
           @Override
           public void handle(Map.Entry<Integer, Integer> event) {

@@ -30,7 +30,7 @@ public class TelnetTestBase extends TestBase {
   }
 
   protected final void server(Provider<TelnetHandler> factory) {
-    server = vertx.createNetServer().connectHandler(new TelnetNetSocketHandler(factory));
+    server = vertx.createNetServer().connectHandler(new TelnetNetSocketHandler(vertx, factory));
     final BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
     server.listen(4000, "localhost", new org.vertx.java.core.Handler<AsyncResult<NetServer>>() {
       @Override

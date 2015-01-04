@@ -120,6 +120,11 @@ public class ReadlineBootstrap {
       }
 
       @Override
+      public void schedule(Runnable task) {
+        new Thread(task).start(); // Not awesome but ok for now and testing
+      }
+
+      @Override
       public void setErrorStream(OutputStream err) {
       }
 

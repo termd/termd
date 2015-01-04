@@ -30,4 +30,7 @@ public interface TermConnection {
    */
   Handler<int[]> charsHandler();
 
+
+  void schedule(Runnable task);
+
 }

@@ -17,16 +17,6 @@ public class EventHandler implements Handler<Event> {
   final LineBuffer buffer = new LineBuffer();
   final Handler<RequestContext> handler;
 
-  public EventHandler(Handler<int[]> output) {
-    this(output, new Handler<RequestContext>() {
-      @Override
-      public void handle(RequestContext event) {
-        System.out.println("Line " + event.getRaw());
-        event.end();
-      }
-    });
-  }
-
   public EventHandler(Handler<int[]> output, Handler<RequestContext> handler) {
     output.handle(new int[]{'%', ' '});
     this.output = output;

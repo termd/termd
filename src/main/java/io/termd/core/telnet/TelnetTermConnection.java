@@ -13,12 +13,12 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetTermConnection extends TelnetHandler implements TermConnection {
+public abstract class TelnetTermConnection extends TelnetHandler implements TermConnection {
 
   private Handler<Map.Entry<Integer, Integer>> sizeHandler;
   private HashMap.SimpleEntry<Integer, Integer> size;
   private Handler<int[]> charsHandler;
-  private TelnetConnection conn;
+  protected TelnetConnection conn;
 
   private final BinaryDecoder decoder = new BinaryDecoder(512, StandardCharsets.US_ASCII, new Handler<int[]>() {
     @Override

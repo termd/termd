@@ -3,9 +3,11 @@ package io.termd.core.readline;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.IntBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -80,5 +82,44 @@ public class EventMapperTest {
     eventMapper.reduceOnce();
     eventMapper.reduceOnce();
     assertEquals(2, eventMapper.getEvents().size());
+  }
+
+  @Test
+  public void testHasEvents() {
+    EventMapper eventMapper = new EventMapper();
+    assertFalse(eventMapper.hasEvents());
+    eventMapper.append(65, 66);
+    assertFalse(eventMapper.hasEvents());
+    eventMapper.reduceOnce();
+    assertTrue(eventMapper.hasEvents());
+    eventMapper.popEvent();
+    assertFalse(eventMapper.hasEvents());
+    eventMapper.reduceOnce();
+    assertTrue(eventMapper.hasEvents());
+    eventMapper.popEvent();
+    assertFalse(eventMapper.hasEvents());
+    eventMapper.reduceOnce();
+    assertFalse(eventMapper.hasEvents());
+  }
+
+  @Test
+  public void testBuffer() {
+    EventMapper eventMapper = new EventMapper();
+    assertEquals(0, eventMapper.getBuffer().capacity());
+    eventMapper.append('h', 'e', 'l', 'l', 'o');
+    IntBuffer buffer = eventMapper.getBuffer();
+    buffer.mark();
+    assertEquals(5, buffer.capacity());
+    assertEquals('h', buffer.get());
+    assertEquals('e', buffer.get());
+    assertEquals('l', buffer.get());
+    assertEquals('l', buffer.get());
+    assertEquals('o', buffer.get());
+    buffer.reset();
+    try {
+      buffer.put(0, 'p');
+      fail();
+    } catch (ReadOnlyBufferException ignore) {
+    }
   }
 }
