@@ -16,54 +16,26 @@
  */
 package io.termd.core.readline;
 
-import io.termd.core.Handler;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
+ * The event mapper is a state machine that consumes chars and produces events.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Reader {
-
-  static class EventMapping {
-    final int[] seq;
-    final Event event;
-    public EventMapping(KeyEvent event) {
-      this.seq = new int[event.length()];
-      for (int i = 0;i < seq.length;i++) {
-        seq[i] = event.getAt(i);
-      }
-      this.event = event;
-    }
-    public EventMapping(int[] seq, Event event) {
-      this.seq = seq;
-      this.event = event;
-    }
-  }
+public class EventMapper {
 
   private final EventMapping[] mappings;
   private State state;
-  private final Handler<Integer> appender = new Handler<Integer>() {
-    @Override
-    public void handle(Integer event) {
-      append(event);
-    }
-  };
-  private final Handler<int[]> appender2 = new Handler<int[]>() {
-    @Override
-    public void handle(int[] event) {
-      append(event);
-    }
-  };
 
-  public Reader() {
+  public EventMapper() {
     this(Keys.values());
   }
 
-  public Reader(InputStream inputrc) {
+  public EventMapper(InputStream inputrc) {
     final ArrayList<EventMapping> actions = new ArrayList<>();
     InputrcHandler handler = new InputrcHandler() {
       @Override
@@ -85,7 +57,7 @@ public class Reader {
     this.state = new State(new int[0], new Event[0]);
   }
 
-  public Reader(KeyEvent[] keys) {
+  public EventMapper(KeyEvent[] keys) {
     this.mappings = new EventMapping[keys.length];
     for (int i = 0;i < keys.length;i++) {
       mappings[i] = new EventMapping(keys[i]);
@@ -93,27 +65,19 @@ public class Reader {
     this.state = new State(new int[0], new Event[0]);
   }
 
-  public Handler<Integer> appender() {
-    return appender;
-  }
-
-  public Handler<int[]> appender2() {
-    return appender2;
-  }
-
-  public Reader append(int... chars) {
+  public EventMapper append(int... chars) {
     for (int c : chars) {
       state = state.append(c);
     }
     return this;
   }
 
-  public Reader reduceOnce() {
+  public EventMapper reduceOnce() {
     state = state.reduceOnce();
     return this;
   }
 
-  public Reader reduce() {
+  public EventMapper reduce() {
     while (true) {
       State next = state.reduceOnce();
       if (next == state) {
@@ -140,20 +104,18 @@ public class Reader {
   }
 
   /**
-   * Returns the list of events in the queue.
-   *
-   * @return the event list
+   * @return the list of events in the queue.
    */
   public List<Event> getEvents() {
     return Arrays.asList(state.queue);
   }
 
-  public class State {
+  private class State {
 
     private final int[] buffer;
     private final Event[] queue;
 
-    private State(int[] buffer, Event[] queue) {
+    State(int[] buffer, Event[] queue) {
       this.buffer = buffer;
       this.queue = queue;
     }
@@ -177,7 +139,7 @@ public class Reader {
         EventMapping candidate = null;
         int prefixes = 0;
         next:
-        for (EventMapping action : Reader.this.mappings) {
+        for (EventMapping action : EventMapper.this.mappings) {
           if (action.seq.length > 0) {
             if (action.seq.length <= buffer.length) {
               for (int i = 0;i < action.seq.length;i++) {
@@ -229,6 +191,22 @@ public class Reader {
         }
       }
       return this;
+    }
+  }
+
+  private static class EventMapping {
+    final int[] seq;
+    final Event event;
+    public EventMapping(KeyEvent event) {
+      this.seq = new int[event.length()];
+      for (int i = 0;i < seq.length;i++) {
+        seq[i] = event.getAt(i);
+      }
+      this.event = event;
+    }
+    public EventMapping(int[] seq, Event event) {
+      this.seq = seq;
+      this.event = event;
     }
   }
 }

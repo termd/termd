@@ -4,7 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.Helper;
 import io.termd.core.readline.Event;
 import io.termd.core.readline.EventHandler;
-import io.termd.core.readline.Reader;
+import io.termd.core.readline.EventMapper;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -20,8 +20,8 @@ public class ReadlineTerm {
     this.conn = conn;
 
     //
-    InputStream inputrc = Reader.class.getResourceAsStream("inputrc");
-    final Reader reader = new Reader(inputrc);
+    InputStream inputrc = EventMapper.class.getResourceAsStream("inputrc");
+    final EventMapper eventMapper = new EventMapper(inputrc);
     final EventHandler handler = new EventHandler(conn.charsHandler());
     for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
       handler.addFunction(function);
@@ -29,9 +29,9 @@ public class ReadlineTerm {
     conn.charsHandler(new Handler<int[]>() {
       @Override
       public void handle(int[] chars) {
-        reader.append(chars);
+        eventMapper.append(chars);
         while (true) {
-          Event event = reader.reduceOnce().popEvent();
+          Event event = eventMapper.reduceOnce().popEvent();
           if (event != null) {
             handler.handle(event);
           } else {
