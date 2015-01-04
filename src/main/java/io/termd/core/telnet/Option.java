@@ -63,7 +63,7 @@ public enum Option {
 
     @Override
     void handleWill(TelnetConnection session) {
-      session.output.handle(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, code, BYTE_SEND, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
+      session.send(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, code, BYTE_SEND, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
     }
     @Override
     void handleWont(TelnetConnection session) {

@@ -16,8 +16,7 @@
  */
 package io.termd.core.telnet;
 
-import io.termd.core.Function;
-import io.termd.core.Handler;
+import io.termd.core.Provider;
 
 /**
  * A test class.
@@ -35,10 +34,10 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(new Function<Handler<byte[]>, TelnetConnection>() {
+    start(new Provider<TelnetHandler>() {
       @Override
-      public TelnetConnection call(Handler<byte[]> output) {
-        return new TelnetConnection(output, new TelnetHandler() {
+      public TelnetHandler provide() {
+        return new TelnetHandler() {
 
           @Override
           protected void onOpen(TelnetConnection conn) {
@@ -90,11 +89,11 @@ public abstract class TelnetBootstrap {
           protected void onCommand(byte command) {
             System.out.println("Command:" + command);
           }
-        });
+        };
       }
     });
   }
 
-  public abstract void start(Function<Handler<byte[]>, TelnetConnection> factory);
+  public abstract void start(Provider<TelnetHandler> factory);
 
 }

@@ -16,10 +16,10 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.Function;
-import io.termd.core.Handler;
+import io.termd.core.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
+import io.termd.core.telnet.TelnetHandler;
 import io.termd.core.telnet.TelnetTermConnection;
 import io.termd.core.term.ReadlineTerm;
 
@@ -49,12 +49,16 @@ public class ReadlineBootstrap {
   }
 
   public void start() {
-    telnet.start(new Function<Handler<byte[]>, TelnetConnection>() {
+    telnet.start(new Provider<TelnetHandler>() {
       @Override
-      public TelnetConnection call(Handler<byte[]> output) {
-        TelnetTermConnection conn = new TelnetTermConnection();
-        new ReadlineTerm(conn);
-        return new TelnetConnection(output, conn);
+      public TelnetHandler provide() {
+        return new TelnetTermConnection() {
+          @Override
+          protected void onOpen(TelnetConnection conn) {
+            super.onOpen(conn);
+            new ReadlineTerm(this);
+          }
+        };
       }
     });
   }

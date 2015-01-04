@@ -2,8 +2,10 @@ package io.termd.core.telnet.vertx;
 
 import io.termd.core.Function;
 import io.termd.core.Handler;
+import io.termd.core.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
+import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.net.NetServer;
@@ -33,7 +35,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(Function<Handler<byte[]>, TelnetConnection> factory) {
+  public void start(Provider<TelnetHandler> factory) {
     NetServer server = vertx.createNetServer();
     server.connectHandler(new TelnetNetSocketHandler(factory));
     server.listen(port, host);

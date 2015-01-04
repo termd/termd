@@ -62,6 +62,7 @@ public class TelnetTermConnection extends TelnetHandler implements TermConnectio
 
   @Override
   protected void onOpen(TelnetConnection conn) {
+    this.conn = conn;
     conn.writeWillOption(Option.ECHO);
     conn.writeWillOption(Option.SGA);
     conn.writeDoOption(Option.NAWS);

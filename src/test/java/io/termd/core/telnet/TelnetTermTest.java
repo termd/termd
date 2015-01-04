@@ -1,7 +1,7 @@
 package io.termd.core.telnet;
 
-import io.termd.core.Function;
 import io.termd.core.Handler;
+import io.termd.core.Provider;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
@@ -22,9 +22,9 @@ public class TelnetTermTest extends TelnetTestBase {
   @Test
   public void testSizeHanlder() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Function<Handler<byte[]>, TelnetConnection>() {
+    server(new Provider<TelnetHandler>() {
       @Override
-      public TelnetConnection call(Handler<byte[]> argument) {
+      public TelnetHandler provide() {
         final AtomicInteger count = new AtomicInteger();
         final TelnetTermConnection connection = new TelnetTermConnection();
         connection.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
@@ -54,7 +54,7 @@ public class TelnetTermTest extends TelnetTestBase {
             }
           }
         });
-        return new TelnetConnection(argument, connection);
+        return connection;
       }
     });
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);

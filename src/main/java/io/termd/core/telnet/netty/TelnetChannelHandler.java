@@ -1,23 +1,20 @@
 package io.termd.core.telnet.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.termd.core.Function;
-import io.termd.core.Handler;
-import io.termd.core.telnet.TelnetConnection;
+import io.termd.core.Provider;
+import io.termd.core.telnet.TelnetHandler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetChannelHandler extends ChannelInboundHandlerAdapter implements Handler<byte[]> {
+public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
 
-  private final Function<Handler<byte[]>, TelnetConnection> factory;
-  private TelnetConnection conn;
-  private ChannelHandlerContext ctx;
+  private final Provider<TelnetHandler> factory;
+  private NettyTelnetConnection conn;
 
-  public TelnetChannelHandler(Function<Handler<byte[]>, TelnetConnection> factory) {
+  public TelnetChannelHandler(Provider<TelnetHandler> factory) {
     this.factory = factory;
   }
 
@@ -27,20 +24,18 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter implement
     int size = buf.readableBytes();
     byte[] data = new byte[size];
     buf.getBytes(0, data);
-    conn.handle(data);
+    conn.receive(data);
   }
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    this.ctx = ctx;
-    this.conn = factory.call(this);
+    this.conn = new NettyTelnetConnection(factory.provide(), ctx);
     conn.init();
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     conn.close();
-    this.ctx = null;
     this.conn = null;
   }
 
@@ -48,10 +43,5 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter implement
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     cause.printStackTrace();
     ctx.close();
-  }
-
-  @Override
-  public void handle(byte[] event) {
-    ctx.writeAndFlush(Unpooled.wrappedBuffer(event));
   }
 }

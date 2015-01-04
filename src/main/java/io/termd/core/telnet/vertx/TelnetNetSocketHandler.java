@@ -16,8 +16,9 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.Function;
+import io.termd.core.Provider;
 import io.termd.core.telnet.TelnetConnection;
+import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
@@ -27,24 +28,20 @@ import org.vertx.java.core.net.NetSocket;
  */
 public class TelnetNetSocketHandler implements Handler<NetSocket> {
 
-  final Function<io.termd.core.Handler<byte[]>, TelnetConnection> factory;
+  final Provider<TelnetHandler> factory;
 
-  public TelnetNetSocketHandler(Function<io.termd.core.Handler<byte[]>, TelnetConnection> factory) {
+  public TelnetNetSocketHandler(Provider<TelnetHandler> factory) {
     this.factory = factory;
   }
 
   @Override
   public void handle(final NetSocket socket) {
-    final TelnetConnection connection = factory.call(new io.termd.core.Handler<byte[]>() {
-      @Override
-      public void handle(byte[] event) {
-        socket.write(new Buffer(event));
-      }
-    });
+    TelnetHandler handler = factory.provide();
+    final TelnetConnection connection = new VertxTelnetConnection(handler, socket);
     socket.dataHandler(new Handler<Buffer>() {
       @Override
       public void handle(Buffer event) {
-        connection.handle(event.getBytes());
+        connection.receive(event.getBytes());
       }
     });
     socket.closeHandler(new Handler<Void>() {

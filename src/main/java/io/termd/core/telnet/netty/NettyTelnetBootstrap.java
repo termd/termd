@@ -13,8 +13,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.termd.core.Function;
 import io.termd.core.Handler;
+import io.termd.core.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
+import io.termd.core.telnet.TelnetHandler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -30,7 +32,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(final Function<Handler<byte[]>, TelnetConnection> factory) {
+  public void start(final Provider<TelnetHandler> factory) {
 
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     EventLoopGroup workerGroup = new NioEventLoopGroup();

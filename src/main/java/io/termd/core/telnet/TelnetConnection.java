@@ -16,14 +16,12 @@
  */
 package io.termd.core.telnet;
 
-import io.termd.core.Handler;
-
 import java.util.Arrays;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class TelnetConnection implements Handler<byte[]> {
+public abstract class TelnetConnection {
 
   public static final byte BYTE_IAC = (byte)  0xFF;
   public static final byte BYTE_DONT = (byte) 0xFE;
@@ -40,19 +38,17 @@ public class TelnetConnection implements Handler<byte[]> {
   byte[] paramsBuffer;
   int paramsLength;
   boolean paramsIac;
-  final Handler<byte[]> output;
   boolean sendBinary;
   boolean receiveBinary;
   final TelnetHandler handler;
 
-  public TelnetConnection(Handler<byte[]> output, TelnetHandler handler) {
+  public TelnetConnection(TelnetHandler handler) {
     this.status = Status.DATA;
     this.paramsOptionCode = null;
     this.paramsBuffer = null;
     this.paramsIac = false;
     this.sendBinary = false;
     this.receiveBinary = false;
-    this.output = output;
     this.handler = handler;
   }
 
@@ -73,7 +69,7 @@ public class TelnetConnection implements Handler<byte[]> {
    * @param option the option to send
    */
   public final void writeDoOption(Option option) {
-    output.handle(new byte[]{BYTE_IAC, BYTE_DO, option.code});
+    send(new byte[]{BYTE_IAC, BYTE_DO, option.code});
   }
 
   /**
@@ -82,20 +78,30 @@ public class TelnetConnection implements Handler<byte[]> {
    * @param option the option to send
    */
   public final void writeWillOption(Option option) {
-    output.handle(new byte[]{BYTE_IAC, BYTE_WILL, option.code});
+    send(new byte[]{BYTE_IAC, BYTE_WILL, option.code});
   }
 
   private void rawWrite(byte[] data, int offset, int length) {
     if (length > 0) {
       if (offset == 0 && length == data.length) {
-        output.handle(data);
+        send(data);
       } else {
         byte[] chunk = new byte[length];
         System.arraycopy(data, offset, chunk, 0, chunk.length);
-        output.handle(chunk);
+        send(chunk);
       }
     }
   }
+  
+  protected abstract void send(byte[] data);
+
+  public void receive(byte[] data) {
+    for (byte b : data) {
+      status.handle(this, b);
+    }
+    flushDataIfNecessary();
+  }
+
 
   /**
    * Write data to the client, escaping data if necessary or truncating it. The original buffer can
@@ -109,7 +115,7 @@ public class TelnetConnection implements Handler<byte[]> {
       for (int i = 0;i < data.length;i++) {
         if (data[i] == -1) {
           rawWrite(data, prev, i - prev);
-          output.handle(new byte[]{-1, -1});
+          send(new byte[]{-1, -1});
           prev = i + 1;
         }
       }
@@ -118,16 +124,8 @@ public class TelnetConnection implements Handler<byte[]> {
       for (int i = 0;i < data.length;i++) {
         data[i] = (byte)(data[i] & 0x7F);
       }
-      output.handle(data);
+      send(data);
     }
-  }
-
-  @Override
-  public void handle(byte[] data) {
-    for (byte b : data) {
-      status.handle(this, b);
-    }
-    flushDataIfNecessary();
   }
 
   public void close() {
@@ -150,7 +148,7 @@ public class TelnetConnection implements Handler<byte[]> {
         return;
       }
     }
-    output.handle(new byte[]{BYTE_IAC, BYTE_DONT, optionCode});
+    send(new byte[]{BYTE_IAC, BYTE_DONT, optionCode});
   }
 
   /**
@@ -186,7 +184,7 @@ public class TelnetConnection implements Handler<byte[]> {
         return;
       }
     }
-    output.handle(new byte[]{BYTE_IAC, BYTE_WONT, optionCode});
+    send(new byte[]{BYTE_IAC, BYTE_WONT, optionCode});
   }
 
   /**
