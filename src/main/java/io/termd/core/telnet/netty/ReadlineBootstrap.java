@@ -43,11 +43,11 @@ public class ReadlineBootstrap {
             @Override
             public void run() {
               try {
-                Thread.sleep(1000);
+                Thread.sleep(3000);
               } catch (InterruptedException e) {
                 e.printStackTrace();
               } finally {
-                event.write("You just typed :" + event.getRaw());
+//                event.write("You just typed :" + event.getRaw());
                 event.end();
               }
             }
