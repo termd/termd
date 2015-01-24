@@ -16,7 +16,9 @@
  */
 package io.termd.core.telnet.netty;
 
+import io.termd.core.Handler;
 import io.termd.core.Provider;
+import io.termd.core.readline.RequestContext;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
@@ -30,6 +32,30 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ReadlineBootstrap {
+
+  public static final Handler<RequestContext> ECHO_HANDLER = new Handler<RequestContext>() {
+    @Override
+    public void handle(final RequestContext event) {
+      new Thread() {
+        @Override
+        public void run() {
+          new Thread() {
+            @Override
+            public void run() {
+              try {
+                Thread.sleep(1000);
+              } catch (InterruptedException e) {
+                e.printStackTrace();
+              } finally {
+                event.write("You just typed :" + event.getRaw());
+                event.end();
+              }
+            }
+          }.start();
+        }
+      }.start();
+    }
+  };
 
   public static void main(String[] args) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
@@ -55,7 +81,7 @@ public class ReadlineBootstrap {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this);
+            new ReadlineTerm(this, ECHO_HANDLER);
           }
         };
       }

@@ -159,7 +159,7 @@ public class ReadlineBootstrap {
         encoder = new BinaryEncoder(512, charset, out);
 
         //
-        new ReadlineTerm(this);
+        new ReadlineTerm(this, io.termd.core.telnet.netty.ReadlineBootstrap.ECHO_HANDLER);
       }
 
       public void updateSize(Environment env) {

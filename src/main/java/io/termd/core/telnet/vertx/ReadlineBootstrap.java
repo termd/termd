@@ -55,7 +55,7 @@ public class ReadlineBootstrap {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this);
+            new ReadlineTerm(this, io.termd.core.telnet.netty.ReadlineBootstrap.ECHO_HANDLER);
           }
         };
       }

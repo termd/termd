@@ -22,26 +22,6 @@ public class ReadlineTerm {
 
   final TermConnection conn;
 
-  public ReadlineTerm(TermConnection conn) {
-    this(conn, new Handler<RequestContext>() {
-      @Override
-      public void handle(final RequestContext event) {
-        System.out.println("Line " + event.getRaw());
-        new Thread() {
-          @Override
-          public void run() {
-            try {
-              Thread.sleep(1000);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            event.end();
-          }
-        }.start();
-      }
-    });
-  }
-
   public ReadlineTerm(TermConnection conn, Handler<RequestContext> requestHandler) {
     this.conn = conn;
 
