@@ -8,6 +8,15 @@ public interface RequestContext {
   String getRaw();
 
   /**
+   * Write the specified string to the client
+   *
+   * @param s the string to write
+   * @return this request object
+   * @throws java.lang.IllegalStateException if the request is ended
+   */
+  RequestContext write(String s);
+
+  /**
    * Signal the request is processed
    */
   void end();

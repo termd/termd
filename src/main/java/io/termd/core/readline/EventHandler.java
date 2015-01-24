@@ -1,6 +1,7 @@
 package io.termd.core.readline;
 
 import io.termd.core.Handler;
+import io.termd.core.Helper;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -108,10 +109,18 @@ public class EventHandler implements Handler<Event> {
             output.handle(new int[]{'\r', '\n'});
             buffer.setSize(0);
             handler.handle(new RequestContext() {
+
               @Override
               public String getRaw() {
                 return raw.toString();
               }
+
+              @Override
+              public RequestContext write(String s) {
+                output.handle(Helper.toCodePoints(s));
+                return this;
+              }
+
               @Override
               public void end() {
                 output.handle(new int[]{'%', ' '});
