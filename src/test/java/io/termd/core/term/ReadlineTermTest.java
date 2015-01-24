@@ -21,6 +21,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ReadlineTermTest extends TelnetTestBase {
 
+  protected final void assertConnect() throws Exception {
+    client = new TelnetClient();
+    client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
+    client.connect("localhost", 4000);
+  }
+
+  protected final String assertRead(int length) throws Exception {
+    byte[] bytes = new byte[length];
+    while (length > 0) {
+      int i = client.getInputStream().read(bytes, bytes.length - length, length);
+      if (i == -1) {
+        throw new AssertionError();
+      }
+      length -= i;
+    }
+    return new String(bytes, 0, bytes.length, "UTF-8");
+  }
+
+  protected final void assertWrite(String s) throws Exception {
+    client.getOutputStream().write(s.getBytes("UTF-8"));
+  }
+
   @Test
   public void testGetPrompt() throws Exception {
     final AtomicInteger connectionCount = new AtomicInteger();
@@ -44,12 +66,8 @@ public class ReadlineTermTest extends TelnetTestBase {
         };
       }
     });
-    client = new TelnetClient();
-    client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
-    client.connect("localhost", 4000);
-    byte[] bytes = new byte[100];
-    assertEquals(2, client.getInputStream().read(bytes));
-    assertEquals("% ", new String(bytes, 0, 2));
+    assertConnect();
+    assertEquals("% ", assertRead(2));
     assertEquals(1, connectionCount.get());
     assertEquals(0, requestCount.get());
   }
@@ -76,17 +94,11 @@ public class ReadlineTermTest extends TelnetTestBase {
         };
       }
     });
-    client = new TelnetClient();
-    client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
-    client.connect("localhost", 4000);
-    byte[] bytes = new byte[100];
-    assertEquals(2, client.getInputStream().read(bytes));
-    assertEquals("% ", new String(bytes, 0, 2));
-    client.getOutputStream().write('\r');
-    client.getOutputStream().flush();
+    assertConnect();
+    assertEquals("% ", assertRead(2));
+    assertWrite("\r");
     assertTrue(latch.await(10, TimeUnit.SECONDS));
-    assertEquals(9, client.getInputStream().read(bytes));
-    assertEquals("\r\nhello% ", new String(bytes, 0, 9));
+    assertEquals("\r\nhello% ", assertRead(9));
   }
 
   @Test
@@ -109,19 +121,12 @@ public class ReadlineTermTest extends TelnetTestBase {
         };
       }
     });
-    client = new TelnetClient();
-    client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
-    client.connect("localhost", 4000);
-    byte[] bytes = new byte[100];
-    assertEquals(2, client.getInputStream().read(bytes));
-    assertEquals("% ", new String(bytes, 0, 2));
-    client.getOutputStream().write('\r');
-    client.getOutputStream().flush();
+    assertConnect();
+    assertEquals("% ", assertRead(2));
+    assertWrite("\r");
     RequestContext requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
-    assertEquals(2, client.getInputStream().read(bytes));
-    assertEquals("\r\n", new String(bytes, 0, 2));
+    assertEquals("\r\n", assertRead(2));
     requestContext.end();
-    assertEquals(2, client.getInputStream().read(bytes));
-    assertEquals("% ", new String(bytes, 0, 2));
+    assertEquals("% ", assertRead(2));
   }
 }
