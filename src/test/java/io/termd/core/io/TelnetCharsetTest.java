@@ -4,8 +4,10 @@ import io.termd.core.Handler;
 import io.termd.core.Helper;
 import org.junit.Test;
 
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 
 import static org.junit.Assert.*;
@@ -17,46 +19,48 @@ public class TelnetCharsetTest {
 
   @Test
   public void testDecodeSingleByte() {
-    Charset cs = TelnetCharset.INSTANCE;
     for (int i = 13;i < 256;i++) {
       byte[] bytes = {(byte) i};
-      assertEquals("Invalid encoding at " + i, new String(new char[]{(char) i}), cs.decode(ByteBuffer.wrap(bytes)).toString());
+      assertEquals("Invalid encoding at " + i, new String(new char[]{(char) i}), TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
     }
   }
 
   @Test
   public void testDecodeByte() {
-    Charset cs = TelnetCharset.INSTANCE;
     for (int i = 0;i < 256;i++) {
       byte[] bytes = {(byte) i, 'A'};
-      assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, 'A'}), cs.decode(ByteBuffer.wrap(bytes)).toString());
+      assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, 'A'}), TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
     }
   }
 
   @Test
   public void testDecodeCRLF() {
-    Charset cs = TelnetCharset.INSTANCE;
     for (int i = 0;i < 256;i++) {
       byte[] bytes = {(byte) i, '\n'};
       if (i != '\r') {
-        assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, '\n'}), cs.decode(ByteBuffer.wrap(bytes)).toString());
+        assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, '\n'}), TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
       } else {
-        assertEquals("Invalid encoding at " + i, "\r", cs.decode(ByteBuffer.wrap(bytes)).toString());
+        assertEquals("Invalid encoding at " + i, "\r", TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
       }
     }
   }
 
   @Test
   public void testDecodeCRNULL() {
-    Charset cs = TelnetCharset.INSTANCE;
     for (int i = 0;i < 256;i++) {
       byte[] bytes = {(byte) i, 0};
       if (i != '\r') {
-        assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, 0}), cs.decode(ByteBuffer.wrap(bytes)).toString());
+        assertEquals("Invalid encoding at " + i, new String(new char[]{(char)i, 0}), TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
       } else {
-        assertEquals("Invalid encoding at " + i, "\r", cs.decode(ByteBuffer.wrap(bytes)).toString());
+        assertEquals("Invalid encoding at " + i, "\r", TelnetCharset.INSTANCE.decode(ByteBuffer.wrap(bytes)).toString());
       }
     }
+  }
+
+  @Test
+  public void testDecoderOverflow() {
+    CharsetDecoder decoder = TelnetCharset.INSTANCE.newDecoder();
+    assertTrue(decoder.decode(ByteBuffer.wrap(new byte[]{'A', 'B'}), CharBuffer.allocate(1), true).isOverflow());
   }
 
   @Test
