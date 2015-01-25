@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static org.junit.Assert.*;
@@ -21,12 +20,7 @@ public class TelnetCharsetTest {
     Charset cs = TelnetCharset.INSTANCE;
     for (int i = 13;i < 256;i++) {
       byte[] bytes = {(byte) i};
-      if (i != '\r') {
-        String abc = new String(new char[]{(char) i});
-        assertEquals("Invalid encoding at " + i, abc, cs.decode(ByteBuffer.wrap(bytes)).toString());
-      } else {
-        assertEquals("Invalid encoding at " + i, "\uFFFD", cs.decode(ByteBuffer.wrap(bytes)).toString());
-      }
+      assertEquals("Invalid encoding at " + i, new String(new char[]{(char) i}), cs.decode(ByteBuffer.wrap(bytes)).toString());
     }
   }
 
@@ -80,7 +74,7 @@ public class TelnetCharsetTest {
         }
       });
       decoder.write(new byte[]{'\r'});
-      assertEquals(0, codePoints.size());
+      assertEquals(1, codePoints.size());
       decoder.write(new byte[]{input[i]});
       assertEquals(Helper.list(expectedOutput[i]), codePoints);
     }

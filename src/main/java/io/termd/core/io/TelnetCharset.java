@@ -30,31 +30,28 @@ public class TelnetCharset extends Charset {
   @Override
   public CharsetDecoder newDecoder() {
     return new CharsetDecoder(this, 1.0f, 1.0f) {
+      private boolean prevCR;
       @Override
       protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
         int pos = in.position();
         int limit = in.limit();
         try {
           while (pos < limit) {
-            if (out.position() >= out.limit()) {
-              return CoderResult.OVERFLOW;
-            }
             byte b = in.get(pos);
             char c;
             if (b >= 0) {
-              c = (char) b;
-              if (b == '\r') {
-                if (pos + 1 >= limit) {
-                  return CoderResult.UNDERFLOW;
-                }
-                byte next = in.get(pos + 1);
-                if (next == '\n' || next == 0) {
-                  pos++;
-                  c = '\r';
-                }
+              if (prevCR && (b == '\n' || b == 0)) {
+                pos++;
+                prevCR = false;
+                continue;
               }
+              c = (char) b;
+              prevCR = b == '\r';
             } else {
               c = (char)(256 + b);
+            }
+            if (out.position() >= out.limit()) {
+              return CoderResult.OVERFLOW;
             }
             pos++;
             out.put(c);
