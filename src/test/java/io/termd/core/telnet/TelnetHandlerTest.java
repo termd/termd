@@ -262,8 +262,7 @@ public class TelnetHandlerTest extends TelnetTestBase {
     });
     client = new TelnetClient();
     client.connect("localhost", 4000);
-    byte[] data = new byte[8];
-    assertEquals(8, client.getInputStream().read(data));
+    byte[] data = assertReadBytes(8);
     assertEquals((byte)0, data[0]);
     assertEquals((byte)1, data[1]);
     assertEquals((byte)2, data[2]);

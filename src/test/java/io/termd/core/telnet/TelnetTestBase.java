@@ -24,6 +24,23 @@ public class TelnetTestBase extends TestBase {
   private NetServer server;
   protected TelnetClient client;
 
+  protected final String assertReadString(int length) throws Exception {
+    return new String(assertReadBytes(length), 0, length, "UTF-8");
+  }
+
+  protected final byte[] assertReadBytes(int length) throws Exception {
+    byte[] bytes = new byte[length];
+    while (length > 0) {
+      int i = client.getInputStream().read(bytes, bytes.length - length, length);
+      if (i == -1) {
+        throw new AssertionError();
+      }
+      length -= i;
+    }
+    return bytes;
+  }
+
+
   @Before
   public void before() throws InterruptedException {
     vertx = VertxFactory.newVertx();

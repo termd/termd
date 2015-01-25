@@ -34,18 +34,6 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     client.connect("localhost", 4000);
   }
 
-  protected final String assertRead(int length) throws Exception {
-    byte[] bytes = new byte[length];
-    while (length > 0) {
-      int i = client.getInputStream().read(bytes, bytes.length - length, length);
-      if (i == -1) {
-        throw new AssertionError();
-      }
-      length -= i;
-    }
-    return new String(bytes, 0, bytes.length, "UTF-8");
-  }
-
   protected final void assertWrite(byte[] data) throws Exception {
     OutputStream out = client.getOutputStream();
     out.write(data);
@@ -84,7 +72,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
       }
     });
     assertConnect();
-    assertEquals("% ", assertRead(2));
+    assertEquals("% ", assertReadString(2));
     assertEquals(1, connectionCount.get());
     assertEquals(0, requestCount.get());
   }
@@ -112,10 +100,10 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
       }
     });
     assertConnect();
-    assertEquals("% ", assertRead(2));
+    assertEquals("% ", assertReadString(2));
     assertWriteln("");
     assertTrue(latch.await(10, TimeUnit.SECONDS));
-    assertEquals("\r\nhello% ", assertRead(9));
+    assertEquals("\r\nhello% ", assertReadString(9));
   }
 
   @Test
@@ -139,12 +127,12 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
       }
     });
     assertConnect();
-    assertEquals("% ", assertRead(2));
+    assertEquals("% ", assertReadString(2));
     assertWriteln("");
     RequestContext requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
-    assertEquals("\r\n", assertRead(2));
+    assertEquals("\r\n", assertReadString(2));
     requestContext.end();
-    assertEquals("% ", assertRead(2));
+    assertEquals("% ", assertReadString(2));
   }
 
   @Test
@@ -168,17 +156,17 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
       }
     });
     assertConnect();
-    assertEquals("% ", assertRead(2));
+    assertEquals("% ", assertReadString(2));
     assertWriteln("abc");
     RequestContext requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
-    assertEquals("abc\r\n", assertRead(5));
+    assertEquals("abc\r\n", assertReadString(5));
     assertEquals("abc", requestContext.getRaw());
     assertWriteln("def");
     requestContext.end();
-    assertEquals("% def", assertRead(5));
+    assertEquals("% def", assertReadString(5));
     requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("def", requestContext.getRaw());
     requestContext.end();
-    assertEquals("\r\n% ", assertRead(4));
+    assertEquals("\r\n% ", assertReadString(4));
   }
 }
