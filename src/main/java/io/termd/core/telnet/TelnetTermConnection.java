@@ -55,11 +55,19 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
   @Override
   protected void onOpen(TelnetConnection conn) {
     this.conn = conn;
+
+    // Kludge mode
     conn.writeWillOption(Option.ECHO);
     conn.writeWillOption(Option.SGA);
+
+    // Window size
     conn.writeDoOption(Option.NAWS);
+
+    // Binary by all means
     conn.writeDoOption(Option.BINARY);
     conn.writeWillOption(Option.BINARY);
+
+    // Get some info about user
     conn.writeDoOption(Option.TERMINAL_TYPE);
   }
 
