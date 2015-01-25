@@ -1,6 +1,6 @@
 ## Termd
 
-A terminal daemon library providing terminal handling in Java.
+An open source terminal daemon library providing terminal handling in Java.
 
 ### Features
 
