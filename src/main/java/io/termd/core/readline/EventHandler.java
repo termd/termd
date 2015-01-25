@@ -6,22 +6,31 @@ import io.termd.core.Helper;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventHandler implements Handler<Event> {
+public class EventHandler implements Handler<EventContext> {
 
+  public final EventQueue eventQueue;
+  final Executor scheduler;
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
-  final LinkedList<int[]> lines = new LinkedList<>();
-  final LineBuffer buffer = new LineBuffer();
   final Handler<RequestContext> handler;
 
-  public EventHandler(Handler<int[]> output, Handler<RequestContext> handler) {
+  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<RequestContext> handler) {
+    this(new EventQueue(), output, scheduler, handler);
+  }
+
+  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<RequestContext> handler) {
     output.handle(new int[]{'%', ' '});
+    this.eventQueue = eventQueue;
     this.output = output;
     this.handler = handler;
+    this.scheduler = scheduler;
   }
 
   public EventHandler addFunction(Function function) {
@@ -29,13 +38,60 @@ public class EventHandler implements Handler<Event> {
     return this;
   }
 
-  private boolean handling;
+  private final AtomicInteger handling = new AtomicInteger();
+
+  public void append(int[] chars) {
+    eventQueue.append(chars);
+    scheduler.execute(task);
+  }
+
+  final Runnable task = new Runnable() {
+    @Override
+    public void run() {
+      if (handling.compareAndSet(0, 2)) {
+        if (eventQueue.hasNext()) {
+          final Event event = eventQueue.next();
+          final Runnable self = this;
+          EventContext context = new EventContext() {
+            @Override
+            public Event getEvent() {
+              return event;
+            }
+            @Override
+            public void end() {
+              EventHandler.this.end();
+            }
+          };
+          handle(context);
+          if (handling.decrementAndGet() == 0) {
+            scheduler.execute(self);
+          }
+        } else {
+          handling.set(0);
+        }
+      }
+
+    }
+  };
+
+  private void end() {
+    if (handling.decrementAndGet() == 0) {
+      scheduler.execute(task);
+    }
+  }
+
+  enum LineStatus {
+    LITERAL, ESCAPED, QUOTED
+  }
+
+  private final LinkedList<int[]> lines = new LinkedList<>();
+  private final LineBuffer lineBuffer = new LineBuffer();
   private LinkedList<Integer> escaped = new LinkedList<>();
-  private int status = 0;
+  private LineStatus lineStatus = LineStatus.LITERAL;
   private EscapeFilter filter = new EscapeFilter(new Escaper() {
     @Override
     public void escaping() {
-      status = 1;
+      lineStatus = LineStatus.ESCAPED;
     }
     @Override
     public void escaped(int ch) {
@@ -43,17 +99,17 @@ public class EventHandler implements Handler<Event> {
         escaped.add((int) '\\');
         escaped.add(ch);
       }
-      status = 0;
+      lineStatus = LineStatus.LITERAL;
     }
     @Override
     public void beginQuotes(int delim) {
       escaped.add(delim);
-      status = 2;
+      lineStatus = LineStatus.QUOTED;
     }
     @Override
     public void endQuotes(int delim) {
       escaped.add(delim);
-      status = 0;
+      lineStatus = LineStatus.LITERAL;
     }
     @Override
     public void handle(Integer event) {
@@ -61,26 +117,19 @@ public class EventHandler implements Handler<Event> {
     }
   });
 
-  public void handle(Event event) {
-    handle(event, null);
-  }
-
-  public void handle(Event event, final Handler<Void> doneHandler) {
-    if (handling) {
-      throw new IllegalStateException();
-    }
-    handling = true;
-    LineBuffer copy = new LineBuffer(buffer);
+  public void handle(final EventContext context) {
+    LineBuffer copy = new LineBuffer(lineBuffer);
+    Event event = context.getEvent();
     if (event instanceof KeyEvent) {
       KeyEvent key = (KeyEvent) event;
       if (key.length() == 1 && key.getAt(0) == '\r') {
-        for (int j : buffer) {
+        for (int j : lineBuffer) {
           filter.handle(j);
         }
-        if (status == 1) {
+        if (lineStatus == LineStatus.ESCAPED) {
           filter.handle((int) '\r'); // Correct status
           output.handle(new int[]{'\r', '\n', '>', ' '});
-          buffer.setSize(0);
+          lineBuffer.setSize(0);
           copy.setSize(0);
         } else {
           int[] l = new int[this.escaped.size()];
@@ -89,9 +138,9 @@ public class EventHandler implements Handler<Event> {
           }
           escaped.clear();
           lines.add(l);
-          if (status == 2) {
+          if (lineStatus == LineStatus.QUOTED) {
             output.handle(new int[]{'\r', '\n', '>', ' '});
-            buffer.setSize(0);
+            lineBuffer.setSize(0);
             copy.setSize(0);
           } else {
             final StringBuilder raw = new StringBuilder();
@@ -107,7 +156,7 @@ public class EventHandler implements Handler<Event> {
             lines.clear();
             escaped.clear();
             output.handle(new int[]{'\r', '\n'});
-            buffer.setSize(0);
+            lineBuffer.setSize(0);
             handler.handle(new RequestContext() {
 
               @Override
@@ -124,10 +173,7 @@ public class EventHandler implements Handler<Event> {
               @Override
               public void end() {
                 output.handle(new int[]{'%', ' '});
-                handling = false;
-                if (doneHandler != null) {
-                  doneHandler.handle(null);
-                }
+                context.end();
               }
             });
             return;
@@ -136,27 +182,24 @@ public class EventHandler implements Handler<Event> {
       } else {
         for (int i = 0;i < key.length();i++) {
           int codePoint = key.getAt(i);
-          buffer.insert(codePoint);
+          lineBuffer.insert(codePoint);
         }
       }
     } else {
       FunctionEvent fname = (FunctionEvent) event;
       Function function = functions.get(fname.getName());
       if (function != null) {
-        function.call(buffer);
+        function.call(lineBuffer);
       } else {
         System.out.println("Unimplemented function " + fname.getName());
       }
     }
-    LinkedList<Integer> a = copy.compute(buffer);
+    LinkedList<Integer> a = copy.compute(lineBuffer);
     int[] t = new int[a.size()];
     for (int index = 0;index < a.size();index++) {
       t[index] = a.get(index);
     }
     output.handle(t);
-    handling = false;
-    if (doneHandler != null) {
-      doneHandler.handle(null);
-    }
+    context.end();
   }
 }

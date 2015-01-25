@@ -3,7 +3,7 @@ package io.termd.core.system;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.readline.Event;
-import io.termd.core.readline.EventMapper;
+import io.termd.core.readline.EventQueue;
 import io.termd.core.telnet.netty.ReadlineBootstrap;
 
 import java.io.FileDescriptor;
@@ -22,18 +22,14 @@ public class SystemBootstrap {
   public static void main(String[] args) throws IOException {
 
     InputStream inputrc = ReadlineBootstrap.class.getResourceAsStream("inputrc");
-    final EventMapper eventMapper = new EventMapper(inputrc);
+    final EventQueue eventMapper = new EventQueue(inputrc);
     BinaryDecoder decoder = new BinaryDecoder(Charset.forName("UTF-8"), new Handler<int[]>() {
       @Override
-      public void handle(int[] event) {
-        eventMapper.append(event);
-        while (true) {
-          Event action = eventMapper.reduceOnce().popEvent();
-          if (action != null) {
-            System.out.println("Read " + action);
-          } else {
-            break;
-          }
+      public void handle(int[] data) {
+        eventMapper.append(data);
+        while (eventMapper.hasNext()) {
+          Event event = eventMapper.next();
+          System.out.println("Read " + event);
         }
       }
     });

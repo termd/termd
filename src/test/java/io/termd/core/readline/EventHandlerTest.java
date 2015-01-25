@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
@@ -38,12 +39,24 @@ public class EventHandlerTest {
       return "forward-char";
     }
   };
+  
+  static class EventContextImpl implements EventContext {
 
-  static class Counter implements Handler<Void> {
-    int value = 0;
+    int endCount = 0;
+    final Event event;
+
+    public EventContextImpl(Event event) {
+      this.event = event;
+    }
+
     @Override
-    public void handle(Void event) {
-      value++;
+    public Event getEvent() {
+      return event;
+    }
+
+    @Override
+    public void end() {
+      endCount++;
     }
   }
 
@@ -93,7 +106,12 @@ public class EventHandlerTest {
     }
 
     public Term(Handler<RequestContext> requestHandler) {
-      handler = new EventHandler(adapter, requestHandler).
+      handler = new EventHandler(adapter, new Executor() {
+        @Override
+        public void execute(Runnable command) {
+          command.run();
+        }
+      }, requestHandler).
           addFunction(new BackwardDeleteChar()).
           addFunction(new BackwardChar()).
           addFunction(new ForwardChar());
@@ -138,7 +156,7 @@ public class EventHandlerTest {
   @Test
   public void testEnter() {
     Term term = new Term();
-    term.handler.handle(Keys.CTRL_M);
+    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
     term.assertScreen(
         "% ",
         "% "
@@ -149,9 +167,9 @@ public class EventHandlerTest {
   @Test
   public void testInsertChar() {
     Term term = new Term();
-    Counter counter = new Counter();
-    term.handler.handle(Keys.A, counter);
-    assertEquals(1, counter.value);
+    EventContextImpl context = new EventContextImpl(Keys.A);
+    term.handler.handle(context);
+    assertEquals(1, context.endCount);
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
@@ -159,8 +177,8 @@ public class EventHandlerTest {
   @Test
   public void testInsertCharEnter() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(Keys.CTRL_M);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
     term.assertScreen(
         "% A",
         "% ");
@@ -170,8 +188,8 @@ public class EventHandlerTest {
   @Test
   public void testBS() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(BACKWARD_DELETE_CHAR);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
     term.assertScreen("%  ");
     term.assertAt(0, 2);
   }
@@ -179,22 +197,22 @@ public class EventHandlerTest {
   @Test
   public void testEscapeCR() {
     Term term = new Term();
-    term.handler.handle(Keys.BACKSLASH);
+    term.handler.handle(new EventContextImpl(Keys.BACKSLASH));
     term.assertScreen("% \\");
-    Counter counter = new Counter();
-    term.handler.handle(Keys.CTRL_M, counter);
+    EventContextImpl context = new EventContextImpl(Keys.CTRL_M);
+    term.handler.handle(context);
     term.assertScreen(
         "% \\",
         "> "
     );
     term.assertAt(1, 2);
-    assertEquals(1, counter.value);
+    assertEquals(1, context.endCount);
   }
 
   @Test
   public void testBackwardDelete() {
     Term term = new Term();
-    term.handler.handle(BACKWARD_DELETE_CHAR);
+    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
     term.assertScreen(
         "% "
     );
@@ -204,9 +222,9 @@ public class EventHandlerTest {
   @Test
   public void testBackwardDeleteLastChar() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(Keys.B);
-    term.handler.handle(BACKWARD_DELETE_CHAR);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(Keys.B));
+    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
     term.assertScreen(
         "% A "
     );
@@ -216,10 +234,10 @@ public class EventHandlerTest {
   @Test
   public void testBackwardDeleteChar() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(Keys.B);
-    term.handler.handle(BACKWARD_CHAR);
-    term.handler.handle(BACKWARD_DELETE_CHAR);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(Keys.B));
+    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
+    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
     term.assertScreen(
         "% B "
     );
@@ -229,9 +247,9 @@ public class EventHandlerTest {
   @Test
   public void testBackwardDeleteEscape() {
     Term term = new Term();
-    term.handler.handle(Keys.BACKSLASH);
+    term.handler.handle(new EventContextImpl(Keys.BACKSLASH));
     term.assertScreen("% \\");
-    term.handler.handle(BACKWARD_DELETE_CHAR);
+    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
     term.assertScreen(
         "%  "
     );
@@ -241,7 +259,7 @@ public class EventHandlerTest {
   @Test
   public void testBackwardChar() {
     Term term = new Term();
-    term.handler.handle(BACKWARD_CHAR);
+    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -249,8 +267,8 @@ public class EventHandlerTest {
   @Test
   public void testInsertCharBackwardChar() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(BACKWARD_CHAR);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
     term.assertScreen("% A");
     term.assertAt(0, 2);
   }
@@ -258,7 +276,7 @@ public class EventHandlerTest {
   @Test
   public void testForwardChar() {
     Term term = new Term();
-    term.handler.handle(FORWARD_CHAR);
+    term.handler.handle(new EventContextImpl(FORWARD_CHAR));
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -266,9 +284,9 @@ public class EventHandlerTest {
   @Test
   public void testInsertCharForwardChar() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(BACKWARD_CHAR);
-    term.handler.handle(FORWARD_CHAR);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
+    term.handler.handle(new EventContextImpl(FORWARD_CHAR));
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
@@ -276,23 +294,23 @@ public class EventHandlerTest {
   @Test
   public void testQuotedMultiline() {
     Term term = new Term();
-    term.handler.handle(Keys.A);
-    term.handler.handle(Keys.QUOTE);
-    Counter counter = new Counter();
-    term.handler.handle(Keys.CTRL_M, counter);
+    term.handler.handle(new EventContextImpl(Keys.A));
+    term.handler.handle(new EventContextImpl(Keys.QUOTE));
+    EventContextImpl context = new EventContextImpl(Keys.CTRL_M);
+    term.handler.handle(context);
     term.assertScreen(
         "% A\"",
         "> ");
-    assertEquals(1, counter.value);
-    term.handler.handle(Keys.B);
-    term.handler.handle(Keys.CTRL_M);
+    assertEquals(1, context.endCount);
+    term.handler.handle(new EventContextImpl(Keys.B));
+    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
     term.assertScreen(
         "% A\"",
         "> B",
         "> ");
-    term.handler.handle(Keys.C);
-    term.handler.handle(Keys.QUOTE);
-    term.handler.handle(Keys.CTRL_M);
+    term.handler.handle(new EventContextImpl(Keys.C));
+    term.handler.handle(new EventContextImpl(Keys.QUOTE));
+    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
     term.assertScreen(
         "% A\"",
         "> B",
@@ -301,7 +319,7 @@ public class EventHandlerTest {
   }
 
   @Test
-  public void testBlocking() {
+  public void testCharsQueuing() {
     final AtomicReference<RequestContext> ctx = new AtomicReference<>();
     Term term = new Term(new Handler<RequestContext>() {
       @Override
@@ -309,24 +327,14 @@ public class EventHandlerTest {
         ctx.set(event);
       }
     });
-    Counter counter = new Counter();
-    term.handler.handle(Keys.CTRL_M, counter);
+    term.handler.append(new int[]{'\r'});
     assertNotNull(ctx);
     term.assertScreen("% ");
     term.assertAt(1, 0);
-    assertEquals(0, counter.value);
-    try {
-      term.handler.handle(Keys.A);
-      fail();
-    } catch (IllegalStateException ignore) {
-    }
+    term.handler.append(new int[]{'A'});
+    term.assertScreen("% ");
+    term.assertAt(1, 0);
     ctx.get().end();
-    term.assertScreen(
-        "% ",
-        "% ");
-    term.assertAt(1, 2);
-    assertEquals(1, counter.value);
-    term.handler.handle(Keys.A);
     term.assertScreen(
         "% ",
         "% A");
