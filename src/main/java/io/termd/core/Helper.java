@@ -46,4 +46,12 @@ public class Helper {
     }
     return services;
   }
+
+  public static List<Integer> list(int... list) {
+    ArrayList<Integer> result = new ArrayList<>(list.length);
+    for (int i : list) {
+      result.add(i);
+    }
+    return result;
+  }
 }

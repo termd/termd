@@ -3,6 +3,7 @@ package io.termd.core.telnet;
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
+import io.termd.core.io.TelnetCharset;
 import io.termd.core.term.TermConnection;
 
 import java.nio.charset.StandardCharsets;
@@ -20,7 +21,7 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
   private Handler<int[]> charsHandler;
   protected TelnetConnection conn;
 
-  private final BinaryDecoder decoder = new BinaryDecoder(512, StandardCharsets.US_ASCII, new Handler<int[]>() {
+  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, new Handler<int[]>() {
     @Override
     public void handle(int[] event) {
       if (charsHandler != null) {
@@ -44,7 +45,9 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
 
   @Override
   protected void onReceiveBinary(boolean binary) {
-    decoder.setCharset(StandardCharsets.UTF_8);
+    if (binary) {
+      decoder.setCharset(StandardCharsets.UTF_8);
+    }
   }
 
   @Override

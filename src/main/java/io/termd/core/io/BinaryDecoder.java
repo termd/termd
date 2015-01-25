@@ -7,6 +7,7 @@ import java.nio.CharBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -63,9 +64,9 @@ public class BinaryDecoder {
     bBuf.flip();
 
     // Drain the byte buffer
-    while (bBuf.hasRemaining()) {
+    while (true) {
       IntBuffer iBuf = IntBuffer.allocate(bBuf.remaining());
-      decoder.decode(bBuf, cBuf, false);
+      CoderResult result = decoder.decode(bBuf, cBuf, false);
       cBuf.flip();
       while (cBuf.hasRemaining()) {
         char c = cBuf.get();
@@ -98,6 +99,14 @@ public class BinaryDecoder {
       iBuf.get(codePoints);
       onChar.handle(codePoints);
       cBuf.compact();
+      if (result.isOverflow()) {
+        // We still have work to do
+      } else if (result.isUnderflow()) {
+        // Either we are done or we need more input
+        break;
+      } else {
+        throw new UnsupportedOperationException("Handle me gracefully");
+      }
     }
     bBuf.compact();
   }

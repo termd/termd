@@ -21,12 +21,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineTermTest extends TelnetTestBase {
+public abstract class ReadlineTermTestBase extends TelnetTestBase {
+
+  protected boolean binary;
 
   protected final void assertConnect() throws Exception {
     client = new TelnetClient();
     client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
-    client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
+    if (binary) {
+      client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
+    }
     client.connect("localhost", 4000);
   }
 
@@ -42,10 +46,18 @@ public class ReadlineTermTest extends TelnetTestBase {
     return new String(bytes, 0, bytes.length, "UTF-8");
   }
 
-  protected final void assertWrite(String s) throws Exception {
+  protected final void assertWrite(byte[] data) throws Exception {
     OutputStream out = client.getOutputStream();
-    out.write(s.getBytes("UTF-8"));
+    out.write(data);
     out.flush();
+  }
+
+  protected final void assertWrite(String s) throws Exception {
+    assertWrite(s.getBytes("UTF-8"));
+  }
+
+  protected final void assertWriteln(String s) throws Exception {
+    assertWrite(s + (binary ? "\r" : "\r\n"));
   }
 
   @Test
@@ -101,7 +113,7 @@ public class ReadlineTermTest extends TelnetTestBase {
     });
     assertConnect();
     assertEquals("% ", assertRead(2));
-    assertWrite("\r");
+    assertWriteln("");
     assertTrue(latch.await(10, TimeUnit.SECONDS));
     assertEquals("\r\nhello% ", assertRead(9));
   }
@@ -128,7 +140,7 @@ public class ReadlineTermTest extends TelnetTestBase {
     });
     assertConnect();
     assertEquals("% ", assertRead(2));
-    assertWrite("\r");
+    assertWriteln("");
     RequestContext requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
     assertEquals("\r\n", assertRead(2));
     requestContext.end();
@@ -157,14 +169,14 @@ public class ReadlineTermTest extends TelnetTestBase {
     });
     assertConnect();
     assertEquals("% ", assertRead(2));
-    assertWrite("abc\r");
-    RequestContext requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
+    assertWriteln("abc");
+    RequestContext requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("abc\r\n", assertRead(5));
     assertEquals("abc", requestContext.getRaw());
-    assertWrite("def\r");
+    assertWriteln("def");
     requestContext.end();
     assertEquals("% def", assertRead(5));
-    requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
+    requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("def", requestContext.getRaw());
     requestContext.end();
     assertEquals("\r\n% ", assertRead(4));
