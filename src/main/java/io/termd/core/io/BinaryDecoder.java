@@ -1,6 +1,7 @@
 package io.termd.core.io;
 
 import io.termd.core.Handler;
+import io.termd.core.Helper;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -102,7 +103,13 @@ public class BinaryDecoder {
       if (result.isOverflow()) {
         // We still have work to do
       } else if (result.isUnderflow()) {
-        // Either we are done or we need more input
+        if (bBuf.hasRemaining()) {
+          // We need more input
+          Helper.noop();
+        } else {
+          // We are done
+          Helper.noop();
+        }
         break;
       } else {
         throw new UnsupportedOperationException("Handle me gracefully");

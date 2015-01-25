@@ -10,6 +10,8 @@ import java.util.ServiceLoader;
  */
 public class Helper {
 
+  public static void noop() {}
+
   /**
    * Convert the string to an array of codepoints.
    *

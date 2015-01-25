@@ -90,6 +90,24 @@ public class BinaryEncodingTest {
   }
 
   @Test
+  public void testDecoderUnderflow() throws Exception {
+    final ArrayList<Integer> codePoints = new ArrayList<>();
+    BinaryDecoder decoder = new BinaryDecoder(10, UTF8, new Handler<int[]>() {
+      @Override
+      public void handle(int[] event) {
+        codePoints.addAll(Helper.list(event));
+      }
+    });
+    decoder.write(new byte[]{(byte) 0xE2});
+    assertEquals(0, codePoints.size());
+    decoder.write(new byte[]{(byte) 0x82});
+    assertEquals(0, codePoints.size());
+    decoder.write(new byte[]{(byte) 0xAC});
+    assertEquals(1, codePoints.size());
+    assertEquals('\u20AC', (int)codePoints.get(0));
+  }
+
+  @Test
   public void testDecodeMalformed() throws Exception {
     // Todo
   }
