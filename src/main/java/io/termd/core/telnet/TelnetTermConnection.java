@@ -49,15 +49,7 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
 
   @Override
   protected void onData(byte[] data) {
-    if (decoder != null) {
-      decoder.write(data);
-    } else if (charsHandler != null) {
-      int[] chars = new int[data.length];
-      for (int i = 0;i < data.length;i++) {
-        chars[i] = data[i];
-      }
-      charsHandler.handle(chars);
-    }
+    decoder.write(data);
   }
 
   @Override
