@@ -11,11 +11,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.termd.core.Function;
-import io.termd.core.Handler;
 import io.termd.core.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
-import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 
 /**
