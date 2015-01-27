@@ -17,7 +17,9 @@
 package io.termd.core.telnet.netty;
 
 import io.termd.core.Handler;
+import io.termd.core.Helper;
 import io.termd.core.Provider;
+import io.termd.core.term.TermEvent;
 import io.termd.core.term.TermRequest;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
@@ -35,25 +37,37 @@ public class ReadlineBootstrap {
 
   public static final Handler<TermRequest> ECHO_HANDLER = new Handler<TermRequest>() {
     @Override
-    public void handle(final TermRequest event) {
-      new Thread() {
-        @Override
-        public void run() {
-          new Thread() {
-            @Override
-            public void run() {
-              try {
-                Thread.sleep(3000);
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-              } finally {
-//                event.write("You just typed :" + event.getRaw());
-                event.end();
-              }
+    public void handle(final TermRequest request) {
+      if (request.requestCount() == 0) {
+        request.write("Welcome sir\r\n\r\n% ").end();
+      } else {
+        request.eventHandler(new Handler<TermEvent>() {
+          @Override
+          public void handle(TermEvent event) {
+            if (event instanceof TermEvent.Data) {
+              request.write("key pressed " + Helper.fromCodePoints(((TermEvent.Data) event).getData()) + "\r\n");
             }
-          }.start();
-        }
-      }.start();
+          }
+        });
+        new Thread() {
+          @Override
+          public void run() {
+            new Thread() {
+              @Override
+              public void run() {
+                try {
+                  Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                  e.printStackTrace();
+                } finally {
+                  request.write("You just typed :" + request.getData());
+                  request.write("\r\n% ").end();
+                }
+              }
+            }.start();
+          }
+        }.start();
+      }
     }
   };
 

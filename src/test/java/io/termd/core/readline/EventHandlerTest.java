@@ -4,6 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
+import io.termd.core.term.TermEvent;
 import io.termd.core.term.TermRequest;
 import org.junit.Test;
 
@@ -103,6 +104,7 @@ public class EventHandlerTest {
       this(new Handler<TermRequest>() {
         @Override
         public void handle(TermRequest event) {
+          event.write("% ");
           event.end();
         }
       });
@@ -118,6 +120,7 @@ public class EventHandlerTest {
           addFunction(new BackwardDeleteChar()).
           addFunction(new BackwardChar()).
           addFunction(new ForwardChar());
+      handler.init();
     }
 
     private List<String> render() {
@@ -326,8 +329,17 @@ public class EventHandlerTest {
     final AtomicReference<TermRequest> ctx = new AtomicReference<>();
     Term term = new Term(new Handler<TermRequest>() {
       @Override
-      public void handle(TermRequest event) {
-        ctx.set(event);
+      public void handle(TermRequest request) {
+        switch (request.requestCount()) {
+          case 0:
+            request.write("% ").end();
+            break;
+          case 1:
+            ctx.set(request);
+            break;
+          default:
+            fail();
+        }
       }
     });
     term.handler.append(new int[]{'\r'});
@@ -337,7 +349,7 @@ public class EventHandlerTest {
     term.handler.append(new int[]{'A'});
     term.assertScreen("% ");
     term.assertAt(1, 0);
-    ctx.get().end();
+    ctx.get().write("% ").end();
     term.assertScreen(
         "% ",
         "% A");
@@ -347,33 +359,42 @@ public class EventHandlerTest {
   @Test
   public void testSetDataHandler() {
     final AtomicReference<TermRequest> ctx = new AtomicReference<>();
-    final LinkedList<int[]> events = new LinkedList<>();
+    final LinkedList<TermEvent> events = new LinkedList<>();
     Term term = new Term(new Handler<TermRequest>() {
       @Override
-      public void handle(final TermRequest event) {
-        event.dataHandler(new Handler<int[]>() {
-          @Override
-          public void handle(int[] data) {
-            events.add(data.clone());
-            if (events.size() == 1) {
-              event.dataHandler(null);
-            }
-          }
-        });
-        ctx.set(event);
+      public void handle(final TermRequest request) {
+        switch (request.requestCount()) {
+          case 0:
+            request.write("% ").end();
+            break;
+          case 1:
+            ctx.set(request);
+            request.eventHandler(new Handler<TermEvent>() {
+              @Override
+              public void handle(TermEvent data) {
+                events.add(data);
+                if (events.size() == 1) {
+                  request.eventHandler(null);
+                }
+              }
+            });
+            break;
+          default:
+            fail();
+        }
       }
     });
     term.handler.append(new int[]{'\r'});
     term.handler.append(new int[]{'h','e','l','l','o'});
     assertEquals(1, events.size());
-    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, events.get(0)));
+    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, ((TermEvent.Data) events.get(0)).getData()));
     term.assertScreen(
         "% "
     );
     term.assertAt(1, 0);
     term.handler.append(new int[]{'b', 'y', 'e'});
     assertEquals(1, events.size());
-    ctx.get().end();
+    ctx.get().write("% ").end();
     term.assertScreen(
         "% ",
         "% bye"
@@ -383,28 +404,37 @@ public class EventHandlerTest {
 
   @Test
   public void testResetDataHandlerAfterRequest() {
-    final LinkedList<int[]> events = new LinkedList<>();
-    final AtomicInteger requestCount = new AtomicInteger();
+    final LinkedList<TermEvent> events = new LinkedList<>();
     final AtomicReference<TermRequest> ctx = new AtomicReference<>();
     Term term = new Term(new Handler<TermRequest>() {
       @Override
       public void handle(final TermRequest request) {
-        if (requestCount.getAndIncrement() == 0) {
-          request.dataHandler(new Handler<int[]>() {
-            @Override
-            public void handle(int[] data) {
-              events.add(data.clone());
-            }
-          });
+        switch (request.requestCount()) {
+          case 0:
+            request.write("% ").end();
+            break;
+          case 1:
+            request.eventHandler(new Handler<TermEvent>() {
+              @Override
+              public void handle(TermEvent event) {
+                events.add(event);
+              }
+            });
+            ctx.set(request);
+            break;
+          case 2:
+            ctx.set(request);
+            break;
+          default:
+            fail();
         }
-        ctx.set(request);
       }
     });
     term.handler.append(new int[]{'\r'});
-    ctx.get().end();
+    ctx.get().write("% ").end();
     term.handler.append(new int[]{'\r'});
     term.handler.append(new int[]{'b', 'y', 'e'});
-    ctx.get().end();
+    ctx.get().write("% ").end();
     assertEquals(0, events.size());
     term.assertScreen(
         "% ",

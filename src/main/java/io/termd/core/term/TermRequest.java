@@ -7,9 +7,11 @@ import io.termd.core.Handler;
  */
 public interface TermRequest {
 
-  String getRaw();
+  int requestCount();
 
-  void dataHandler(Handler<int[]> handler);
+  String getData();
+
+  void eventHandler(Handler<TermEvent> handler);
 
   /**
    * Write the specified string to the client

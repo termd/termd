@@ -61,9 +61,9 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
             super.onOpen(conn);
             new ReadlineTerm(this, new Handler<TermRequest>() {
               @Override
-              public void handle(TermRequest event) {
+              public void handle(TermRequest request) {
                 requestCount.incrementAndGet();
-                event.end();
+                request.write("% ").end();
               }
             });
           }
@@ -73,7 +73,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertConnect();
     assertEquals("% ", assertReadString(2));
     assertEquals(1, connectionCount.get());
-    assertEquals(0, requestCount.get());
+    assertEquals(1, requestCount.get());
   }
 
   @Test
@@ -88,10 +88,16 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
             super.onOpen(conn);
             new ReadlineTerm(this, new Handler<TermRequest>() {
               @Override
-              public void handle(TermRequest event) {
-                event.write("hello");
-                event.end();
-                latch.countDown();
+              public void handle(TermRequest request) {
+                switch (request.requestCount()) {
+                  case 0:
+                    request.write("% ").end();
+                    break;
+                  default:
+                    request.write("hello");
+                    request.write("% ").end();
+                    latch.countDown();
+                }
               }
             });
           }
@@ -117,8 +123,14 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
             super.onOpen(conn);
             new ReadlineTerm(this, new Handler<TermRequest>() {
               @Override
-              public void handle(TermRequest event) {
-                requestContextWait.add(event);
+              public void handle(TermRequest request) {
+                switch (request.requestCount()) {
+                  case 0:
+                    request.write("% ").end();
+                    break;
+                  default:
+                    requestContextWait.add(request);
+                }
               }
             });
           }
@@ -130,7 +142,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertWriteln("");
     TermRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
     assertEquals("\r\n", assertReadString(2));
-    requestContext.end();
+    requestContext.write("% ").end();
     assertEquals("% ", assertReadString(2));
   }
 
@@ -146,8 +158,14 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
             super.onOpen(conn);
             new ReadlineTerm(this, new Handler<TermRequest>() {
               @Override
-              public void handle(TermRequest event) {
-                requestContextWait.add(event);
+              public void handle(TermRequest request) {
+                switch (request.requestCount()) {
+                  case 0:
+                    request.write("% ").end();
+                    break;
+                  default:
+                    requestContextWait.add(request);
+                }
               }
             });
           }
@@ -159,13 +177,13 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertWriteln("abc");
     TermRequest requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("abc\r\n", assertReadString(5));
-    assertEquals("abc", requestContext.getRaw());
+    assertEquals("abc", requestContext.getData());
     assertWriteln("def");
-    requestContext.end();
+    requestContext.write("% ").end();
     assertEquals("% def", assertReadString(5));
     requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
-    assertEquals("def", requestContext.getRaw());
-    requestContext.end();
+    assertEquals("def", requestContext.getData());
+    requestContext.write("% ").end();
     assertEquals("\r\n% ", assertReadString(4));
   }
 }

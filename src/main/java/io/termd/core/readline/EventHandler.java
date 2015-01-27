@@ -2,6 +2,7 @@ package io.termd.core.readline;
 
 import io.termd.core.Handler;
 import io.termd.core.Helper;
+import io.termd.core.term.TermEvent;
 import io.termd.core.term.TermRequest;
 
 import java.util.HashMap;
@@ -26,7 +27,6 @@ public class EventHandler implements Handler<EventContext> {
   }
 
   public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<TermRequest> handler) {
-    output.handle(new int[]{'%', ' '});
     this.eventQueue = eventQueue;
     this.output = output;
     this.handler = handler;
@@ -39,14 +39,29 @@ public class EventHandler implements Handler<EventContext> {
   }
 
   private final AtomicInteger handling = new AtomicInteger();
-  private Handler<int[]> dataHandler;
+  private Handler<TermEvent> eventHandler;
 
   public void append(int[] data) {
-    if (dataHandler != null) {
-      dataHandler.handle(data);
+    if (eventHandler != null) {
+      eventHandler.handle(new TermEvent.Data(data));
     } else {
       eventQueue.append(data);
       scheduler.execute(task);
+    }
+  }
+
+  private class BlockingEventContext implements EventContext {
+    final Event event;
+    public BlockingEventContext(Event event) {
+      this.event = event;
+    }
+    @Override
+    public Event getEvent() {
+      return event;
+    }
+    @Override
+    public void end() {
+      EventHandler.this.end();
     }
   }
 
@@ -55,33 +70,31 @@ public class EventHandler implements Handler<EventContext> {
     public void run() {
       if (handling.compareAndSet(0, 2)) {
         if (eventQueue.hasNext()) {
-          final Event event = eventQueue.next();
-          final Runnable self = this;
-          EventContext context = new EventContext() {
-            @Override
-            public Event getEvent() {
-              return event;
-            }
-            @Override
-            public void end() {
-              EventHandler.this.end();
-            }
-          };
-          handle(context);
-          if (handling.decrementAndGet() == 0) {
-            scheduler.execute(self);
-          }
+          handle(new BlockingEventContext(eventQueue.next()));
+          end(); // Should it be called ?
         } else {
           handling.set(0);
         }
       }
-
     }
   };
 
+  public void init() {
+    if (handling.compareAndSet(0, 2)) {
+      BlockingEventContext context = new BlockingEventContext(new InitEvent());
+      handler.handle(new TermRequestImpl(context, 0, null));
+      context.end();
+    } else {
+      throw new IllegalStateException("Invoked at the wrong time");
+    }
+  }
+
   private void end() {
-    if (handling.decrementAndGet() == 0) {
+    int value = handling.decrementAndGet();
+    if (value == 0) {
       scheduler.execute(task);
+    } else if (value < 0) {
+      throw new AssertionError();
     }
   }
 
@@ -93,6 +106,7 @@ public class EventHandler implements Handler<EventContext> {
   private final LineBuffer lineBuffer = new LineBuffer();
   private LinkedList<Integer> escaped = new LinkedList<>();
   private LineStatus lineStatus = LineStatus.LITERAL;
+  private AtomicInteger count = new AtomicInteger();
   private EscapeFilter filter = new EscapeFilter(new Escaper() {
     @Override
     public void escaping() {
@@ -121,6 +135,50 @@ public class EventHandler implements Handler<EventContext> {
       escaped.add(event);
     }
   });
+
+  private class TermRequestImpl implements TermRequest {
+
+    final EventContext context;
+    final int count;
+    final String data;
+
+    public TermRequestImpl(EventContext context, int count, String data) {
+      this.context = context;
+      this.data = data;
+      this.count = count;
+    }
+
+    @Override
+    public int requestCount() {
+      return count;
+    }
+
+    @Override
+    public String getData() {
+      return data;
+    }
+
+    @Override
+    public void eventHandler(Handler<TermEvent> handler) {
+      if (handler != null) {
+        eventHandler = handler;
+      } else {
+        eventHandler = null;
+      }
+    }
+
+    @Override
+    public TermRequest write(String s) {
+      output.handle(Helper.toCodePoints(s));
+      return this;
+    }
+
+    @Override
+    public void end() {
+      eventHandler = null;
+      context.end();
+    }
+  }
 
   public void handle(final EventContext context) {
     LineBuffer copy = new LineBuffer(lineBuffer);
@@ -162,35 +220,7 @@ public class EventHandler implements Handler<EventContext> {
             escaped.clear();
             output.handle(new int[]{'\r', '\n'});
             lineBuffer.setSize(0);
-            handler.handle(new TermRequest() {
-
-              @Override
-              public String getRaw() {
-                return raw.toString();
-              }
-
-              @Override
-              public void dataHandler(Handler<int[]> handler) {
-                if (handler != null) {
-                  dataHandler = handler;
-                } else {
-                  dataHandler = null;
-                }
-              }
-
-              @Override
-              public TermRequest write(String s) {
-                output.handle(Helper.toCodePoints(s));
-                return this;
-              }
-
-              @Override
-              public void end() {
-                dataHandler = null;
-                output.handle(new int[]{'%', ' '});
-                context.end();
-              }
-            });
+            handler.handle(new TermRequestImpl(context, count.incrementAndGet(), raw.toString()));
             return;
           }
         }

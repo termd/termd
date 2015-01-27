@@ -35,6 +35,14 @@ public class Helper {
     return codePoints;
   }
 
+  public static String fromCodePoints(int[] codePoints) {
+    StringBuilder buffer = new StringBuilder();
+    for (int codePoint : codePoints) {
+      buffer.appendCodePoint(codePoint);
+    }
+    return buffer.toString();
+  }
+
   public static <S> List<S> loadServices(ClassLoader loader, Class<S> serviceClass) {
     ArrayList<S> services = new ArrayList<>();
     Iterator<S> i = ServiceLoader.load(serviceClass, loader).iterator();

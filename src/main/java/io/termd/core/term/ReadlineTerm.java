@@ -49,5 +49,8 @@ public class ReadlineTerm {
         System.out.println("Window size changed width=" + event.getKey() + " height=" + event.getValue());
       }
     });
+
+    // Send the init event
+    handler.init();
   }
 }
