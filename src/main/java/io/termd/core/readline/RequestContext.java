@@ -1,11 +1,16 @@
 package io.termd.core.readline;
 
+import io.termd.core.Handler;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface RequestContext {
+  
 
   String getRaw();
+
+  void dataHandler(Handler<int[]> handler);
 
   /**
    * Write the specified string to the client

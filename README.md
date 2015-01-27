@@ -19,3 +19,5 @@ As fucking simple as that.
 The Event stuff should be moved into the EventHandler and it should receive key events
 
 Control flow.
+
+Try to use the maven install plugin to install artifacts with specific dependencies.

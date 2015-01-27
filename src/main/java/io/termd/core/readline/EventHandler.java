@@ -39,10 +39,15 @@ public class EventHandler implements Handler<EventContext> {
   }
 
   private final AtomicInteger handling = new AtomicInteger();
+  private Handler<int[]> dataHandler;
 
-  public void append(int[] chars) {
-    eventQueue.append(chars);
-    scheduler.execute(task);
+  public void append(int[] data) {
+    if (dataHandler != null) {
+      dataHandler.handle(data);
+    } else {
+      eventQueue.append(data);
+      scheduler.execute(task);
+    }
   }
 
   final Runnable task = new Runnable() {
@@ -165,6 +170,15 @@ public class EventHandler implements Handler<EventContext> {
               }
 
               @Override
+              public void dataHandler(Handler<int[]> handler) {
+                if (handler != null) {
+                  dataHandler = handler;
+                } else {
+                  dataHandler = null;
+                }
+              }
+
+              @Override
               public RequestContext write(String s) {
                 output.handle(Helper.toCodePoints(s));
                 return this;
@@ -172,6 +186,7 @@ public class EventHandler implements Handler<EventContext> {
 
               @Override
               public void end() {
+                dataHandler = null;
                 output.handle(new int[]{'%', ' '});
                 context.end();
               }

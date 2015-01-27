@@ -8,8 +8,10 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
@@ -339,5 +341,75 @@ public class EventHandlerTest {
         "% ",
         "% A");
     term.assertAt(1, 3);
+  }
+
+  @Test
+  public void testSetDataHandler() {
+    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
+    final LinkedList<int[]> events = new LinkedList<>();
+    Term term = new Term(new Handler<RequestContext>() {
+      @Override
+      public void handle(final RequestContext event) {
+        event.dataHandler(new Handler<int[]>() {
+          @Override
+          public void handle(int[] data) {
+            events.add(data.clone());
+            if (events.size() == 1) {
+              event.dataHandler(null);
+            }
+          }
+        });
+        ctx.set(event);
+      }
+    });
+    term.handler.append(new int[]{'\r'});
+    term.handler.append(new int[]{'h','e','l','l','o'});
+    assertEquals(1, events.size());
+    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, events.get(0)));
+    term.assertScreen(
+        "% "
+    );
+    term.assertAt(1, 0);
+    term.handler.append(new int[]{'b', 'y', 'e'});
+    assertEquals(1, events.size());
+    ctx.get().end();
+    term.assertScreen(
+        "% ",
+        "% bye"
+    );
+    term.assertAt(1, 5);
+  }
+
+  @Test
+  public void testResetDataHandlerAfterRequest() {
+    final LinkedList<int[]> events = new LinkedList<>();
+    final AtomicInteger requestCount = new AtomicInteger();
+    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<RequestContext>() {
+      @Override
+      public void handle(final RequestContext request) {
+        if (requestCount.getAndIncrement() == 0) {
+          request.dataHandler(new Handler<int[]>() {
+            @Override
+            public void handle(int[] data) {
+              events.add(data.clone());
+            }
+          });
+        }
+        ctx.set(request);
+      }
+    });
+    term.handler.append(new int[]{'\r'});
+    ctx.get().end();
+    term.handler.append(new int[]{'\r'});
+    term.handler.append(new int[]{'b', 'y', 'e'});
+    ctx.get().end();
+    assertEquals(0, events.size());
+    term.assertScreen(
+        "% ",
+        "% ",
+        "% bye"
+    );
+    term.assertAt(2, 5);
   }
 }
