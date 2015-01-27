@@ -4,7 +4,6 @@ import io.termd.core.Handler;
 import io.termd.core.Helper;
 import io.termd.core.readline.EventHandler;
 import io.termd.core.readline.EventQueue;
-import io.termd.core.readline.RequestContext;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -17,7 +16,7 @@ public class ReadlineTerm {
 
   final TermConnection conn;
 
-  public ReadlineTerm(final TermConnection conn, Handler<RequestContext> requestHandler) {
+  public ReadlineTerm(final TermConnection conn, Handler<TermRequest> requestHandler) {
     this.conn = conn;
 
     //

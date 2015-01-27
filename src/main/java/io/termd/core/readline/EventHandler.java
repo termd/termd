@@ -2,12 +2,12 @@ package io.termd.core.readline;
 
 import io.termd.core.Handler;
 import io.termd.core.Helper;
+import io.termd.core.term.TermRequest;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -19,13 +19,13 @@ public class EventHandler implements Handler<EventContext> {
   final Executor scheduler;
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
-  final Handler<RequestContext> handler;
+  final Handler<TermRequest> handler;
 
-  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<RequestContext> handler) {
+  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<TermRequest> handler) {
     this(new EventQueue(), output, scheduler, handler);
   }
 
-  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<RequestContext> handler) {
+  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<TermRequest> handler) {
     output.handle(new int[]{'%', ' '});
     this.eventQueue = eventQueue;
     this.output = output;
@@ -162,7 +162,7 @@ public class EventHandler implements Handler<EventContext> {
             escaped.clear();
             output.handle(new int[]{'\r', '\n'});
             lineBuffer.setSize(0);
-            handler.handle(new RequestContext() {
+            handler.handle(new TermRequest() {
 
               @Override
               public String getRaw() {
@@ -179,7 +179,7 @@ public class EventHandler implements Handler<EventContext> {
               }
 
               @Override
-              public RequestContext write(String s) {
+              public TermRequest write(String s) {
                 output.handle(Helper.toCodePoints(s));
                 return this;
               }

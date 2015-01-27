@@ -1,12 +1,11 @@
-package io.termd.core.readline;
+package io.termd.core.term;
 
 import io.termd.core.Handler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface RequestContext {
-  
+public interface TermRequest {
 
   String getRaw();
 
@@ -19,7 +18,7 @@ public interface RequestContext {
    * @return this request object
    * @throws java.lang.IllegalStateException if the request is ended
    */
-  RequestContext write(String s);
+  TermRequest write(String s);
 
   /**
    * Signal the request is processed

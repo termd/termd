@@ -4,6 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
+import io.termd.core.term.TermRequest;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -99,15 +100,15 @@ public class EventHandlerTest {
     final EventHandler handler;
 
     public Term() {
-      this(new Handler<RequestContext>() {
+      this(new Handler<TermRequest>() {
         @Override
-        public void handle(RequestContext event) {
+        public void handle(TermRequest event) {
           event.end();
         }
       });
     }
 
-    public Term(Handler<RequestContext> requestHandler) {
+    public Term(Handler<TermRequest> requestHandler) {
       handler = new EventHandler(adapter, new Executor() {
         @Override
         public void execute(Runnable command) {
@@ -322,10 +323,10 @@ public class EventHandlerTest {
 
   @Test
   public void testCharsQueuing() {
-    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<RequestContext>() {
+    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<TermRequest>() {
       @Override
-      public void handle(RequestContext event) {
+      public void handle(TermRequest event) {
         ctx.set(event);
       }
     });
@@ -345,11 +346,11 @@ public class EventHandlerTest {
 
   @Test
   public void testSetDataHandler() {
-    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
+    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
     final LinkedList<int[]> events = new LinkedList<>();
-    Term term = new Term(new Handler<RequestContext>() {
+    Term term = new Term(new Handler<TermRequest>() {
       @Override
-      public void handle(final RequestContext event) {
+      public void handle(final TermRequest event) {
         event.dataHandler(new Handler<int[]>() {
           @Override
           public void handle(int[] data) {
@@ -384,10 +385,10 @@ public class EventHandlerTest {
   public void testResetDataHandlerAfterRequest() {
     final LinkedList<int[]> events = new LinkedList<>();
     final AtomicInteger requestCount = new AtomicInteger();
-    final AtomicReference<RequestContext> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<RequestContext>() {
+    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<TermRequest>() {
       @Override
-      public void handle(final RequestContext request) {
+      public void handle(final TermRequest request) {
         if (requestCount.getAndIncrement() == 0) {
           request.dataHandler(new Handler<int[]>() {
             @Override

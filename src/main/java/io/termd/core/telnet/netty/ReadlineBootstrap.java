@@ -18,7 +18,7 @@ package io.termd.core.telnet.netty;
 
 import io.termd.core.Handler;
 import io.termd.core.Provider;
-import io.termd.core.readline.RequestContext;
+import io.termd.core.term.TermRequest;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
@@ -33,9 +33,9 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ReadlineBootstrap {
 
-  public static final Handler<RequestContext> ECHO_HANDLER = new Handler<RequestContext>() {
+  public static final Handler<TermRequest> ECHO_HANDLER = new Handler<TermRequest>() {
     @Override
-    public void handle(final RequestContext event) {
+    public void handle(final TermRequest event) {
       new Thread() {
         @Override
         public void run() {
