@@ -104,11 +104,13 @@
 
   <profiles>
 
+
+
     <profile>
       <id>jacoco</id>
       <activation>
         <property>
-          <name>!nocoverage</name>
+          <name>!maven.surefire.debug</name>
         </property>
       </activation>
       <build>
