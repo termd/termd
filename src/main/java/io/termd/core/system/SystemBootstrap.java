@@ -2,7 +2,6 @@ package io.termd.core.system;
 
 import io.termd.core.Handler;
 import io.termd.core.io.BinaryDecoder;
-import io.termd.core.readline.Event;
 import io.termd.core.readline.EventQueue;
 import io.termd.core.telnet.netty.ReadlineBootstrap;
 
@@ -27,10 +26,12 @@ public class SystemBootstrap {
       @Override
       public void handle(int[] data) {
         eventMapper.append(data);
+/*
         while (eventMapper.hasNext()) {
           Event event = eventMapper.next();
           System.out.println("Read " + event);
         }
+*/
       }
     });
 

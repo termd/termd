@@ -5,12 +5,12 @@ import io.termd.core.Handler;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EscapeFilter implements Handler<Integer> {
+class EscapeFilter implements Handler<Integer> {
 
   private EscStatus status = EscStatus.NORMAL;
   private final Escaper escaper;
 
-  public EscapeFilter(Escaper escaper) {
+  EscapeFilter(Escaper escaper) {
     this.escaper = escaper;
   }
 

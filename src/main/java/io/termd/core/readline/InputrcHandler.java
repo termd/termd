@@ -11,20 +11,20 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class InputrcHandler {
+abstract class InputrcHandler {
 
-  public static final Pattern COMMENT = Pattern.compile("#.*");
-  public static final Pattern CONDITIONAL = Pattern.compile("\\$.*");
-  public static final Pattern SET_VARIABLE = Pattern.compile("set\\s+(\\S)+\\s+(\\S)+\\s*");
-  public static final Pattern BIND = Pattern.compile("(?:(?:\"(.*)\")|(.*))" + ":\\s*" + "(?:(?:\"(.*)\")|(?:'(.*)')|(\\S+))" + "\\s*");
-  public static final Pattern A = Pattern.compile("^\\\\([0-9]{1,3})");
-  public static final Pattern B = Pattern.compile("^\\\\x([0-9,A-F,a-f]{1,2})");
+  static final Pattern COMMENT = Pattern.compile("#.*");
+  static final Pattern CONDITIONAL = Pattern.compile("\\$.*");
+  static final Pattern SET_VARIABLE = Pattern.compile("set\\s+(\\S)+\\s+(\\S)+\\s*");
+  static final Pattern BIND = Pattern.compile("(?:(?:\"(.*)\")|(.*))" + ":\\s*" + "(?:(?:\"(.*)\")|(?:'(.*)')|(\\S+))" + "\\s*");
+  static final Pattern A = Pattern.compile("^\\\\([0-9]{1,3})");
+  static final Pattern B = Pattern.compile("^\\\\x([0-9,A-F,a-f]{1,2})");
 
-  public static void parse(String s, InputrcHandler handler) throws UnsupportedEncodingException {
+  static void parse(String s, InputrcHandler handler) throws UnsupportedEncodingException {
     parse(new ByteArrayInputStream(s.getBytes("US-ASCII")), handler);
   }
 
-  public static void parse(InputStream s, InputrcHandler handler) {
+  static void parse(InputStream s, InputrcHandler handler) {
 
     Scanner sc = new Scanner(s, "US-ASCII").useDelimiter("\n");
     while (sc.hasNext()) {
@@ -138,15 +138,15 @@ public abstract class InputrcHandler {
     }
   }
 
-  public void bindMacro(String keyName, String macro) {
+  void bindMacro(String keyName, String macro) {
   }
 
-  public void bindFunction(String keyName, String functionName) {
+  void bindFunction(String keyName, String functionName) {
   }
 
-  public void bindMacro(int[] keySequence, String macro) {
+  void bindMacro(int[] keySequence, String macro) {
   }
 
-  public void bindFunction(int[] keySequence, String functionName) {
+  void bindFunction(int[] keySequence, String functionName) {
   }
 }
