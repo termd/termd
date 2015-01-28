@@ -97,7 +97,7 @@ public class TestBase {
     }
   }
 
-  protected <T> T assertNotNull(T object) {
+  public <T> T assertNotNull(T object) {
     try {
       Assert.assertNotNull(object);
     } catch (AssertionError e) {
@@ -106,7 +106,7 @@ public class TestBase {
     return object;
   }
 
-  protected void fail(Throwable message) {
+  public void fail(Throwable message) {
     try {
       Assert.fail(message.getMessage());
     } catch (AssertionError e) {
@@ -114,7 +114,7 @@ public class TestBase {
     }
   }
 
-  protected void fail(String message) {
+  public void fail(String message) {
     try {
       Assert.fail(message);
     } catch (AssertionError e) {
@@ -122,7 +122,7 @@ public class TestBase {
     }
   }
 
-  protected void assertTrue(boolean condition) {
+  public void assertTrue(boolean condition) {
     try {
       Assert.assertTrue(condition);
     } catch (AssertionError e) {
@@ -130,7 +130,7 @@ public class TestBase {
     }
   }
 
-  protected void assertFalse(boolean condition) {
+  public void assertFalse(boolean condition) {
     try {
       Assert.assertFalse(condition);
     } catch (AssertionError e) {
@@ -138,12 +138,16 @@ public class TestBase {
     }
   }
 
-  protected void assertEquals(Object expected, Object actual) {
+  public void assertEquals(Object expected, Object actual) {
     try {
       Assert.assertEquals(expected, actual);
     } catch (AssertionError e) {
       handleThrowable(e);
     }
+  }
+
+  public void awaitLatch(CountDownLatch latch) throws InterruptedException {
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
   @Before

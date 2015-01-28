@@ -476,7 +476,7 @@ public class EventHandlerTest extends TestBase {
         latch.countDown();
       }
     });
-    latch.await(10, TimeUnit.SECONDS);
+    awaitLatch(latch);
     term.assertScreen("foo");
     term.assertAt(0, 3);
   }
