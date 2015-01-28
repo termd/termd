@@ -6,7 +6,6 @@ import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.telnet.TestBase;
 import io.termd.core.term.TermEvent;
-import io.termd.core.term.TermRequest;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -100,16 +99,16 @@ public class EventHandlerTest extends TestBase {
     final EventHandler handler;
 
     public Term() {
-      this(new Handler<TermRequest>() {
+      this(new Handler<ReadlineRequest>() {
         @Override
-        public void handle(TermRequest event) {
+        public void handle(ReadlineRequest event) {
           event.write("% ");
           event.end();
         }
       });
     }
 
-    public Term(Handler<TermRequest> requestHandler) {
+    public Term(Handler<ReadlineRequest> requestHandler) {
       handler = new EventHandler(adapter, new Executor() {
         @Override
         public void execute(Runnable command) {
@@ -325,10 +324,10 @@ public class EventHandlerTest extends TestBase {
 
   @Test
   public void testCharsQueuing() {
-    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<TermRequest>() {
+    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<ReadlineRequest>() {
       @Override
-      public void handle(TermRequest request) {
+      public void handle(ReadlineRequest request) {
         switch (request.requestCount()) {
           case 0:
             request.write("% ").end();
@@ -357,11 +356,11 @@ public class EventHandlerTest extends TestBase {
 
   @Test
   public void testSetDataHandler() {
-    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
+    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
     final LinkedList<TermEvent> events = new LinkedList<>();
-    Term term = new Term(new Handler<TermRequest>() {
+    Term term = new Term(new Handler<ReadlineRequest>() {
       @Override
-      public void handle(final TermRequest request) {
+      public void handle(final ReadlineRequest request) {
         switch (request.requestCount()) {
           case 0:
             request.write("% ").end();
@@ -404,10 +403,10 @@ public class EventHandlerTest extends TestBase {
   @Test
   public void testResetDataHandlerAfterRequest() {
     final LinkedList<TermEvent> events = new LinkedList<>();
-    final AtomicReference<TermRequest> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<TermRequest>() {
+    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
+    Term term = new Term(new Handler<ReadlineRequest>() {
       @Override
-      public void handle(final TermRequest request) {
+      public void handle(final ReadlineRequest request) {
         switch (request.requestCount()) {
           case 0:
             request.write("% ").end();
@@ -446,9 +445,9 @@ public class EventHandlerTest extends TestBase {
   @Test
   public void testEndedTermRequest() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    Term term = new Term(new Handler<TermRequest>() {
+    Term term = new Term(new Handler<ReadlineRequest>() {
       @Override
-      public void handle(final TermRequest request) {
+      public void handle(final ReadlineRequest request) {
         request.write("foo");
         request.end();
         assertNull(request.getData());

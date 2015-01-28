@@ -4,6 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.Helper;
 import io.termd.core.readline.EventHandler;
 import io.termd.core.readline.EventQueue;
+import io.termd.core.readline.ReadlineRequest;
 
 import java.io.InputStream;
 import java.util.concurrent.Executor;
@@ -15,7 +16,7 @@ public class ReadlineTerm {
 
   final TermConnection conn;
 
-  public ReadlineTerm(final TermConnection conn, Handler<TermRequest> requestHandler) {
+  public ReadlineTerm(final TermConnection conn, Handler<ReadlineRequest> requestHandler) {
     this.conn = conn;
 
     //
@@ -37,17 +38,7 @@ public class ReadlineTerm {
     // Send the init event
     handler.init();
 
-    conn.eventHandler(new Handler<TermEvent>() {
-      @Override
-      public void handle(TermEvent event) {
-        if (event instanceof TermEvent.Read) {
-          TermEvent.Read read = (TermEvent.Read) event;
-          handler.append(read.data);
-        } else if (event instanceof TermEvent.Size) {
-          TermEvent.Size size = (TermEvent.Size) event;
-          System.out.println("Window size changed width=" + size.getWidth() + " height=" + size.getHeight());
-        }
-      }
-    });
+    // Wire the handler
+    conn.eventHandler(handler);
   }
 }

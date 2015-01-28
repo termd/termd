@@ -20,7 +20,7 @@ import io.termd.core.Handler;
 import io.termd.core.Helper;
 import io.termd.core.Provider;
 import io.termd.core.term.TermEvent;
-import io.termd.core.term.TermRequest;
+import io.termd.core.readline.ReadlineRequest;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
@@ -35,9 +35,9 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ReadlineBootstrap {
 
-  public static final Handler<TermRequest> ECHO_HANDLER = new Handler<TermRequest>() {
+  public static final Handler<ReadlineRequest> ECHO_HANDLER = new Handler<ReadlineRequest>() {
     @Override
-    public void handle(final TermRequest request) {
+    public void handle(final ReadlineRequest request) {
       if (request.requestCount() == 0) {
         request.write("Welcome sir\r\n\r\n% ").end();
       } else {

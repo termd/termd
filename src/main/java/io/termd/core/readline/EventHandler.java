@@ -3,7 +3,6 @@ package io.termd.core.readline;
 import io.termd.core.Handler;
 import io.termd.core.Helper;
 import io.termd.core.term.TermEvent;
-import io.termd.core.term.TermRequest;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,19 +13,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventHandler implements Handler<EventContext> {
+public class EventHandler implements Handler<TermEvent> {
 
   public final EventQueue eventQueue;
   final Executor scheduler;
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
-  final Handler<TermRequest> handler;
+  final Handler<ReadlineRequest> handler;
 
-  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<TermRequest> handler) {
+  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
     this(new EventQueue(), output, scheduler, handler);
   }
 
-  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<TermRequest> handler) {
+  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
     this.eventQueue = eventQueue;
     this.output = output;
     this.handler = handler;
@@ -41,13 +40,24 @@ public class EventHandler implements Handler<EventContext> {
   private final AtomicInteger handling = new AtomicInteger();
   private Handler<TermEvent> eventHandler;
 
-  public void append(int[] data) {
+  @Override
+  public void handle(TermEvent event) {
     if (eventHandler != null) {
-      eventHandler.handle(new TermEvent.Read(data));
+      eventHandler.handle(event);
     } else {
-      eventQueue.append(data);
-      scheduler.execute(task);
+      if (event instanceof TermEvent.Read) {
+        TermEvent.Read read = (TermEvent.Read) event;
+        eventQueue.append(read.getData());
+        scheduler.execute(task);
+      } else if (event instanceof TermEvent.Size) {
+        TermEvent.Size size = (TermEvent.Size) event;
+        System.out.println("Window size changed width=" + size.getWidth() + " height=" + size.getHeight());
+      }
     }
+  }
+
+  public void append(int[] data) {
+    handle(new TermEvent.Read(data));
   }
 
   private class BlockingEventContext implements EventContext {
@@ -79,10 +89,13 @@ public class EventHandler implements Handler<EventContext> {
     }
   };
 
+  /**
+   * Initialize readline and send the init event.
+   */
   public void init() {
     if (handling.compareAndSet(0, 2)) {
       BlockingEventContext context = new BlockingEventContext(new InitEvent());
-      handler.handle(new TermRequestImpl(context, 0, null));
+      handler.handle(new ReadlineRequestImpl(context, 0, null));
       context.end();
     } else {
       throw new IllegalStateException("Invoked at the wrong time");
@@ -136,14 +149,14 @@ public class EventHandler implements Handler<EventContext> {
     }
   });
 
-  private class TermRequestImpl implements TermRequest {
+  private class ReadlineRequestImpl implements ReadlineRequest {
 
     final EventContext context;
     final int count;
     final String data;
     private boolean done;
 
-    public TermRequestImpl(EventContext context, int count, String data) {
+    public ReadlineRequestImpl(EventContext context, int count, String data) {
       this.context = context;
       this.data = data;
       this.count = count;
@@ -172,7 +185,7 @@ public class EventHandler implements Handler<EventContext> {
     }
 
     @Override
-    public synchronized TermRequest write(String s) {
+    public synchronized ReadlineRequest write(String s) {
       if (done) {
         throw new IllegalStateException("Already ended");
       }
@@ -231,7 +244,7 @@ public class EventHandler implements Handler<EventContext> {
             escaped.clear();
             output.handle(new int[]{'\r', '\n'});
             lineBuffer.setSize(0);
-            handler.handle(new TermRequestImpl(context, count.incrementAndGet(), raw.toString()));
+            handler.handle(new ReadlineRequestImpl(context, count.incrementAndGet(), raw.toString()));
             return;
           }
         }

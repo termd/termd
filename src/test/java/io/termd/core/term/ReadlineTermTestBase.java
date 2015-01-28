@@ -2,6 +2,7 @@ package io.termd.core.term;
 
 import io.termd.core.Handler;
 import io.termd.core.Provider;
+import io.termd.core.readline.ReadlineRequest;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import io.termd.core.telnet.TelnetTestBase;
@@ -59,9 +60,9 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, new Handler<TermRequest>() {
+            new ReadlineTerm(this, new Handler<ReadlineRequest>() {
               @Override
-              public void handle(TermRequest request) {
+              public void handle(ReadlineRequest request) {
                 requestCount.incrementAndGet();
                 request.write("% ").end();
               }
@@ -86,9 +87,9 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, new Handler<TermRequest>() {
+            new ReadlineTerm(this, new Handler<ReadlineRequest>() {
               @Override
-              public void handle(TermRequest request) {
+              public void handle(ReadlineRequest request) {
                 switch (request.requestCount()) {
                   case 0:
                     request.write("% ").end();
@@ -113,7 +114,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
 
   @Test
   public void testAsyncEndRequest() throws Exception {
-    final ArrayBlockingQueue<TermRequest> requestContextWait = new ArrayBlockingQueue<>(1);
+    final ArrayBlockingQueue<ReadlineRequest> requestContextWait = new ArrayBlockingQueue<>(1);
     server(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
@@ -121,9 +122,9 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, new Handler<TermRequest>() {
+            new ReadlineTerm(this, new Handler<ReadlineRequest>() {
               @Override
-              public void handle(TermRequest request) {
+              public void handle(ReadlineRequest request) {
                 switch (request.requestCount()) {
                   case 0:
                     request.write("% ").end();
@@ -140,7 +141,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertConnect();
     assertEquals("% ", assertReadString(2));
     assertWriteln("");
-    TermRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
+    ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
     assertEquals("\r\n", assertReadString(2));
     requestContext.write("% ").end();
     assertEquals("% ", assertReadString(2));
@@ -148,7 +149,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
 
   @Test
   public void testBufferedRequest() throws Exception {
-    final ArrayBlockingQueue<TermRequest> requestContextWait = new ArrayBlockingQueue<>(10);
+    final ArrayBlockingQueue<ReadlineRequest> requestContextWait = new ArrayBlockingQueue<>(10);
     server(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
@@ -156,9 +157,9 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, new Handler<TermRequest>() {
+            new ReadlineTerm(this, new Handler<ReadlineRequest>() {
               @Override
-              public void handle(TermRequest request) {
+              public void handle(ReadlineRequest request) {
                 switch (request.requestCount()) {
                   case 0:
                     request.write("% ").end();
@@ -175,7 +176,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertConnect();
     assertEquals("% ", assertReadString(2));
     assertWriteln("abc");
-    TermRequest requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
+    ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("abc\r\n", assertReadString(5));
     assertEquals("abc", requestContext.getData());
     assertWriteln("def");
