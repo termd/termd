@@ -4,6 +4,7 @@ import io.termd.core.Handler;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
+import io.termd.core.telnet.TestBase;
 import io.termd.core.term.TermEvent;
 import io.termd.core.term.TermRequest;
 import org.junit.Test;
@@ -12,16 +13,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventHandlerTest {
+public class EventHandlerTest extends TestBase {
 
   public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent() {
     @Override
@@ -64,7 +64,7 @@ public class EventHandlerTest {
     }
   }
 
-  static class Term {
+  class Term {
 
     private int[][] buffer = new int[10][];
     private int row;
@@ -338,7 +338,7 @@ public class EventHandlerTest {
             ctx.set(request);
             break;
           default:
-            fail();
+            fail("was not expecting such request");
         }
       }
     });
@@ -380,7 +380,7 @@ public class EventHandlerTest {
             });
             break;
           default:
-            fail();
+            fail("was not expecting such request");
         }
       }
     });
@@ -426,7 +426,7 @@ public class EventHandlerTest {
             ctx.set(request);
             break;
           default:
-            fail();
+            fail("was not expecting such request");
         }
       }
     });
@@ -442,5 +442,42 @@ public class EventHandlerTest {
         "% bye"
     );
     term.assertAt(2, 5);
+  }
+
+  @Test
+  public void testEndedTermRequest() throws Exception {
+    final CountDownLatch latch = new CountDownLatch(1);
+    Term term = new Term(new Handler<TermRequest>() {
+      @Override
+      public void handle(final TermRequest request) {
+        request.write("foo");
+        request.end();
+        assertNull(request.getData());
+        assertEquals(0, request.requestCount());
+        try {
+          request.eventHandler(new Handler<TermEvent>() {
+            @Override
+            public void handle(TermEvent event) {
+            }
+          });
+          fail("was expecting an illegal state exception");
+        } catch (IllegalStateException ignore) {
+        }
+        try {
+          request.write("something");
+          fail("was expecting an illegal state exception");
+        } catch (IllegalStateException ignore) {
+        }
+        try {
+          request.end();
+          fail("was expecting an illegal state exception");
+        } catch (IllegalStateException ignore) {
+        }
+        latch.countDown();
+      }
+    });
+    latch.await(10, TimeUnit.SECONDS);
+    term.assertScreen("foo");
+    term.assertAt(0, 3);
   }
 }

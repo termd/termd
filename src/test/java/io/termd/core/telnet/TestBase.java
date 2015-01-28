@@ -89,6 +89,14 @@ public class TestBase {
     }
   }
 
+  public void assertNull(Object object) {
+    try {
+      Assert.assertNull(object);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
   protected <T> T assertNotNull(T object) {
     try {
       Assert.assertNotNull(object);

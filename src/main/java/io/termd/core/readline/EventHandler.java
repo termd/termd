@@ -141,6 +141,7 @@ public class EventHandler implements Handler<EventContext> {
     final EventContext context;
     final int count;
     final String data;
+    private boolean done;
 
     public TermRequestImpl(EventContext context, int count, String data) {
       this.context = context;
@@ -159,7 +160,10 @@ public class EventHandler implements Handler<EventContext> {
     }
 
     @Override
-    public void eventHandler(Handler<TermEvent> handler) {
+    public synchronized void eventHandler(Handler<TermEvent> handler) {
+      if (done) {
+        throw new IllegalStateException("Already ended");
+      }
       if (handler != null) {
         eventHandler = handler;
       } else {
@@ -168,13 +172,20 @@ public class EventHandler implements Handler<EventContext> {
     }
 
     @Override
-    public TermRequest write(String s) {
+    public synchronized TermRequest write(String s) {
+      if (done) {
+        throw new IllegalStateException("Already ended");
+      }
       output.handle(Helper.toCodePoints(s));
       return this;
     }
 
     @Override
-    public void end() {
+    public synchronized void end() {
+      if (done) {
+        throw new IllegalStateException("Already ended");
+      }
+      done = true;
       eventHandler = null;
       context.end();
     }
