@@ -43,7 +43,7 @@ public class EventHandler implements Handler<EventContext> {
 
   public void append(int[] data) {
     if (eventHandler != null) {
-      eventHandler.handle(new TermEvent.Data(data));
+      eventHandler.handle(new TermEvent.Read(data));
     } else {
       eventQueue.append(data);
       scheduler.execute(task);

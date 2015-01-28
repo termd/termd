@@ -3,13 +3,13 @@ package io.termd.core.telnet;
 import io.termd.core.Handler;
 import io.termd.core.Provider;
 import io.termd.core.telnet.vertx.VertxTermConnection;
+import io.termd.core.term.TermEvent;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,30 +28,34 @@ public class TelnetTermTest extends TelnetTestBase {
       public TelnetHandler provide() {
         final AtomicInteger count = new AtomicInteger();
         final TelnetTermConnection connection = new VertxTermConnection();
-        connection.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
+        connection.eventHandler(new Handler<TermEvent>() {
           @Override
-          public void handle(Map.Entry<Integer, Integer> event) {
-            switch (count.getAndIncrement()) {
-              case 0:
-                assertEquals(20, event.getKey());
-                assertEquals(10, event.getValue());
-                latch.countDown();
-                break;
-              case 1:
-                assertEquals(80, event.getKey());
-                assertEquals(24, event.getValue());
-                connection.sizeHandler(null);
-                connection.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
-                  @Override
-                  public void handle(Map.Entry<Integer, Integer> event) {
-                    assertEquals(80, event.getKey());
-                    assertEquals(24, event.getValue());
-                    testComplete();
-                  }
-                });
-                break;
-              default:
-                fail("Was not expecting that");
+          public void handle(TermEvent event) {
+            if (event instanceof TermEvent.Size) {
+              TermEvent.Size size = (TermEvent.Size) event;
+              switch (count.getAndIncrement()) {
+                case 0:
+                  assertEquals(20, size.getWidth());
+                  assertEquals(10, size.getHeight());
+                  latch.countDown();
+                  break;
+                case 1:
+                  assertEquals(80, size.getWidth());
+                  assertEquals(24, size.getHeight());
+                  connection.eventHandler(null);
+                  connection.eventHandler(new Handler<TermEvent>() {
+                    @Override
+                    public void handle(TermEvent event) {
+                      TermEvent.Size size = (TermEvent.Size) event;
+                      assertEquals(80, size.getWidth());
+                      assertEquals(24, size.getHeight());
+                      testComplete();
+                    }
+                  });
+                  break;
+                default:
+                  fail("Was not expecting that");
+              }
             }
           }
         });

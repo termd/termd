@@ -44,8 +44,8 @@ public class ReadlineBootstrap {
         request.eventHandler(new Handler<TermEvent>() {
           @Override
           public void handle(TermEvent event) {
-            if (event instanceof TermEvent.Data) {
-              request.write("key pressed " + Helper.fromCodePoints(((TermEvent.Data) event).getData()) + "\r\n");
+            if (event instanceof TermEvent.Read) {
+              request.write("key pressed " + Helper.fromCodePoints(((TermEvent.Read) event).getData()) + "\r\n");
             }
           }
         });

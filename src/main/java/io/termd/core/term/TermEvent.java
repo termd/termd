@@ -5,9 +5,9 @@ package io.termd.core.term;
  */
 public abstract class TermEvent {
 
-  public static class Data extends TermEvent {
+  public static class Read extends TermEvent {
     final int[] data;
-    public Data(int[] data) {
+    public Read(int[] data) {
       this.data = data;
     }
     public int[] getData() {
@@ -15,7 +15,22 @@ public abstract class TermEvent {
     }
   }
 
-  public static class Resize extends TermEvent {
+  public static class Size extends TermEvent {
 
+    final int width;
+    final int height;
+
+    public Size(int width, int height) {
+      this.width = width;
+      this.height = height;
+    }
+
+    public int getWidth() {
+      return width;
+    }
+
+    public int getHeight() {
+      return height;
+    }
   }
 }

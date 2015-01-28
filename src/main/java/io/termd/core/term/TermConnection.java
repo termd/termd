@@ -11,19 +11,7 @@ import java.util.Map;
  */
 public interface TermConnection {
 
-  /**
-   * Set an handler to receive window size change events.
-   *
-   * @param handler the size handler.
-   */
-  void sizeHandler(Handler<Map.Entry<Integer, Integer>> handler);
-
-  /**
-   * Set an handler for receiving chars events.
-   *
-   * @param handler the chars handler
-   */
-  void charsHandler(Handler<int[]> handler);
+  void eventHandler(Handler<TermEvent> handler);
 
   /**
    * @return the chars handler of this connection

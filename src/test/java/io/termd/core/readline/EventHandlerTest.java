@@ -15,7 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -387,7 +386,7 @@ public class EventHandlerTest extends TestBase {
     term.handler.append(new int[]{'\r'});
     term.handler.append(new int[]{'h','e','l','l','o'});
     assertEquals(1, events.size());
-    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, ((TermEvent.Data) events.get(0)).getData()));
+    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, ((TermEvent.Read) events.get(0)).getData()));
     term.assertScreen(
         "% "
     );

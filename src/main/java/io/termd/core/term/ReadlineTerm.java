@@ -6,7 +6,6 @@ import io.termd.core.readline.EventHandler;
 import io.termd.core.readline.EventQueue;
 
 import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -35,22 +34,20 @@ public class ReadlineTerm {
       handler.addFunction(function);
     }
 
-    //
-    conn.charsHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] chars) {
-        handler.append(chars);
-      }
-    });
-
-    conn.sizeHandler(new Handler<Map.Entry<Integer, Integer>>() {
-      @Override
-      public void handle(Map.Entry<Integer, Integer> event) {
-        System.out.println("Window size changed width=" + event.getKey() + " height=" + event.getValue());
-      }
-    });
-
     // Send the init event
     handler.init();
+
+    conn.eventHandler(new Handler<TermEvent>() {
+      @Override
+      public void handle(TermEvent event) {
+        if (event instanceof TermEvent.Read) {
+          TermEvent.Read read = (TermEvent.Read) event;
+          handler.append(read.data);
+        } else if (event instanceof TermEvent.Size) {
+          TermEvent.Size size = (TermEvent.Size) event;
+          System.out.println("Window size changed width=" + size.getWidth() + " height=" + size.getHeight());
+        }
+      }
+    });
   }
 }

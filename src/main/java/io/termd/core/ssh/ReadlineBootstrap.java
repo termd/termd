@@ -5,6 +5,7 @@ import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.term.ReadlineTerm;
 import io.termd.core.term.TermConnection;
+import io.termd.core.term.TermEvent;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.ChannelSessionAware;
@@ -26,8 +27,6 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.AbstractMap;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,21 +49,16 @@ public class ReadlineBootstrap {
       private BinaryDecoder decoder;
       private BinaryEncoder encoder;
       private Handler<byte[]> out;
-      private HashMap.SimpleEntry<Integer, Integer> size;
-      private Handler<Map.Entry<Integer, Integer>> sizeHandler;
-      private Handler<int[]> charsHandler;
+      private int width = -1;
+      private int height = -1;
+      private Handler<TermEvent> eventHandler;
 
       @Override
-      public void sizeHandler(Handler<Map.Entry<Integer, Integer>> handler) {
-        sizeHandler = handler;
-        if (size != null && handler != null) {
-          handler.handle(new AbstractMap.SimpleEntry<>(size));
+      public void eventHandler(Handler<TermEvent> handler) {
+        eventHandler = handler;
+        if (width >= 0 && height >= 0 && handler != null) {
+          handler.handle(new TermEvent.Size(width, height));
         }
-      }
-
-      @Override
-      public void charsHandler(Handler<int[]> handler) {
-        charsHandler = handler;
       }
 
       @Override
@@ -151,8 +145,8 @@ public class ReadlineBootstrap {
         decoder = new BinaryDecoder(512, charset, new Handler<int[]>() {
           @Override
           public void handle(int[] event) {
-            if (charsHandler != null) {
-              charsHandler.handle(event);
+            if (eventHandler != null) {
+              eventHandler.handle(new TermEvent.Read(event));
             }
           }
         });
@@ -176,9 +170,10 @@ public class ReadlineBootstrap {
             size = null;
           }
           if (size != null) {
-            this.size = size;
-            if (sizeHandler != null) {
-              sizeHandler.handle(new AbstractMap.SimpleEntry<>(size));
+            this.width = width;
+            this.height = height;
+            if (eventHandler != null) {
+              eventHandler.handle(new TermEvent.Size(size.getKey(), size.getValue()));
             }
           }
         }

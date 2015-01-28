@@ -5,27 +5,25 @@ import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
 import io.termd.core.term.TermConnection;
+import io.termd.core.term.TermEvent;
 
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class TelnetTermConnection extends TelnetHandler implements TermConnection {
 
-  private Handler<Map.Entry<Integer, Integer>> sizeHandler;
-  private HashMap.SimpleEntry<Integer, Integer> size;
-  private Handler<int[]> charsHandler;
+  private int width = -1;
+  private int height = -1;
+  private Handler<TermEvent> eventHandler;
   protected TelnetConnection conn;
 
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, new Handler<int[]>() {
     @Override
     public void handle(int[] event) {
-      if (charsHandler != null) {
-        charsHandler.handle(event);
+      if (eventHandler != null) {
+        eventHandler.handle(new TermEvent.Read(event));
       }
     }
   });
@@ -76,23 +74,19 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
 
   @Override
   protected void onSize(int width, int height) {
-    size = new AbstractMap.SimpleEntry<>(width, height);
-    if (sizeHandler != null) {
-      sizeHandler.handle(new AbstractMap.SimpleEntry<>(size));
+    this.width = width;
+    this.height = height;
+    if (eventHandler != null) {
+      eventHandler.handle(new TermEvent.Size(width, height));
     }
   }
 
   @Override
-  public void sizeHandler(Handler<Map.Entry<Integer, Integer>> handler) {
-    sizeHandler = handler;
-    if (handler != null && size != null) {
-      handler.handle(new AbstractMap.SimpleEntry<>(size));
+  public void eventHandler(Handler<TermEvent> handler) {
+    this.eventHandler = handler;
+    if (handler != null && width >= 0 && height >= 0) {
+      handler.handle(new TermEvent.Size(width, height));
     }
-  }
-
-  @Override
-  public void charsHandler(Handler<int[]> handler) {
-    charsHandler = handler;
   }
 
   @Override
