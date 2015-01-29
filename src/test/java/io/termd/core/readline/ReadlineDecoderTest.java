@@ -5,7 +5,6 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.nio.IntBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,11 +14,11 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventQueueTest {
+public class ReadlineDecoderTest {
 
   @Test
   public void testDecodeKeySeq() {
-    EventQueue queue = new EventQueue(new ByteArrayInputStream("\"ab\":foo".getBytes()));
+    ReadlineDecoder queue = new ReadlineDecoder(new ByteArrayInputStream("\"ab\":foo".getBytes()));
     assertFalse(queue.append('a').hasNext());
     assertTrue(queue.append('b', 'c').hasNext());
     FunctionEvent action = (FunctionEvent) queue.next();
@@ -33,7 +32,7 @@ public class EventQueueTest {
 
   @Test
   public void testDecodeKeySeqPrefix() {
-    EventQueue queue = new EventQueue(new ByteArrayInputStream("\"ab\":foo".getBytes()));
+    ReadlineDecoder queue = new ReadlineDecoder(new ByteArrayInputStream("\"ab\":foo".getBytes()));
     assertFalse(queue.append('a').hasNext());
     assertTrue(queue.append('c').hasNext());
     KeyEvent key = (KeyEvent) queue.next();
@@ -48,7 +47,7 @@ public class EventQueueTest {
 
   @Test
   public void testRecognizePredefinedKey1() {
-    EventQueue queue = new EventQueue();
+    ReadlineDecoder queue = new ReadlineDecoder();
     queue.append(27, 91);
     assertTrue(queue.hasNext());
     assertEquals(1, ((KeyEvent) queue.peek()).length());
@@ -60,7 +59,7 @@ public class EventQueueTest {
 
   @Test
   public void testRecognizePredefinedKey2() {
-    EventQueue queue = new EventQueue();
+    ReadlineDecoder queue = new ReadlineDecoder();
     queue.append(27, 91);
     assertEquals(1, ((KeyEvent) queue.peek()).length());
     assertEquals(27, ((KeyEvent)queue.peek()).getAt(0));
@@ -72,7 +71,7 @@ public class EventQueueTest {
 
   @Test
   public void testNotRecognizePredefinedKey() {
-    EventQueue queue = new EventQueue();
+    ReadlineDecoder queue = new ReadlineDecoder();
     queue.append('a');
     assertTrue(queue.hasNext());
     KeyEvent key = (KeyEvent) queue.next();
@@ -82,7 +81,7 @@ public class EventQueueTest {
 
   @Test
   public void testBuffer() {
-    EventQueue queue = new EventQueue();
+    ReadlineDecoder queue = new ReadlineDecoder();
     assertEquals(0, queue.getBuffer().capacity());
     queue.append('h', 'e', 'l', 'l', 'o');
     IntBuffer buffer = queue.getBuffer();

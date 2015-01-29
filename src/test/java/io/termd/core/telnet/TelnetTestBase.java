@@ -1,7 +1,7 @@
 package io.termd.core.telnet;
 
-import io.termd.core.Provider;
-import io.termd.core.telnet.vertx.TelnetNetSocketHandler;
+import io.termd.core.util.Provider;
+import io.termd.core.telnet.vertx.TelnetSocketHandler;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +47,7 @@ public class TelnetTestBase extends TestBase {
   }
 
   protected final void server(Provider<TelnetHandler> factory) {
-    server = vertx.createNetServer().connectHandler(new TelnetNetSocketHandler(vertx, factory));
+    server = vertx.createNetServer().connectHandler(new TelnetSocketHandler(vertx, factory));
     final BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
     server.listen(4000, "localhost", new org.vertx.java.core.Handler<AsyncResult<NetServer>>() {
       @Override

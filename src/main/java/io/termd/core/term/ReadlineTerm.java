@@ -1,9 +1,9 @@
 package io.termd.core.term;
 
-import io.termd.core.Handler;
-import io.termd.core.Helper;
-import io.termd.core.readline.EventHandler;
-import io.termd.core.readline.EventQueue;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Helper;
+import io.termd.core.readline.ReadlineHandler;
+import io.termd.core.readline.ReadlineDecoder;
 import io.termd.core.readline.ReadlineRequest;
 
 import java.io.InputStream;
@@ -20,10 +20,10 @@ public class ReadlineTerm {
     this.conn = conn;
 
     //
-    InputStream inputrc = EventQueue.class.getResourceAsStream("inputrc");
-    final EventHandler handler = new EventHandler(
-        new EventQueue(inputrc),
-        conn.charsHandler(),
+    InputStream inputrc = ReadlineDecoder.class.getResourceAsStream("inputrc");
+    final ReadlineHandler handler = new ReadlineHandler(
+        new ReadlineDecoder(inputrc),
+        conn.dataHandler(),
         new Executor() {
           @Override
           public void execute(Runnable command) {

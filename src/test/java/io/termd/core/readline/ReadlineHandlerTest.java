@@ -1,6 +1,6 @@
 package io.termd.core.readline;
 
-import io.termd.core.Handler;
+import io.termd.core.util.Handler;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventHandlerTest extends TestBase {
+public class ReadlineHandlerTest extends TestBase {
 
   public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent() {
     @Override
@@ -96,7 +96,7 @@ public class EventHandlerTest extends TestBase {
         }
       }
     };
-    final EventHandler handler;
+    final ReadlineHandler handler;
 
     public Term() {
       this(new Handler<ReadlineRequest>() {
@@ -109,7 +109,7 @@ public class EventHandlerTest extends TestBase {
     }
 
     public Term(Handler<ReadlineRequest> requestHandler) {
-      handler = new EventHandler(adapter, new Executor() {
+      handler = new ReadlineHandler(adapter, new Executor() {
         @Override
         public void execute(Runnable command) {
           command.run();

@@ -16,7 +16,7 @@
  */
 package io.termd.core.telnet;
 
-import io.termd.core.Provider;
+import io.termd.core.util.Provider;
 
 /**
  * A test class.

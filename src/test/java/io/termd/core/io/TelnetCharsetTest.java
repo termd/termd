@@ -1,11 +1,10 @@
 package io.termd.core.io;
 
-import io.termd.core.Handler;
-import io.termd.core.Helper;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Helper;
 import org.junit.Test;
 
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;

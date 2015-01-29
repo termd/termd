@@ -13,38 +13,38 @@ import static org.junit.Assert.assertTrue;
  */
 public class InputrcTest {
 
-  static class FailingHandler extends InputrcHandler {
+  static class FailingParser extends InputrcParser {
     @Override public void bindMacro(String keyName, String macro) { throw new AssertionError(); }
     @Override public void bindFunction(String keyName, String functionName) { throw new AssertionError(); }
     @Override public void bindMacro(int[] keySequence, String macro) { throw new AssertionError(); }
     @Override public void bindFunction(int[] keySequence, String functionName) { throw new AssertionError(); }
   }
 
-  static class AssertingHandler extends InputrcHandler {
+  static class AssertingParser extends InputrcParser {
 
     @Override public void bindMacro(String keyName, String macro) { nextParser().bindMacro(keyName, macro); }
     @Override public void bindFunction(String keyName, String functionName) { nextParser().bindFunction(keyName, functionName); }
     @Override public void bindMacro(int[] keySequence, String macro) { nextParser().bindMacro(keySequence, macro); }
     @Override public void bindFunction(int[] keySequence, String functionName) { nextParser().bindFunction(keySequence, functionName); }
 
-    private FailingHandler nextParser() {
+    private FailingParser nextParser() {
       assertTrue(asserts.size() > 0);
       return asserts.removeFirst();
     }
 
-    final LinkedList<FailingHandler> asserts = new LinkedList<>();
+    final LinkedList<FailingParser> asserts = new LinkedList<>();
 
     void parse(String s) throws UnsupportedEncodingException {
-      InputrcHandler.parse(s, this);
+      InputrcParser.parse(s, this);
     }
 
-    AssertingHandler append(FailingHandler next) {
+    AssertingParser append(FailingParser next) {
       asserts.add(next);
       return this;
     }
 
-    AssertingHandler assertBindMacro(final String keyName, final String macro) {
-      return append(new FailingHandler() {
+    AssertingParser assertBindMacro(final String keyName, final String macro) {
+      return append(new FailingParser() {
         @Override
         public void bindMacro(String k, String m) {
           Assert.assertEquals(k, keyName);
@@ -53,8 +53,8 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindMacro(final int[] keyName, final String macro) {
-      return append(new FailingHandler() {
+    AssertingParser assertBindMacro(final int[] keyName, final String macro) {
+      return append(new FailingParser() {
         @Override
         public void bindMacro(int[] k, String m) {
           Assert.assertArrayEquals(k, keyName);
@@ -63,8 +63,8 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindFunction(final String keyName, final String macro) {
-      return append (new FailingHandler() {
+    AssertingParser assertBindFunction(final String keyName, final String macro) {
+      return append (new FailingParser() {
         @Override
         public void bindFunction(String k, String m) {
           Assert.assertEquals(k, keyName);
@@ -73,8 +73,8 @@ public class InputrcTest {
       });
     }
 
-    AssertingHandler assertBindFunction(final int[] keySequence, final String macro) {
-      return append(new FailingHandler() {
+    AssertingParser assertBindFunction(final int[] keySequence, final String macro) {
+      return append(new FailingParser() {
         @Override
         public void bindFunction(int[] k, String m) {
           Assert.assertArrayEquals(k, keySequence);
@@ -87,39 +87,39 @@ public class InputrcTest {
   @Test
   public void testFoo() throws UnsupportedEncodingException {
 
-    new AssertingHandler() {}.assertBindFunction("a", "b").parse("a:b");
-    new AssertingHandler() {}.assertBindMacro("a", "b").parse("a:\"b\"");
-    new AssertingHandler() {}.assertBindMacro("a", "b").parse("a:'b'");
-    new AssertingHandler() {}.assertBindFunction(new int[]{64}, "b").parse("\"@\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\C-@\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{8}, "b").parse("\"\\C-H\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{8}, "b").parse("\"\\C-h\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{127}, "b").parse("\"\\C-?\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{27,0}, "b").parse("\"\\M-@\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{27,8}, "b").parse("\"\\M-H\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{27,8}, "b").parse("\"\\M-h\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{27,127}, "b").parse("\"\\M-?\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{27}, "b").parse("\"\\e\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{92}, "b").parse("\"\\\\\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{34}, "b").parse("\"\\\"\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{39}, "b").parse("\"\\'\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{7}, "b").parse("\"\\a\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{127}, "b").parse("\"\\d\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{12}, "b").parse("\"\\f\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{10}, "b").parse("\"\\n\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{13}, "b").parse("\"\\r\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{9}, "b").parse("\"\\t\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{11}, "b").parse("\"\\v\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\0\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\00\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\000\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\377\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\x0\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xFF\":b");
-    new AssertingHandler() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xff\":b");
+    new AssertingParser() {}.assertBindFunction("a", "b").parse("a:b");
+    new AssertingParser() {}.assertBindMacro("a", "b").parse("a:\"b\"");
+    new AssertingParser() {}.assertBindMacro("a", "b").parse("a:'b'");
+    new AssertingParser() {}.assertBindFunction(new int[]{64}, "b").parse("\"@\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\C-@\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{8}, "b").parse("\"\\C-H\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{8}, "b").parse("\"\\C-h\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{127}, "b").parse("\"\\C-?\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{27,0}, "b").parse("\"\\M-@\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{27,8}, "b").parse("\"\\M-H\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{27,8}, "b").parse("\"\\M-h\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{27,127}, "b").parse("\"\\M-?\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{27}, "b").parse("\"\\e\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{92}, "b").parse("\"\\\\\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{34}, "b").parse("\"\\\"\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{39}, "b").parse("\"\\'\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{7}, "b").parse("\"\\a\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{127}, "b").parse("\"\\d\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{12}, "b").parse("\"\\f\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{10}, "b").parse("\"\\n\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{13}, "b").parse("\"\\r\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{9}, "b").parse("\"\\t\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{11}, "b").parse("\"\\v\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\0\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\00\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\000\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\377\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{0}, "b").parse("\"\\x0\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xFF\":b");
+    new AssertingParser() {}.assertBindFunction(new int[]{255}, "b").parse("\"\\xff\":b");
 
     // Bind \ to \
-    new AssertingHandler() {}.assertBindFunction(new int[]{27,'/'}, "\\").parse("\"\\e/\":\\");
+    new AssertingParser() {}.assertBindFunction(new int[]{27,'/'}, "\\").parse("\"\\e/\":\\");
 
 /*
     InputrcParser.parse("#azefzef");

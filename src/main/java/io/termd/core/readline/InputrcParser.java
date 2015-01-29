@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class InputrcHandler {
+abstract class InputrcParser {
 
   static final Pattern COMMENT = Pattern.compile("#.*");
   static final Pattern CONDITIONAL = Pattern.compile("\\$.*");
@@ -20,11 +20,11 @@ abstract class InputrcHandler {
   static final Pattern A = Pattern.compile("^\\\\([0-9]{1,3})");
   static final Pattern B = Pattern.compile("^\\\\x([0-9,A-F,a-f]{1,2})");
 
-  static void parse(String s, InputrcHandler handler) throws UnsupportedEncodingException {
+  static void parse(String s, InputrcParser handler) throws UnsupportedEncodingException {
     parse(new ByteArrayInputStream(s.getBytes("US-ASCII")), handler);
   }
 
-  static void parse(InputStream s, InputrcHandler handler) {
+  static void parse(InputStream s, InputrcParser handler) {
 
     Scanner sc = new Scanner(s, "US-ASCII").useDelimiter("\n");
     while (sc.hasNext()) {

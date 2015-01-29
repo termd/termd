@@ -7,7 +7,16 @@ package io.termd.core.telnet;
  */
 public class TelnetHandler {
 
+  /**
+   * The telnet connection opened.
+   *
+   * @param conn the connection
+   */
   protected void onOpen(TelnetConnection conn) {}
+
+  /**
+   * The telnet connection closed.
+   */
   protected void onClose() {}
 
   /**

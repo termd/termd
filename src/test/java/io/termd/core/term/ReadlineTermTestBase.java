@@ -1,12 +1,12 @@
 package io.termd.core.term;
 
-import io.termd.core.Handler;
-import io.termd.core.Provider;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Provider;
 import io.termd.core.readline.ReadlineRequest;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
+import io.termd.core.telnet.TelnetTermConnection;
 import io.termd.core.telnet.TelnetTestBase;
-import io.termd.core.telnet.vertx.VertxTermConnection;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.TelnetClient;
@@ -56,7 +56,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
       @Override
       public TelnetHandler provide() {
         connectionCount.incrementAndGet();
-        return new VertxTermConnection() {
+        return new TelnetTermConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
@@ -83,7 +83,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     server(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new VertxTermConnection() {
+        return new TelnetTermConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
@@ -118,7 +118,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     server(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new VertxTermConnection() {
+        return new TelnetTermConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
@@ -153,7 +153,7 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     server(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new VertxTermConnection() {
+        return new TelnetTermConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);

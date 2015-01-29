@@ -16,7 +16,7 @@
  */
 package io.termd.core.telnet;
 
-import io.termd.core.Provider;
+import io.termd.core.util.Provider;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.SuppressGAOptionHandler;

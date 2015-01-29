@@ -1,8 +1,7 @@
 package io.termd.core.telnet;
 
-import io.termd.core.Handler;
-import io.termd.core.Provider;
-import io.termd.core.telnet.vertx.VertxTermConnection;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Provider;
 import io.termd.core.term.TermEvent;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
@@ -27,7 +26,7 @@ public class TelnetTermTest extends TelnetTestBase {
       @Override
       public TelnetHandler provide() {
         final AtomicInteger count = new AtomicInteger();
-        final TelnetTermConnection connection = new VertxTermConnection();
+        final TelnetTermConnection connection = new TelnetTermConnection();
         connection.eventHandler(new Handler<TermEvent>() {
           @Override
           public void handle(TermEvent event) {

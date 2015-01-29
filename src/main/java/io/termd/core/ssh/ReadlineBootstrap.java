@@ -1,6 +1,6 @@
 package io.termd.core.ssh;
 
-import io.termd.core.Handler;
+import io.termd.core.util.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.term.ReadlineTerm;
@@ -62,7 +62,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Handler<int[]> charsHandler() {
+      public Handler<int[]> dataHandler() {
         return encoder;
       }
 

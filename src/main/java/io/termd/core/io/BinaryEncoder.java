@@ -1,6 +1,6 @@
 package io.termd.core.io;
 
-import io.termd.core.Handler;
+import io.termd.core.util.Handler;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

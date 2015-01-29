@@ -16,7 +16,7 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.Provider;
+import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Handler;
@@ -25,14 +25,16 @@ import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 
 /**
+ * Telnet server integration with Vert.x {@link org.vertx.java.core.net.NetServer}.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetNetSocketHandler implements Handler<NetSocket> {
+public class TelnetSocketHandler implements Handler<NetSocket> {
 
   final Vertx vertx;
   final Provider<TelnetHandler> factory;
 
-  public TelnetNetSocketHandler(Vertx vertx, Provider<TelnetHandler> factory) {
+  public TelnetSocketHandler(Vertx vertx, Provider<TelnetHandler> factory) {
     this.vertx = vertx;
     this.factory = factory;
   }

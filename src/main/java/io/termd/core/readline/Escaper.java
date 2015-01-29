@@ -1,6 +1,6 @@
 package io.termd.core.readline;
 
-import io.termd.core.Handler;
+import io.termd.core.util.Handler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

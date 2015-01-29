@@ -29,18 +29,23 @@ import java.util.NoSuchElementException;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventQueue {
+public class ReadlineDecoder {
 
   private final EventMapping[] mappings;
   private State state;
 
-  public EventQueue() {
+  public ReadlineDecoder() {
     this(Keys.values());
   }
 
-  public EventQueue(InputStream inputrc) {
+  /**
+   * Create a new decoder configured from the <i>inputrc</i> configuration file.
+   *
+   * @param inputrc the configuration file
+   */
+  public ReadlineDecoder(InputStream inputrc) {
     final ArrayList<EventMapping> actions = new ArrayList<>();
-    InputrcHandler handler = new InputrcHandler() {
+    InputrcParser handler = new InputrcParser() {
       @Override
       public void bindFunction(final int[] keySequence, final String functionName) {
         actions.add(new EventMapping(keySequence, new FunctionEvent() {
@@ -55,12 +60,12 @@ public class EventQueue {
         }));
       }
     };
-    InputrcHandler.parse(inputrc, handler);
+    InputrcParser.parse(inputrc, handler);
     this.mappings = actions.toArray(new EventMapping[actions.size()]);
     this.state = new State(new int[0]);
   }
 
-  public EventQueue(KeyEvent[] keys) {
+  public ReadlineDecoder(KeyEvent[] keys) {
     this.mappings = new EventMapping[keys.length];
     for (int i = 0;i < keys.length;i++) {
       mappings[i] = new EventMapping(keys[i]);
@@ -68,7 +73,7 @@ public class EventQueue {
     this.state = new State(new int[0]);
   }
 
-  public EventQueue append(int... chars) {
+  public ReadlineDecoder append(int... chars) {
     for (int c : chars) {
       state = state.append(c);
     }
@@ -108,11 +113,11 @@ public class EventQueue {
 
     private State(int[] buffer) {
 
-      FooBar fooBar = reduce(buffer, mappings);
+      Match match = reduce(buffer);
 
       //
-      this.head = fooBar != null ? fooBar.event : null;
-      this.length = fooBar != null ? fooBar.size : 0;
+      this.head = match != null ? match.event : null;
+      this.length = match != null ? match.size : 0;
       this.buffer = buffer;
     }
 
@@ -147,16 +152,16 @@ public class EventQueue {
     }
   }
 
-  static class FooBar {
+  static class Match {
     final Event event;
     final int size;
-    public FooBar(Event event, int size) {
+    public Match(Event event, int size) {
       this.event = event;
       this.size = size;
     }
   }
 
-  private static FooBar reduce(int[] buffer, EventMapping[] mappings) {
+  private Match reduce(int[] buffer) {
     if (buffer.length > 0) {
       EventMapping candidate = null;
       int prefixes = 0;
@@ -186,7 +191,7 @@ public class EventQueue {
       if (candidate == null) {
         if (prefixes == 0) {
           final int c = buffer[0];
-          return new FooBar(new KeyEvent() {
+          return new Match(new KeyEvent() {
             @Override
             public int getAt(int index) throws IndexOutOfBoundsException {
               if (index != 0) {
@@ -205,7 +210,7 @@ public class EventQueue {
           }, 1);
         }
       } else {
-        return new FooBar(candidate.event, candidate.seq.length);
+        return new Match(candidate.event, candidate.seq.length);
       }
     }
     return null;

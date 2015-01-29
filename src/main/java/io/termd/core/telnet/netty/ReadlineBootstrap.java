@@ -16,9 +16,10 @@
  */
 package io.termd.core.telnet.netty;
 
-import io.termd.core.Handler;
-import io.termd.core.Helper;
-import io.termd.core.Provider;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Helper;
+import io.termd.core.util.Provider;
+import io.termd.core.telnet.TelnetTermConnection;
 import io.termd.core.term.TermEvent;
 import io.termd.core.readline.ReadlineRequest;
 import io.termd.core.telnet.TelnetBootstrap;
@@ -91,7 +92,7 @@ public class ReadlineBootstrap {
     telnet.start(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new NettyTermConnection() {
+        return new TelnetTermConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);

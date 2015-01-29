@@ -6,6 +6,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -17,6 +19,11 @@ public class NettyTelnetConnection extends TelnetConnection {
   public NettyTelnetConnection(TelnetHandler handler, ChannelHandlerContext context) {
     super(handler);
     this.context = context;
+  }
+
+  @Override
+  public void schedule(Runnable task) {
+    context.channel().eventLoop().schedule(task, 0, TimeUnit.SECONDS);
   }
 
   // Not properly synchronized, but ok for now

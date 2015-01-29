@@ -3,10 +3,12 @@ package io.termd.core.telnet.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.termd.core.Provider;
+import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetHandler;
 
 /**
+ * Telnet server integration with Netty {@link io.netty.channel.socket.ServerSocketChannel}.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {

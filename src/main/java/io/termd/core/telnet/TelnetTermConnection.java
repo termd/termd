@@ -1,6 +1,6 @@
 package io.termd.core.telnet;
 
-import io.termd.core.Handler;
+import io.termd.core.util.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
@@ -10,9 +10,11 @@ import io.termd.core.term.TermEvent;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * A telnet handler that implements {@link io.termd.core.term.TermConnection}.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class TelnetTermConnection extends TelnetHandler implements TermConnection {
+public class TelnetTermConnection extends TelnetHandler implements TermConnection {
 
   private int width = -1;
   private int height = -1;
@@ -33,6 +35,11 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
       conn.write(event);
     }
   });
+
+  @Override
+  public void schedule(Runnable task) {
+    conn.schedule(task);
+  }
 
   @Override
   protected void onSendBinary(boolean binary) {
@@ -90,7 +97,7 @@ public abstract class TelnetTermConnection extends TelnetHandler implements Term
   }
 
   @Override
-  public Handler<int[]> charsHandler() {
+  public Handler<int[]> dataHandler() {
     return encoder;
   }
 }

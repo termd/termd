@@ -1,4 +1,4 @@
-package io.termd.core;
+package io.termd.core.util;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -6,14 +6,19 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
+ * Various utils.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Helper {
 
+  /**
+   * Do absolutely nothing. This can be useful for code coverage analysis.
+   */
   public static void noop() {}
 
   /**
-   * Convert the string to an array of codepoints.
+   * Convert the string to an array of code points.
    *
    * @param s the string to convert
    * @return the code points
@@ -35,6 +40,12 @@ public class Helper {
     return codePoints;
   }
 
+  /**
+   * Code point to string conversion.
+   *
+   * @param codePoints the code points
+   * @return the corresponding string
+   */
   public static String fromCodePoints(int[] codePoints) {
     StringBuilder buffer = new StringBuilder();
     for (int codePoint : codePoints) {

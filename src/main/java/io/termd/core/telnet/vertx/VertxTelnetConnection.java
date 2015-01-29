@@ -22,6 +22,16 @@ public class VertxTelnetConnection extends TelnetConnection {
     this.socket = socket;
   }
 
+  @Override
+  public void schedule(final Runnable task) {
+    context.runOnContext(new Handler<Void>() {
+      @Override
+      public void handle(Void event) {
+        task.run();
+      }
+    });
+  }
+
   // Not properly synchronized, but ok for now
   @Override
   protected void send(byte[] data) {

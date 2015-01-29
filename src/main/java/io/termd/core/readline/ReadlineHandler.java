@@ -1,7 +1,7 @@
 package io.termd.core.readline;
 
-import io.termd.core.Handler;
-import io.termd.core.Helper;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Helper;
 import io.termd.core.term.TermEvent;
 
 import java.util.HashMap;
@@ -11,28 +11,30 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * A {@link io.termd.core.term.TermEvent} handler that provides readline functionnality.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventHandler implements Handler<TermEvent> {
+public class ReadlineHandler implements Handler<TermEvent> {
 
-  public final EventQueue eventQueue;
+  public final ReadlineDecoder decoder;
   final Executor scheduler;
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
   final Handler<ReadlineRequest> handler;
 
-  public EventHandler(Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
-    this(new EventQueue(), output, scheduler, handler);
+  public ReadlineHandler(Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
+    this(new ReadlineDecoder(), output, scheduler, handler);
   }
 
-  public EventHandler(EventQueue eventQueue, Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
-    this.eventQueue = eventQueue;
+  public ReadlineHandler(ReadlineDecoder decoder, Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
+    this.decoder = decoder;
     this.output = output;
     this.handler = handler;
     this.scheduler = scheduler;
   }
 
-  public EventHandler addFunction(Function function) {
+  public ReadlineHandler addFunction(Function function) {
     functions.put(function.getName(), function);
     return this;
   }
@@ -47,7 +49,7 @@ public class EventHandler implements Handler<TermEvent> {
     } else {
       if (event instanceof TermEvent.Read) {
         TermEvent.Read read = (TermEvent.Read) event;
-        eventQueue.append(read.getData());
+        decoder.append(read.getData());
         scheduler.execute(task);
       } else if (event instanceof TermEvent.Size) {
         TermEvent.Size size = (TermEvent.Size) event;
@@ -71,7 +73,7 @@ public class EventHandler implements Handler<TermEvent> {
     }
     @Override
     public void end() {
-      EventHandler.this.end();
+      ReadlineHandler.this.end();
     }
   }
 
@@ -79,8 +81,8 @@ public class EventHandler implements Handler<TermEvent> {
     @Override
     public void run() {
       if (handling.compareAndSet(0, 2)) {
-        if (eventQueue.hasNext()) {
-          handle(new BlockingEventContext(eventQueue.next()));
+        if (decoder.hasNext()) {
+          handle(new BlockingEventContext(decoder.next()));
           end(); // Should it be called ?
         } else {
           handling.set(0);

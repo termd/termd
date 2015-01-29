@@ -92,7 +92,9 @@ public abstract class TelnetConnection {
       }
     }
   }
-  
+
+  protected abstract void schedule(Runnable task);
+
   protected abstract void send(byte[] data);
 
   public void receive(byte[] data) {

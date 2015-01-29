@@ -1,8 +1,6 @@
 package io.termd.core.term;
 
-import io.termd.core.Handler;
-
-import java.util.Map;
+import io.termd.core.util.Handler;
 
 /**
  * A connection to a term.
@@ -11,14 +9,23 @@ import java.util.Map;
  */
 public interface TermConnection {
 
+  /**
+   * Set the event handler on this connection.
+   *
+   * @param handler the event handler
+   */
   void eventHandler(Handler<TermEvent> handler);
 
   /**
-   * @return the chars handler of this connection
+   * @return the data handler of this connection
    */
-  Handler<int[]> charsHandler();
+  Handler<int[]> dataHandler();
 
-
+  /**
+   * Schedule a task for execution.
+   *
+   * @param task the task to schedule
+   */
   void schedule(Runnable task);
 
 }
