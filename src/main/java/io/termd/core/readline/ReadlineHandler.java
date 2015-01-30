@@ -17,17 +17,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ReadlineHandler implements Handler<TermEvent> {
 
-  public final ReadlineDecoder decoder;
+  public final KeyDecoder decoder;
   final Executor scheduler;
   final Map<String, Function> functions = new HashMap<>();
   final Handler<int[]> output;
   final Handler<ReadlineRequest> handler;
 
   public ReadlineHandler(Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
-    this(new ReadlineDecoder(), output, scheduler, handler);
+    this(new KeyDecoder(new Keymap()), output, scheduler, handler);
   }
 
-  public ReadlineHandler(ReadlineDecoder decoder, Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
+  public ReadlineHandler(KeyDecoder decoder, Handler<int[]> output, Executor scheduler, Handler<ReadlineRequest> handler) {
     this.decoder = decoder;
     this.output = output;
     this.handler = handler;
@@ -35,7 +35,7 @@ public class ReadlineHandler implements Handler<TermEvent> {
   }
 
   public ReadlineHandler addFunction(Function function) {
-    functions.put(function.getName(), function);
+    functions.put(function.name(), function);
     return this;
   }
 
@@ -170,7 +170,7 @@ public class ReadlineHandler implements Handler<TermEvent> {
     }
 
     @Override
-    public String getData() {
+    public String line() {
       return data;
     }
 
@@ -258,11 +258,11 @@ public class ReadlineHandler implements Handler<TermEvent> {
       }
     } else {
       FunctionEvent fname = (FunctionEvent) event;
-      Function function = functions.get(fname.getName());
+      Function function = functions.get(fname.name());
       if (function != null) {
-        function.call(lineBuffer);
+        function.apply(lineBuffer);
       } else {
-        System.out.println("Unimplemented function " + fname.getName());
+        System.out.println("Unimplemented function " + fname.name());
       }
     }
     LinkedList<Integer> a = copy.compute(lineBuffer);

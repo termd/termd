@@ -21,26 +21,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ReadlineHandlerTest extends TestBase {
 
-  public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent() {
-    @Override
-    public String getName() {
-      return "backward-delete-char";
-    }
-  };
-
-  public static final FunctionEvent BACKWARD_CHAR = new FunctionEvent() {
-    @Override
-    public String getName() {
-      return "backward-char";
-    }
-  };
-
-  public static final FunctionEvent FORWARD_CHAR = new FunctionEvent() {
-    @Override
-    public String getName() {
-      return "forward-char";
-    }
-  };
+  public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent("backward-delete-char");
+  public static final FunctionEvent BACKWARD_CHAR = new FunctionEvent("backward-char");
+  public static final FunctionEvent FORWARD_CHAR = new FunctionEvent("forward-char");
   
   static class EventContextImpl implements EventContext {
 
@@ -450,7 +433,7 @@ public class ReadlineHandlerTest extends TestBase {
       public void handle(final ReadlineRequest request) {
         request.write("foo");
         request.end();
-        assertNull(request.getData());
+        assertNull(request.line());
         assertEquals(0, request.requestCount());
         try {
           request.eventHandler(new Handler<TermEvent>() {

@@ -16,9 +16,7 @@
  */
 package io.termd.core.readline;
 
-import java.io.InputStream;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 
@@ -29,51 +27,17 @@ import java.util.NoSuchElementException;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineDecoder {
+public class KeyDecoder {
 
-  private final EventMapping[] mappings;
+  private final Keymap keymap;
   private State state;
 
-  public ReadlineDecoder() {
-    this(Keys.values());
-  }
-
-  /**
-   * Create a new decoder configured from the <i>inputrc</i> configuration file.
-   *
-   * @param inputrc the configuration file
-   */
-  public ReadlineDecoder(InputStream inputrc) {
-    final ArrayList<EventMapping> actions = new ArrayList<>();
-    InputrcParser handler = new InputrcParser() {
-      @Override
-      public void bindFunction(final int[] keySequence, final String functionName) {
-        actions.add(new EventMapping(keySequence, new FunctionEvent() {
-          @Override
-          public String getName() {
-            return functionName;
-          }
-          @Override
-          public String toString() {
-            return functionName;
-          }
-        }));
-      }
-    };
-    InputrcParser.parse(inputrc, handler);
-    this.mappings = actions.toArray(new EventMapping[actions.size()]);
+  public KeyDecoder(Keymap keymap) {
+    this.keymap = keymap;
     this.state = new State(new int[0]);
   }
 
-  public ReadlineDecoder(KeyEvent[] keys) {
-    this.mappings = new EventMapping[keys.length];
-    for (int i = 0;i < keys.length;i++) {
-      mappings[i] = new EventMapping(keys[i]);
-    }
-    this.state = new State(new int[0]);
-  }
-
-  public ReadlineDecoder append(int... chars) {
+  public KeyDecoder append(int... chars) {
     for (int c : chars) {
       state = state.append(c);
     }
@@ -136,22 +100,6 @@ public class ReadlineDecoder {
     }
   }
 
-  private static class EventMapping {
-    final int[] seq;
-    final Event event;
-    public EventMapping(KeyEvent event) {
-      this.seq = new int[event.length()];
-      for (int i = 0;i < seq.length;i++) {
-        seq[i] = event.getAt(i);
-      }
-      this.event = event;
-    }
-    public EventMapping(int[] seq, Event event) {
-      this.seq = seq;
-      this.event = event;
-    }
-  }
-
   static class Match {
     final Event event;
     final int size;
@@ -163,10 +111,10 @@ public class ReadlineDecoder {
 
   private Match reduce(int[] buffer) {
     if (buffer.length > 0) {
-      EventMapping candidate = null;
+      Keymap.Binding candidate = null;
       int prefixes = 0;
       next:
-      for (EventMapping action : mappings) {
+      for (Keymap.Binding action : keymap.bindings) {
         if (action.seq.length > 0) {
           if (action.seq.length <= buffer.length) {
             for (int i = 0;i < action.seq.length;i++) {

@@ -1,9 +1,10 @@
 package io.termd.core.term;
 
+import io.termd.core.readline.Keymap;
 import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 import io.termd.core.readline.ReadlineHandler;
-import io.termd.core.readline.ReadlineDecoder;
+import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.ReadlineRequest;
 
 import java.io.InputStream;
@@ -20,9 +21,9 @@ public class ReadlineTerm {
     this.conn = conn;
 
     //
-    InputStream inputrc = ReadlineDecoder.class.getResourceAsStream("inputrc");
+    InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
     final ReadlineHandler handler = new ReadlineHandler(
-        new ReadlineDecoder(inputrc),
+        new KeyDecoder(new Keymap(inputrc)),
         conn.dataHandler(),
         new Executor() {
           @Override

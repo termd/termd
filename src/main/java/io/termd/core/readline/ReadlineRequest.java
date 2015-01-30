@@ -8,10 +8,22 @@ import io.termd.core.term.TermEvent;
  */
 public interface ReadlineRequest {
 
+  /**
+   * @return the request count.
+   */
   int requestCount();
 
-  String getData();
+  /**
+   * @return the line to process.
+   */
+  String line();
 
+  /**
+   * Set a term  event handler to catch term event occuring during the lifetime of this request. This handler
+   * override the {@link io.termd.core.readline.ReadlineHandler} events.
+   *
+   * @param handler the event handler
+   */
   void eventHandler(Handler<TermEvent> handler);
 
   /**

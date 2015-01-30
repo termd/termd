@@ -14,15 +14,15 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineDecoderTest {
+public class KeyDecoderTest {
 
   @Test
   public void testDecodeKeySeq() {
-    ReadlineDecoder queue = new ReadlineDecoder(new ByteArrayInputStream("\"ab\":foo".getBytes()));
+    KeyDecoder queue = new KeyDecoder(new Keymap(new ByteArrayInputStream("\"ab\":foo".getBytes())));
     assertFalse(queue.append('a').hasNext());
     assertTrue(queue.append('b', 'c').hasNext());
     FunctionEvent action = (FunctionEvent) queue.next();
-    assertEquals("foo", action.getName());
+    assertEquals("foo", action.name());
     assertTrue(queue.hasNext());
     KeyEvent key = (KeyEvent) queue.next();
     assertEquals(1, key.length());
@@ -32,7 +32,7 @@ public class ReadlineDecoderTest {
 
   @Test
   public void testDecodeKeySeqPrefix() {
-    ReadlineDecoder queue = new ReadlineDecoder(new ByteArrayInputStream("\"ab\":foo".getBytes()));
+    KeyDecoder queue = new KeyDecoder(new Keymap(new ByteArrayInputStream("\"ab\":foo".getBytes())));
     assertFalse(queue.append('a').hasNext());
     assertTrue(queue.append('c').hasNext());
     KeyEvent key = (KeyEvent) queue.next();
@@ -47,7 +47,7 @@ public class ReadlineDecoderTest {
 
   @Test
   public void testRecognizePredefinedKey1() {
-    ReadlineDecoder queue = new ReadlineDecoder();
+    KeyDecoder queue = new KeyDecoder(new Keymap());
     queue.append(27, 91);
     assertTrue(queue.hasNext());
     assertEquals(1, ((KeyEvent) queue.peek()).length());
@@ -59,7 +59,7 @@ public class ReadlineDecoderTest {
 
   @Test
   public void testRecognizePredefinedKey2() {
-    ReadlineDecoder queue = new ReadlineDecoder();
+    KeyDecoder queue = new KeyDecoder(new Keymap());
     queue.append(27, 91);
     assertEquals(1, ((KeyEvent) queue.peek()).length());
     assertEquals(27, ((KeyEvent)queue.peek()).getAt(0));
@@ -71,7 +71,7 @@ public class ReadlineDecoderTest {
 
   @Test
   public void testNotRecognizePredefinedKey() {
-    ReadlineDecoder queue = new ReadlineDecoder();
+    KeyDecoder queue = new KeyDecoder(new Keymap());
     queue.append('a');
     assertTrue(queue.hasNext());
     KeyEvent key = (KeyEvent) queue.next();
@@ -81,7 +81,7 @@ public class ReadlineDecoderTest {
 
   @Test
   public void testBuffer() {
-    ReadlineDecoder queue = new ReadlineDecoder();
+    KeyDecoder queue = new KeyDecoder(new Keymap());
     assertEquals(0, queue.getBuffer().capacity());
     queue.append('h', 'e', 'l', 'l', 'o');
     IntBuffer buffer = queue.getBuffer();

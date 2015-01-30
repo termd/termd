@@ -178,12 +178,12 @@ public abstract class ReadlineTermTestBase extends TelnetTestBase {
     assertWriteln("abc");
     ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
     assertEquals("abc\r\n", assertReadString(5));
-    assertEquals("abc", requestContext.getData());
+    assertEquals("abc", requestContext.line());
     assertWriteln("def");
     requestContext.write("% ").end();
     assertEquals("% def", assertReadString(5));
     requestContext = assertNotNull(requestContextWait.poll(10000, TimeUnit.SECONDS));
-    assertEquals("def", requestContext.getData());
+    assertEquals("def", requestContext.line());
     requestContext.write("% ").end();
     assertEquals("\r\n% ", assertReadString(4));
   }

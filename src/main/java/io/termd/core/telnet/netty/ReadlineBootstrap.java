@@ -61,7 +61,7 @@ public class ReadlineBootstrap {
                 } catch (InterruptedException e) {
                   e.printStackTrace();
                 } finally {
-                  request.write("You just typed :" + request.getData());
+                  request.write("You just typed :" + request.line());
                   request.write("\r\n% ").end();
                 }
               }

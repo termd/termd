@@ -9,12 +9,12 @@ import io.termd.core.readline.LineBuffer;
 public class BackwardDeleteChar implements Function {
 
   @Override
-  public String getName() {
+  public String name() {
     return "backward-delete-char";
   }
 
   @Override
-  public void call(LineBuffer buffer) {
+  public void apply(LineBuffer buffer) {
     buffer.deleteAt(-1);
   }
 }

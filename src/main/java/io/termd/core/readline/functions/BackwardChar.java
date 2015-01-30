@@ -9,12 +9,12 @@ import io.termd.core.readline.LineBuffer;
 public class BackwardChar implements Function {
 
   @Override
-  public String getName() {
+  public String name() {
     return "backward-char";
   }
 
   @Override
-  public void call(LineBuffer buffer) {
+  public void apply(LineBuffer buffer) {
     buffer.moveCursor(-1);
   }
 }
