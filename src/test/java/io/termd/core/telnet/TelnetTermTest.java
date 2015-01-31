@@ -1,8 +1,8 @@
 package io.termd.core.telnet;
 
+import io.termd.core.util.Dimension;
 import io.termd.core.util.Handler;
 import io.termd.core.util.Provider;
-import io.termd.core.term.TermEvent;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
@@ -26,35 +26,31 @@ public class TelnetTermTest extends TelnetTestBase {
       @Override
       public TelnetHandler provide() {
         final AtomicInteger count = new AtomicInteger();
-        final TelnetTermConnection connection = new TelnetTermConnection();
-        connection.eventHandler(new Handler<TermEvent>() {
+        final TelnetTtyConnection connection = new TelnetTtyConnection();
+        connection.setResizeHandler(new Handler<Dimension>() {
           @Override
-          public void handle(TermEvent event) {
-            if (event instanceof TermEvent.Size) {
-              TermEvent.Size size = (TermEvent.Size) event;
-              switch (count.getAndIncrement()) {
-                case 0:
-                  assertEquals(20, size.getWidth());
-                  assertEquals(10, size.getHeight());
-                  latch.countDown();
-                  break;
-                case 1:
-                  assertEquals(80, size.getWidth());
-                  assertEquals(24, size.getHeight());
-                  connection.eventHandler(null);
-                  connection.eventHandler(new Handler<TermEvent>() {
-                    @Override
-                    public void handle(TermEvent event) {
-                      TermEvent.Size size = (TermEvent.Size) event;
-                      assertEquals(80, size.getWidth());
-                      assertEquals(24, size.getHeight());
-                      testComplete();
-                    }
-                  });
-                  break;
-                default:
-                  fail("Was not expecting that");
-              }
+          public void handle(Dimension size) {
+            switch (count.getAndIncrement()) {
+              case 0:
+                assertEquals(20, size.getWidth());
+                assertEquals(10, size.getHeight());
+                latch.countDown();
+                break;
+              case 1:
+                assertEquals(80, size.getWidth());
+                assertEquals(24, size.getHeight());
+                connection.setResizeHandler(null);
+                connection.setResizeHandler(new Handler<Dimension>() {
+                  @Override
+                  public void handle(Dimension size) {
+                    assertEquals(80, size.getWidth());
+                    assertEquals(24, size.getHeight());
+                    testComplete();
+                  }
+                });
+                break;
+              default:
+                fail("Was not expecting that");
             }
           }
         });

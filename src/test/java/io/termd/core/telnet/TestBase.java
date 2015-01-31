@@ -61,6 +61,14 @@ public class TestBase {
     }
   }
 
+  protected void await(CountDownLatch latch) {
+    try {
+      assertTrue(latch.await(10, TimeUnit.SECONDS));
+    } catch (InterruptedException e) {
+      throw failure(e);
+    }
+  }
+
   protected void await() {
     if (awaitCalled) {
       throw new IllegalStateException("await() already invoked");

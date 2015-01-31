@@ -20,8 +20,7 @@ import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
-import io.termd.core.telnet.TelnetTermConnection;
-import io.termd.core.term.ReadlineTerm;
+import io.termd.core.telnet.TelnetTtyConnection;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -52,11 +51,11 @@ public class ReadlineBootstrap {
     telnet.start(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new TelnetTermConnection() {
+        return new TelnetTtyConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, io.termd.core.telnet.netty.ReadlineBootstrap.ECHO_HANDLER);
+            io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(this);
           }
         };
       }

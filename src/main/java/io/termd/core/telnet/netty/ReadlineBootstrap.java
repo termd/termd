@@ -16,17 +16,20 @@
  */
 package io.termd.core.telnet.netty;
 
+import io.termd.core.readline.KeyDecoder;
+import io.termd.core.readline.Keymap;
+import io.termd.core.readline.Readline;
+import io.termd.core.tty.Signal;
+import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 import io.termd.core.util.Provider;
-import io.termd.core.telnet.TelnetTermConnection;
-import io.termd.core.term.TermEvent;
-import io.termd.core.readline.ReadlineRequest;
+import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
-import io.termd.core.term.ReadlineTerm;
 
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -36,6 +39,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ReadlineBootstrap {
 
+/*
   public static final Handler<ReadlineRequest> ECHO_HANDLER = new Handler<ReadlineRequest>() {
     @Override
     public void handle(final ReadlineRequest request) {
@@ -71,6 +75,7 @@ public class ReadlineBootstrap {
       }
     }
   };
+*/
 
   public static void main(String[] args) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
@@ -88,15 +93,76 @@ public class ReadlineBootstrap {
     this.telnet = telnet;
   }
 
+  public static final Handler<TtyConnection> READLINE = new Handler<TtyConnection>() {
+    @Override
+    public void handle(final TtyConnection conn) {
+      InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
+      Keymap keymap = new Keymap(inputrc);
+      Readline readline = new Readline(keymap);
+      for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
+        readline.addFunction(function);
+      }
+      conn.writeHandler().handle(Helper.toCodePoints("Welcome sir\r\n\r\n"));
+      read(conn, readline);
+    }
+
+    class Task extends Thread implements Handler<Signal> {
+
+      final TtyConnection conn;
+      final Readline readline;
+      final String line;
+      volatile boolean sleeping;
+
+      public Task(TtyConnection conn, Readline readline, String line) {
+        this.conn = conn;
+        this.readline = readline;
+        this.line = line;
+      }
+
+      @Override
+      public void handle(Signal event) {
+        if (sleeping) {
+          interrupt();
+        }
+      }
+
+      @Override
+      public void run() {
+        conn.writeHandler().handle(Helper.toCodePoints("Running " + line + "\r\n"));
+        conn.setSignalHandler(this);
+        sleeping = true;
+        try {
+          Thread.sleep(3000);
+        } catch (InterruptedException e) {
+          conn.writeHandler().handle(Helper.toCodePoints("Interrupted\r\n"));
+        } finally {
+          sleeping = false;
+          conn.setSignalHandler(null);
+        }
+        read(conn, readline);
+      }
+    }
+
+    public void read(final TtyConnection conn, final Readline readline) {
+      readline.readline(conn, "% ", new Handler<String>() {
+        @Override
+        public void handle(String line) {
+          Task task = new Task(conn, readline, line);
+          task.start();
+        }
+      });
+    }
+  };
+
   public void start() {
     telnet.start(new Provider<TelnetHandler>() {
       @Override
       public TelnetHandler provide() {
-        return new TelnetTermConnection() {
+        return new TelnetTtyConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            new ReadlineTerm(this, ECHO_HANDLER);
+            READLINE.handle(this);
           }
         };
       }

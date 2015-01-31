@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class InputrcParser {
+public abstract class InputrcParser {
 
   static final Pattern COMMENT = Pattern.compile("#.*");
   static final Pattern CONDITIONAL = Pattern.compile("\\$.*");
@@ -148,5 +148,10 @@ abstract class InputrcParser {
   }
 
   void bindFunction(int[] keySequence, String functionName) {
+  }
+
+  public static Keymap create() {
+    InputStream inputrc = InputrcParser.class.getResourceAsStream("inputrc");
+    return new Keymap(inputrc);
   }
 }

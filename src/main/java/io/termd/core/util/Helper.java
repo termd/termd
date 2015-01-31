@@ -48,10 +48,14 @@ public class Helper {
    */
   public static String fromCodePoints(int[] codePoints) {
     StringBuilder buffer = new StringBuilder();
-    for (int codePoint : codePoints) {
-      buffer.appendCodePoint(codePoint);
-    }
+    appendTo(codePoints, buffer);
     return buffer.toString();
+  }
+
+  public static void appendTo(int[] codePoints, StringBuilder sb) {
+    for (int codePoint : codePoints) {
+      sb.appendCodePoint(codePoint);
+    }
   }
 
   public static <S> List<S> loadServices(ClassLoader loader, Class<S> serviceClass) {

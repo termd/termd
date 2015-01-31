@@ -1,30 +1,31 @@
 package io.termd.core.readline;
 
-import io.termd.core.util.Handler;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.telnet.TestBase;
-import io.termd.core.term.TermEvent;
+import io.termd.core.tty.Signal;
+import io.termd.core.tty.TtyConnection;
+import io.termd.core.util.Dimension;
+import io.termd.core.util.Handler;
+import io.termd.core.util.Provider;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineHandlerTest extends TestBase {
+public class ReadlineTest extends TestBase {
 
-  public static final FunctionEvent BACKWARD_DELETE_CHAR = new FunctionEvent("backward-delete-char");
-  public static final FunctionEvent BACKWARD_CHAR = new FunctionEvent("backward-char");
-  public static final FunctionEvent FORWARD_CHAR = new FunctionEvent("forward-char");
-  
+
+  private static final int[] FORWARD_CHAR = { 27, '[', 'C' };
+  private static final int[] BACKWARD_CHAR = { 27, '[', 'D' };
+  private static final int[] BACKWARD_DELETE_CHAR = { 8 };
+
   static class EventContextImpl implements EventContext {
 
     int endCount = 0;
@@ -50,7 +51,7 @@ public class ReadlineHandlerTest extends TestBase {
     private int[][] buffer = new int[10][];
     private int row;
     private int cursor;
-    Handler<int[]> adapter = new Handler<int[]>() {
+    Handler<int[]> writeHandler = new Handler<int[]>() {
       @Override
       public void handle(int[] event) {
         for (int i : event) {
@@ -79,29 +80,78 @@ public class ReadlineHandlerTest extends TestBase {
         }
       }
     };
-    final ReadlineHandler handler;
+    final Readline handler;
+
+    private Handler<int[]> readHandler;
 
     public Term() {
-      this(new Handler<ReadlineRequest>() {
+      Keymap keymap = InputrcParser.create();
+      handler = new Readline(keymap);
+      handler.addFunction(new BackwardDeleteChar());
+      handler.addFunction(new BackwardChar());
+      handler.addFunction(new ForwardChar());
+    }
+
+    public void readlineFail() {
+      readline(new Handler<String>() {
         @Override
-        public void handle(ReadlineRequest event) {
-          event.write("% ");
-          event.end();
+        public void handle(String event) {
+          fail("Was not accepting a call");
         }
       });
     }
 
-    public Term(Handler<ReadlineRequest> requestHandler) {
-      handler = new ReadlineHandler(adapter, new Executor() {
+    public Provider<String> readlineComplete() {
+      final AtomicReference<String> queue = new AtomicReference<>();
+      readline(new Handler<String>() {
         @Override
-        public void execute(Runnable command) {
-          command.run();
+        public void handle(String event) {
+          queue.compareAndSet(null, event);
         }
-      }, requestHandler).
-          addFunction(new BackwardDeleteChar()).
-          addFunction(new BackwardChar()).
-          addFunction(new ForwardChar());
-      handler.init();
+      });
+      return new Provider<String>() {
+        @Override
+        public String provide() {
+          return queue.get();
+        }
+      };
+    }
+
+    public void readline(Handler<String> readlineHandler) {
+      handler.readline(new TtyConnection() {
+        @Override
+        public Handler<Dimension> getResizeHandler() {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public void setResizeHandler(Handler<Dimension> handler) {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public Handler<Signal> getSignalHandler() {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public void setSignalHandler(Handler<Signal> handler) {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public Handler<int[]> getReadHandler() {
+          return readHandler;
+        }
+        @Override
+        public void setReadHandler(Handler<int[]> handler) {
+          readHandler = handler;
+        }
+        @Override
+        public Handler<int[]> writeHandler() {
+          return writeHandler;
+        }
+        @Override
+        public void schedule(Runnable task) {
+          throw new UnsupportedOperationException();
+        }
+      }, "% ", readlineHandler);
     }
 
     private List<String> render() {
@@ -131,75 +181,86 @@ public class ReadlineHandlerTest extends TestBase {
       assertEquals(row, this.row);
       assertEquals(cursor, this.cursor);
     }
+
+    void read(int... data) {
+      readHandler.handle(data);
+    }
+
   }
 
+/*
   @Test
   public void testPrompt() {
     Term term = new Term();
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
+*/
 
   @Test
   public void testEnter() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
-    term.assertScreen(
-        "% ",
-        "% "
-    );
-    term.assertAt(1, 2);
+    term.readline(new Handler<String>() {
+      @Override
+      public void handle(String event) {
+        testComplete();
+      }
+    });
+    term.read('\r');
+    term.assertScreen("% ");
+    term.assertAt(1, 0);
+    await();
   }
 
   @Test
   public void testInsertChar() {
     Term term = new Term();
-    EventContextImpl context = new EventContextImpl(Keys.A);
-    term.handler.handle(context);
-    assertEquals(1, context.endCount);
+    term.readlineFail();
+    term.read('A');
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
 
   @Test
-  public void testInsertCharEnter() {
+  public void testInsertCharEnter() throws Exception {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
-    term.assertScreen(
-        "% A",
-        "% ");
-    term.assertAt(1, 2);
-  }
-
-  @Test
-  public void testBS() {
-    Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
-    term.assertScreen("%  ");
-    term.assertAt(0, 2);
+    Provider<String> line = term.readlineComplete();
+    term.read('A');
+    term.read('\r');
+    term.assertScreen("% A");
+    term.assertAt(1, 0);
+    assertEquals("A", line.provide());
   }
 
   @Test
   public void testEscapeCR() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.BACKSLASH));
+    term.readlineFail();
+    term.read('\\');
     term.assertScreen("% \\");
-    EventContextImpl context = new EventContextImpl(Keys.CTRL_M);
-    term.handler.handle(context);
+    term.read('\r');
     term.assertScreen(
         "% \\",
         "> "
     );
     term.assertAt(1, 2);
-    assertEquals(1, context.endCount);
+  }
+
+  @Test
+  public void testBackwardDeleteChar() {
+    Term term = new Term();
+    term.readlineFail();
+    term.read('A');
+    term.read(BACKWARD_DELETE_CHAR);
+    term.assertScreen("%  ");
+    term.assertAt(0, 2);
   }
 
   @Test
   public void testBackwardDelete() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
+    term.readlineFail();
+    term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
         "% "
     );
@@ -209,9 +270,10 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testBackwardDeleteLastChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(Keys.B));
-    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
+    term.readlineFail();
+    term.read('A');
+    term.read('B');
+    term.read(8);
     term.assertScreen(
         "% A "
     );
@@ -219,12 +281,13 @@ public class ReadlineHandlerTest extends TestBase {
   }
 
   @Test
-  public void testBackwardDeleteChar() {
+  public void testBackwardCharBackwardDeleteChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(Keys.B));
-    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
-    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
+    term.readlineFail();
+    term.read('A');
+    term.read('B');
+    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
         "% B "
     );
@@ -234,9 +297,10 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testBackwardDeleteEscape() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.BACKSLASH));
+    term.readlineFail();
+    term.read('\\');
     term.assertScreen("% \\");
-    term.handler.handle(new EventContextImpl(BACKWARD_DELETE_CHAR));
+    term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
         "%  "
     );
@@ -246,7 +310,8 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testBackwardChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
+    term.readlineFail();
+    term.read(BACKWARD_CHAR);
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -254,8 +319,9 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testInsertCharBackwardChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
+    term.readlineFail();
+    term.read('A');
+    term.read(BACKWARD_CHAR);
     term.assertScreen("% A");
     term.assertAt(0, 2);
   }
@@ -263,7 +329,8 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testForwardChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(FORWARD_CHAR));
+    term.readlineFail();
+    term.read(FORWARD_CHAR);
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -271,9 +338,10 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testInsertCharForwardChar() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(BACKWARD_CHAR));
-    term.handler.handle(new EventContextImpl(FORWARD_CHAR));
+    term.readlineFail();
+    term.read('A');
+    term.read(BACKWARD_CHAR);
+    term.read(FORWARD_CHAR);
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
@@ -281,29 +349,32 @@ public class ReadlineHandlerTest extends TestBase {
   @Test
   public void testQuotedMultiline() {
     Term term = new Term();
-    term.handler.handle(new EventContextImpl(Keys.A));
-    term.handler.handle(new EventContextImpl(Keys.QUOTE));
-    EventContextImpl context = new EventContextImpl(Keys.CTRL_M);
-    term.handler.handle(context);
+    Provider<String> a = term.readlineComplete();
+    term.read('A');
+    term.read('"');
+    term.read('\r');
+    assertNull(a.provide());
     term.assertScreen(
         "% A\"",
         "> ");
-    assertEquals(1, context.endCount);
-    term.handler.handle(new EventContextImpl(Keys.B));
-    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
+    term.read('B');
+    term.read('\r');
     term.assertScreen(
         "% A\"",
         "> B",
         "> ");
-    term.handler.handle(new EventContextImpl(Keys.C));
-    term.handler.handle(new EventContextImpl(Keys.QUOTE));
-    term.handler.handle(new EventContextImpl(Keys.CTRL_M));
+    assertNull(a.provide());
+    term.read('C');
+    term.read('"');
+    term.read('\r');
     term.assertScreen(
         "% A\"",
         "> B",
-        "> C\"",
-        "% ");
+        "> C\"");
+    term.assertAt(3, 0);
+    assertEquals("A\"\nB\nC\"", a.provide());
   }
+/*
 
   @Test
   public void testCharsQueuing() {
@@ -461,4 +532,5 @@ public class ReadlineHandlerTest extends TestBase {
     term.assertScreen("foo");
     term.assertAt(0, 3);
   }
+*/
 }

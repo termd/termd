@@ -1,20 +1,22 @@
 package io.termd.core.ssh;
 
+import io.termd.core.tty.ReadBuffer;
+import io.termd.core.tty.Signal;
+import io.termd.core.tty.SignalDecoder;
+import io.termd.core.util.Dimension;
 import io.termd.core.util.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
-import io.termd.core.term.ReadlineTerm;
-import io.termd.core.term.TermConnection;
-import io.termd.core.term.TermEvent;
+import io.termd.core.tty.TtyConnection;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
+import org.apache.sshd.common.PtyMode;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.SessionAware;
-import org.apache.sshd.server.Signal;
 import org.apache.sshd.server.SignalListener;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
@@ -25,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.AbstractMap;
 import java.util.EnumSet;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,26 +45,52 @@ public class ReadlineBootstrap {
 
     SshServer sshd = SshServer.setUpDefaultServer();
 
-    class MyCommand implements Command, SessionAware, ChannelSessionAware, TermConnection {
+    class TtyCommand implements Command, SessionAware, ChannelSessionAware, TtyConnection {
 
       private Charset charset;
+      private SignalDecoder signalDecoder;
+      private ReadBuffer readBuffer;
       private BinaryDecoder decoder;
       private BinaryEncoder encoder;
       private Handler<byte[]> out;
-      private int width = -1;
-      private int height = -1;
-      private Handler<TermEvent> eventHandler;
+      private Dimension size = null;
+      private Handler<Dimension> resizeHandler;
 
       @Override
-      public void eventHandler(Handler<TermEvent> handler) {
-        eventHandler = handler;
-        if (width >= 0 && height >= 0 && handler != null) {
-          handler.handle(new TermEvent.Size(width, height));
+      public Handler<int[]> getReadHandler() {
+        return readBuffer.getReadHandler();
+      }
+
+      @Override
+      public void setReadHandler(Handler<int[]> handler) {
+        readBuffer.setReadHandler(handler);
+      }
+
+      @Override
+      public Handler<Dimension> getResizeHandler() {
+        return resizeHandler;
+      }
+
+      @Override
+      public void setResizeHandler(Handler<Dimension> handler) {
+        resizeHandler = handler;
+        if (handler != null && size != null) {
+          handler.handle(size);
         }
       }
 
       @Override
-      public Handler<int[]> dataHandler() {
+      public Handler<Signal> getSignalHandler() {
+        return signalDecoder.getSignalHandler();
+      }
+
+      @Override
+      public void setSignalHandler(Handler<Signal> handler) {
+        signalDecoder.setSignalHandler(handler);
+      }
+
+      @Override
+      public Handler<int[]> writeHandler() {
         return encoder;
       }
 
@@ -137,43 +165,53 @@ public class ReadlineBootstrap {
         }
         env.addSignalListener(new SignalListener() {
           @Override
-          public void signal(Signal signal) {
+          public void signal(org.apache.sshd.server.Signal signal) {
+            System.out.println("GOT SIGNAL " + signal);
             updateSize(env);
           }
-        }, EnumSet.of(Signal.WINCH));
+        }, EnumSet.of(org.apache.sshd.server.Signal.WINCH));
         updateSize(env);
-        decoder = new BinaryDecoder(512, charset, new Handler<int[]>() {
+
+        // Signal handling
+        int vintr = getControlChar(env, PtyMode.VINTR, 3);
+
+        //
+        readBuffer = new ReadBuffer(new Executor() {
           @Override
-          public void handle(int[] event) {
-            if (eventHandler != null) {
-              eventHandler.handle(new TermEvent.Read(event));
-            }
+          public void execute(Runnable command) {
+            schedule(command);
           }
         });
+        signalDecoder = new SignalDecoder(vintr).setReadHandler(readBuffer);
+        decoder = new BinaryDecoder(512, charset, signalDecoder);
         encoder = new BinaryEncoder(512, charset, out);
 
         //
-        new ReadlineTerm(this, io.termd.core.telnet.netty.ReadlineBootstrap.ECHO_HANDLER);
+        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(this);
+      }
+
+      private int getControlChar(Environment env, PtyMode key, int def) {
+        Integer controlChar = env.getPtyModes().get(key);
+        return controlChar != null ? controlChar : def;
       }
 
       public void updateSize(Environment env) {
         String columns = env.getEnv().get(Environment.ENV_COLUMNS);
         String lines = env.getEnv().get(Environment.ENV_LINES);
         if (lines != null && columns != null) {
-          AbstractMap.SimpleEntry<Integer, Integer> size;
+          Dimension size;
           try {
             int width = Integer.parseInt(columns);
             int height = Integer.parseInt(lines);
-            size = new AbstractMap.SimpleEntry<>(width, height);
+            size = new Dimension(width, height);
           }
           catch (Exception ignore) {
             size = null;
           }
           if (size != null) {
-            this.width = width;
-            this.height = height;
-            if (eventHandler != null) {
-              eventHandler.handle(new TermEvent.Size(size.getKey(), size.getValue()));
+            this.size = size;
+            if (resizeHandler != null) {
+              resizeHandler.handle(size);
             }
           }
         }
@@ -187,7 +225,7 @@ public class ReadlineBootstrap {
     sshd.setShellFactory(new Factory<Command>() {
       @Override
       public Command create() {
-        return new MyCommand();
+        return new TtyCommand();
       }
     });
 
