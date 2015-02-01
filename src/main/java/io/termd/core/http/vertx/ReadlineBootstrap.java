@@ -9,8 +9,10 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.impl.MimeMapping;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.sockjs.SockJSServer;
+import org.vertx.java.core.sockjs.SockJSSocket;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
@@ -22,9 +24,9 @@ public class ReadlineBootstrap {
 
   public static void main(String[] args) throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = VertxFactory.newVertx();
-    final HttpServer server = vertx.createHttpServer();
-    server.requestHandler(new Handler<HttpServerRequest>() {
+    final Vertx vertx = VertxFactory.newVertx();
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.requestHandler(new Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest req) {
 
@@ -41,7 +43,7 @@ public class ReadlineBootstrap {
             Buffer buf = new Buffer();
             byte[] tmp = new byte[256];
             resp = req.response();
-            for (int l = 0;l != -1;l = in.read(tmp)) {
+            for (int l = 0; l != -1; l = in.read(tmp)) {
               buf.appendBytes(tmp, 0, l);
             }
             int li = path.lastIndexOf('.');
@@ -57,14 +59,23 @@ public class ReadlineBootstrap {
           } else {
             resp.setStatusCode(404);
           }
-        } catch(Exception e) {
+        } catch (Exception e) {
           e.printStackTrace();
         } finally {
           resp.end();
         }
       }
     });
-    server.listen(8080, new Handler<AsyncResult<HttpServer>>() {
+    SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
+    JsonObject config = new JsonObject().putString("prefix", "/term");
+    sockJSServer.installApp(config, new Handler<SockJSSocket>() {
+      @Override
+      public void handle(final SockJSSocket socket) {
+        SockJSTtyConnection conn = new SockJSTtyConnection(vertx, socket);
+        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(conn);
+      }
+    });
+    httpServer.listen(8080, new Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> event) {
         if (event.succeeded()) {
