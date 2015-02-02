@@ -2,7 +2,8 @@ package io.termd.core.tty;
 
 import io.termd.core.util.Handler;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 
 /**
@@ -10,9 +11,9 @@ import java.util.concurrent.Executor;
  */
 public class ReadBuffer implements Handler<int[]> {
 
-  private final LinkedList<int[]> events = new LinkedList<>();
+  private final Queue<int[]> queue = new ArrayDeque<>(10);
   private final Executor executor;
-  private Handler<int[]> readHandler;
+  private volatile Handler<int[]> readHandler;
 
   public ReadBuffer(Executor executor) {
     this.executor = executor;
@@ -20,10 +21,12 @@ public class ReadBuffer implements Handler<int[]> {
 
   @Override
   public void handle(int[] data) {
-    if (readHandler == null) {
-      events.addLast(data);
-    } else {
-      readHandler.handle(data);
+    queue.add(data);
+    while (readHandler != null && queue.size() > 0) {
+      data = queue.poll();
+      if (data != null) {
+        readHandler.handle(data);
+      }
     }
   }
 
@@ -38,22 +41,28 @@ public class ReadBuffer implements Handler<int[]> {
       if (this.readHandler != null) {
         this.readHandler = readHandler;
       } else {
-        Runnable task = new Runnable() {
-          @Override
-          public void run() {
-            if (events.size() > 0) {
-              int[] data = events.removeFirst();
-              readHandler.handle(data);
-              executor.execute(this);
-            } else {
-              ReadBuffer.this.readHandler = readHandler;
-            }
-          }
-        };
-        executor.execute(task);
+        ReadBuffer.this.readHandler = readHandler;
+        drainQueue();
       }
     } else {
       this.readHandler = null;
+    }
+  }
+
+  private void drainQueue() {
+    if (queue.size() > 0 && readHandler != null) {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          if (readHandler != null) {
+            final int[] data = queue.poll();
+            if (data != null) {
+              readHandler.handle(data);
+              drainQueue();
+            }
+          }
+        }
+      });
     }
   }
 }

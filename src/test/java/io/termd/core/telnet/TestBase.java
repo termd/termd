@@ -20,6 +20,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -149,6 +150,14 @@ public class TestBase {
   public void assertEquals(Object expected, Object actual) {
     try {
       Assert.assertEquals(expected, actual);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  public void assertEquals(int[] expected, int[] actual) {
+    try {
+      Assert.assertTrue("Was expecting " + Arrays.toString(expected) + " to be equals to " + Arrays.toString(actual), Arrays.equals(expected, actual));
     } catch (AssertionError e) {
       handleThrowable(e);
     }
