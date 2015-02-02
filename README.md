@@ -11,7 +11,9 @@ An open source terminal daemon library providing terminal handling in Java.
    - read events
    - window size
    - tty signals
-- Extensible readline implementation
+- Readline implementation
+   - extensible with plugable functions
+   - multiline support
 - Unicode support
 
 ### Todo
