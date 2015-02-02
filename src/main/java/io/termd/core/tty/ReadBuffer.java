@@ -34,8 +34,6 @@ public class ReadBuffer implements Handler<int[]> {
     return readHandler;
   }
 
-  // Bug with setHandler when dispatching we need some kind of flag to either forbid it
-  // or handle it properly
   public void setReadHandler(final Handler<int[]> readHandler) {
     if (readHandler != null) {
       if (this.readHandler != null) {
