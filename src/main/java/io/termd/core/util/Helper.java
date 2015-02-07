@@ -79,4 +79,19 @@ public class Helper {
     }
     return result;
   }
+
+  public static List<String> split(String s, char c) {
+    List<String> ret = new ArrayList<>();
+    int prev = 0;
+    while (true) {
+      int pos = s.indexOf('\n', prev);
+      if (pos == -1) {
+        break;
+      }
+      ret.add(s.substring(prev, pos));
+      prev = pos + 1;
+    }
+    ret.add(s.substring(prev));
+    return ret;
+  }
 }
