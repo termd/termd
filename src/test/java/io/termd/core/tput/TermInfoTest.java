@@ -1,6 +1,5 @@
 package io.termd.core.tput;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -100,14 +99,14 @@ public class TermInfoTest {
 
   @Test
   public void testParseFeatureLine() {
-    assertParseFeatureLine("\ta,\n", new TermInfo.Feature.Boolean("a"));
-    assertParseFeatureLine("\ta, \n", new TermInfo.Feature.Boolean("a"));
-    assertParseFeatureLine("\ta,\t\n", new TermInfo.Feature.Boolean("a"));
-    assertParseFeatureLine("\ta,b,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
-    assertParseFeatureLine("\ta, b,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
-    assertParseFeatureLine("\ta,\tb,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
-    assertParseFeatureLine("\ta=b,\n", new TermInfo.Feature.String("a", "b"));
-    assertParseFeatureLine("\ta#1,\n", new TermInfo.Feature.Numeric("a", "1"));
+    assertParseFeatureLine("\ta,\n", new TermInfoFeature.Boolean("a"));
+    assertParseFeatureLine("\ta, \n", new TermInfoFeature.Boolean("a"));
+    assertParseFeatureLine("\ta,\t\n", new TermInfoFeature.Boolean("a"));
+    assertParseFeatureLine("\ta,b,\n", new TermInfoFeature.Boolean("a"), new TermInfoFeature.Boolean("b"));
+    assertParseFeatureLine("\ta, b,\n", new TermInfoFeature.Boolean("a"), new TermInfoFeature.Boolean("b"));
+    assertParseFeatureLine("\ta,\tb,\n", new TermInfoFeature.Boolean("a"), new TermInfoFeature.Boolean("b"));
+    assertParseFeatureLine("\ta=b,\n", new TermInfoFeature.String("a", "b"));
+    assertParseFeatureLine("\ta#1,\n", new TermInfoFeature.Numeric("a", "1"));
     failParseFeatureLine("");
     failParseFeatureLine("a");
     failParseFeatureLine("a,");
@@ -122,15 +121,15 @@ public class TermInfoTest {
     failParseFeatureLine("\ta#b,");
   }
 
-  private void assertParseFeatureLine(String s, TermInfo.Feature... expectedFeatures) {
-    List<TermInfo.Feature> features = new ArrayList<>();
+  private void assertParseFeatureLine(String s, TermInfoFeature... expectedFeatures) {
+    List<TermInfoFeature> features = new ArrayList<>();
     assertEquals(s.length(), parser.parseFeatureLine(s, 0, features));
     assertEquals(Arrays.asList(expectedFeatures), features);
   }
 
   private void failParseFeatureLine(String s) {
     try {
-      if (parser.parseFeatureLine(s, 0, new ArrayList<TermInfo.Feature>()) > 0) {
+      if (parser.parseFeatureLine(s, 0, new ArrayList<TermInfoFeature>()) > 0) {
         fail("was expecting <" + s + "> to fail");
       }
     } catch (IllegalArgumentException ignore) {
@@ -139,7 +138,7 @@ public class TermInfoTest {
 
   @Test
   public void testParseDescription() {
-    parser.parseDescription("a|b,\n\ta,\n", 0, new ArrayList<TermInfo.Entry>());
+    parser.parseDescription("a|b,\n\ta,\n", 0, new ArrayList<TermInfoEntry>());
   }
 
 
@@ -157,6 +156,6 @@ public class TermInfoTest {
       }
     }
     String s = res.toString("ISO-8859-1");
-    assertEquals(s.length(), parser.parseDescriptions(s, 0, new ArrayList<TermInfo.Entry>()));
+    assertEquals(s.length(), parser.parseDescriptions(s, 0, new ArrayList<TermInfoEntry>()));
   }
 }

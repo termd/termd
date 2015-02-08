@@ -16,13 +16,13 @@ public class TermInfoParser {
   private static final String LONGNAME = "([\\x20-\\x7E&&[^|]]+)";
   private static final Pattern LONGNAME_PATTERN = Pattern.compile("^" + LONGNAME + ",\\n");
 
-  public List<TermInfo.Entry> parseDescription(String s) {
-    List<TermInfo.Entry> entries = new ArrayList<>();
+  public List<TermInfoEntry> parseDescription(String s) {
+    List<TermInfoEntry> entries = new ArrayList<>();
     parseDescription(s, 0, entries);
     return entries;
   }
 
-  public int parseDescriptions(String s, int pos, List<TermInfo.Entry> entries) {
+  public int parseDescriptions(String s, int pos, List<TermInfoEntry> entries) {
     while (pos < s.length()) {
       Matcher matcher = BLANK_OR_COMMENT.matcher(s).region(pos, s.length()).useAnchoringBounds(true).useTransparentBounds(true);
       if (matcher.find()) {
@@ -34,11 +34,11 @@ public class TermInfoParser {
     return pos;
   }
 
-  public int parseDescription(String s, int pos, List<TermInfo.Entry> entries) {
+  public int parseDescription(String s, int pos, List<TermInfoEntry> entries) {
     List<String> names = new ArrayList<>();
     pos = parseHeaderLine(s, pos, names);
-    TermInfo.Entry entry = new TermInfo.Entry(names.get(0), names.subList(1, names.size()));
-    List<TermInfo.Feature> features = new ArrayList<>();
+    TermInfoEntry entry = new TermInfoEntry(names.get(0), names.subList(1, names.size()));
+    List<TermInfoFeature> features = new ArrayList<>();
     pos = parseFeatureLines(s, pos, features);
     entry.features.addAll(features);
     entries.add(entry);
@@ -71,7 +71,7 @@ public class TermInfoParser {
     return parseFully(LONGNAME_PATTERN, s, pos);
   }
 
-  public static int parseFeatureLines(String s, int pos, List<TermInfo.Feature> features) {
+  public static int parseFeatureLines(String s, int pos, List<TermInfoFeature> features) {
     int next = parseFeatureLine(s, pos, features);
     if (next == pos) {
       throw new IllegalArgumentException();
@@ -94,7 +94,7 @@ public class TermInfoParser {
   private static final Pattern FEATURE_END_PATTERN = Pattern.compile(",[ \\t]*\\n");
   private static final Pattern COMMA_PATTERN = Pattern.compile(",[ \\t]*");
 
-  public static int parseFeatureLine(String s, int pos, List<TermInfo.Feature> features) {
+  public static int parseFeatureLine(String s, int pos, List<TermInfoFeature> features) {
     if (pos < s.length()) {
       char first = s.charAt(pos);
       if (first == ' ' || first == '\t') {
@@ -115,11 +115,11 @@ public class TermInfoParser {
                 throw new IllegalArgumentException();
               }
               if (featureMatcher.group(1) != null) {
-                features.add(new TermInfo.Feature.String(featureMatcher.group(1), featureMatcher.group(2)));
+                features.add(new TermInfoFeature.String(featureMatcher.group(1), featureMatcher.group(2)));
               } else if (featureMatcher.group(3) != null) {
-                features.add(new TermInfo.Feature.Numeric(featureMatcher.group(3), featureMatcher.group(4)));
+                features.add(new TermInfoFeature.Numeric(featureMatcher.group(3), featureMatcher.group(4)));
               } else if (featureMatcher.group(5) != null) {
-                features.add(new TermInfo.Feature.Boolean(featureMatcher.group(5)));
+                features.add(new TermInfoFeature.Boolean(featureMatcher.group(5)));
               }
             }
             pos = commaMatcher.end();
