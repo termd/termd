@@ -91,38 +91,38 @@ public class TermInfoParser {
   private static final String NUMERIC = "([\\x20-\\x7E&&[^,=#]]+)#([0-9]+)";
   private static final String BOOLEAN = "([\\x20-\\x7E&&[^,=#]]+)";
   private static final Pattern FEATURE_PATTERN = Pattern.compile(STRING + "|" + NUMERIC + "|" + BOOLEAN);
+  private static final Pattern FEATURE_END_PATTERN = Pattern.compile(",[ \\t]*\\n");
+  private static final Pattern COMMA_PATTERN = Pattern.compile(",[ \\t]*");
 
   public static int parseFeatureLine(String s, int pos, List<TermInfo.Feature> features) {
     if (pos < s.length()) {
       char first = s.charAt(pos);
       if (first == ' ' || first == '\t') {
-        int to = s.indexOf(",\n", ++pos);
-        if (to == -1) {
+        Matcher featureEndMatcher = FEATURE_END_PATTERN.matcher(s).region(++pos, s.length());
+        if (!featureEndMatcher.find()) {
           throw new IllegalArgumentException();
         }
+        Matcher commaMatcher = COMMA_PATTERN.matcher(s).region(pos, featureEndMatcher.start() + 1);
         while (true) {
-          int next = s.indexOf(',', pos);
-          if (next > to) {
-            next = -1;
-          }
-          if (next == -1) {
-            return to + 2;
+          if (!commaMatcher.find()) {
+            return featureEndMatcher.end();
           } else {
             // Tolerate empty features
+            int next = commaMatcher.start();
             if (next > pos) {
-              Matcher matcher = FEATURE_PATTERN.matcher(s).region(pos, next);
-              if (!matcher.find()) {
-                throw new IllegalArgumentException("Invalid feature : >" + s.substring(pos, next) + "<");
+              Matcher featureMatcher = FEATURE_PATTERN.matcher(s).region(pos, next);
+              if (!featureMatcher.find()) {
+                throw new IllegalArgumentException();
               }
-              if (matcher.group(1) != null) {
-                features.add(new TermInfo.Feature.String(matcher.group(1), matcher.group(2)));
-              } else if (matcher.group(3) != null) {
-                features.add(new TermInfo.Feature.Numeric(matcher.group(3), matcher.group(4)));
-              } else if (matcher.group(5) != null) {
-                features.add(new TermInfo.Feature.Boolean(matcher.group(5)));
+              if (featureMatcher.group(1) != null) {
+                features.add(new TermInfo.Feature.String(featureMatcher.group(1), featureMatcher.group(2)));
+              } else if (featureMatcher.group(3) != null) {
+                features.add(new TermInfo.Feature.Numeric(featureMatcher.group(3), featureMatcher.group(4)));
+              } else if (featureMatcher.group(5) != null) {
+                features.add(new TermInfo.Feature.Boolean(featureMatcher.group(5)));
               }
             }
-            pos = next + 1;
+            pos = commaMatcher.end();
           }
         }
       }
@@ -133,8 +133,7 @@ public class TermInfoParser {
   public static int parseFully(Pattern pattern, String s, int pos) {
     Matcher matcher = pattern.matcher(s).region(pos, s.length()).useAnchoringBounds(true);
     if (!matcher.find()) {
-      String snippet = s.substring(Math.max(0, pos - 10), Math.min(s.length(), pos + 100));
-      throw new IllegalArgumentException("Bug at " + pos + " : <" + snippet + ">");
+      throw new IllegalArgumentException();
     }
     return matcher.end();
   }

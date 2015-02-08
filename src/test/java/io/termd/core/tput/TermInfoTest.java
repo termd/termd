@@ -101,7 +101,11 @@ public class TermInfoTest {
   @Test
   public void testParseFeatureLine() {
     assertParseFeatureLine("\ta,\n", new TermInfo.Feature.Boolean("a"));
+    assertParseFeatureLine("\ta, \n", new TermInfo.Feature.Boolean("a"));
+    assertParseFeatureLine("\ta,\t\n", new TermInfo.Feature.Boolean("a"));
     assertParseFeatureLine("\ta,b,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
+    assertParseFeatureLine("\ta, b,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
+    assertParseFeatureLine("\ta,\tb,\n", new TermInfo.Feature.Boolean("a"), new TermInfo.Feature.Boolean("b"));
     assertParseFeatureLine("\ta=b,\n", new TermInfo.Feature.String("a", "b"));
     assertParseFeatureLine("\ta#1,\n", new TermInfo.Feature.Numeric("a", "1"));
     failParseFeatureLine("");
