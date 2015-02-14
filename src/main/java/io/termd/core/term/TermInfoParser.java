@@ -1,4 +1,4 @@
-package io.termd.core.tput;
+package io.termd.core.term;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +38,11 @@ public class TermInfoParser {
     List<String> names = new ArrayList<>();
     pos = parseHeaderLine(s, pos, names);
     TermInfoEntry entry = new TermInfoEntry(names.get(0), names.subList(1, names.size()));
-    List<TermInfoFeature> features = new ArrayList<>();
+    List<Feature<?>> features = new ArrayList<>();
     pos = parseFeatureLines(s, pos, features);
-    entry.features.addAll(features);
+    for (Feature<?> feature : features) {
+      entry.addFeature(feature);
+    }
     entries.add(entry);
     return pos;
   }
@@ -71,14 +73,14 @@ public class TermInfoParser {
     return parseFully(LONGNAME_PATTERN, s, pos);
   }
 
-  public static int parseFeatureLines(String s, int pos, List<TermInfoFeature> features) {
-    int next = parseFeatureLine(s, pos, features);
+  public static int parseFeatureLines(String s, int pos, List<Feature<?>> entry) {
+    int next = parseFeatureLine(s, pos, entry);
     if (next == pos) {
       throw new IllegalArgumentException();
     }
     pos = next;
     while (true) {
-      next = parseFeatureLine(s, pos, features);
+      next = parseFeatureLine(s, pos, entry);
       if (next == pos) {
         break;
       }
@@ -94,7 +96,7 @@ public class TermInfoParser {
   private static final Pattern FEATURE_END_PATTERN = Pattern.compile(",[ \\t]*\\n");
   private static final Pattern COMMA_PATTERN = Pattern.compile(",[ \\t]*");
 
-  public static int parseFeatureLine(String s, int pos, List<TermInfoFeature> features) {
+  public static int parseFeatureLine(String s, int pos, List<Feature<?>> entry) {
     if (pos < s.length()) {
       char first = s.charAt(pos);
       if (first == ' ' || first == '\t') {
@@ -115,11 +117,12 @@ public class TermInfoParser {
                 throw new IllegalArgumentException();
               }
               if (featureMatcher.group(1) != null) {
-                features.add(new TermInfoFeature.String(featureMatcher.group(1), featureMatcher.group(2)));
+                entry.add(Feature.create(featureMatcher.group(1), featureMatcher.group(2)));
               } else if (featureMatcher.group(3) != null) {
-                features.add(new TermInfoFeature.Numeric(featureMatcher.group(3), featureMatcher.group(4)));
+                int value = Integer.parseInt(featureMatcher.group(4));
+                entry.add(Feature.create(featureMatcher.group(3), value));
               } else if (featureMatcher.group(5) != null) {
-                features.add(new TermInfoFeature.Boolean(featureMatcher.group(5)));
+                entry.add(Feature.create(featureMatcher.group(5), true));
               }
             }
             pos = commaMatcher.end();
