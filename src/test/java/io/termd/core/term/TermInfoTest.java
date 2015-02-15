@@ -258,7 +258,10 @@ public class TermInfoTest {
     TermInfoParser parser = new TermInfoParser(s);
     TermInfoBuilder builder = new TermInfoBuilder();
     parser.parseDatabase(builder);
-    Collection<Device> entries = builder.build().getDevices();
-    assertEquals(2615, entries.size());
+    TermInfo info = builder.build();
+    Collection<Device> entries = info.getDevices();
+    assertEquals(2645, entries.size());
+    Device device = info.getDevice("xterm-color");
+    assertNotNull(device);
   }
 }

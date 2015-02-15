@@ -18,7 +18,7 @@ public class Device {
   final Map<Capability<?>, Feature<?>> features;
 
   public Device(List<String> names) {
-    name = names.get(names.size() - 1);
+    name = names.get(0);
     synonyms = names.size() > 2 ? names.subList(1, names.size() - 1) : Collections.<String>emptyList();
     longname = names.size() > 1 ? names.get(names.size() - 1) : null;
     features = new HashMap<>();
@@ -61,4 +61,8 @@ public class Device {
     }
   }
 
+  @Override
+  public String toString() {
+    return "Device[name=" + name + "]";
+  }
 }

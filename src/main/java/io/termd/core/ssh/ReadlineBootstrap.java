@@ -48,6 +48,7 @@ public class ReadlineBootstrap {
     class TtyCommand implements Command, SessionAware, ChannelSessionAware, TtyConnection {
 
       private Charset charset;
+      private String term;
       private SignalDecoder signalDecoder;
       private ReadBuffer readBuffer;
       private BinaryDecoder decoder;
@@ -55,6 +56,7 @@ public class ReadlineBootstrap {
       private Handler<byte[]> out;
       private Dimension size = null;
       private Handler<Dimension> resizeHandler;
+      private Handler<String> termHandler;
 
       @Override
       public Handler<int[]> getReadHandler() {
@@ -68,11 +70,15 @@ public class ReadlineBootstrap {
 
       @Override
       public Handler<String> getTermHandler() {
-        return null;
+        return termHandler;
       }
 
       @Override
       public void setTermHandler(Handler<String> handler) {
+        termHandler = handler;
+        if (handler != null && term != null) {
+          handler.handle(term);
+        }
       }
 
       @Override
@@ -175,7 +181,6 @@ public class ReadlineBootstrap {
         env.addSignalListener(new SignalListener() {
           @Override
           public void signal(org.apache.sshd.server.Signal signal) {
-            System.out.println("GOT SIGNAL " + signal);
             updateSize(env);
           }
         }, EnumSet.of(org.apache.sshd.server.Signal.WINCH));
@@ -194,6 +199,7 @@ public class ReadlineBootstrap {
         signalDecoder = new SignalDecoder(vintr).setReadHandler(readBuffer);
         decoder = new BinaryDecoder(512, charset, signalDecoder);
         encoder = new BinaryEncoder(512, charset, out);
+        term = env.getEnv().get("TERM");
 
         //
         io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(this);

@@ -19,6 +19,8 @@ package io.termd.core.telnet.netty;
 import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
+import io.termd.core.term.Device;
+import io.termd.core.term.TermInfo;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Handler;
@@ -102,6 +104,13 @@ public class ReadlineBootstrap {
       for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
         readline.addFunction(function);
       }
+      conn.setTermHandler(new Handler<String>() {
+        @Override
+        public void handle(String event) {
+          TermInfo info = TermInfo.getDefault();
+          Device device = info.getDevice(event);
+        }
+      });
       conn.writeHandler().handle(Helper.toCodePoints("Welcome sir\r\n\r\n"));
       read(conn, readline);
     }

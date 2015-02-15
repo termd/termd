@@ -15,6 +15,7 @@ An open source terminal daemon library providing terminal handling in Java.
    - extensible with plugable functions
    - multiline support
 - Unicode support
+- Terminfo capabilities
 
 ### Todo
 
