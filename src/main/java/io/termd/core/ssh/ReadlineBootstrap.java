@@ -67,6 +67,15 @@ public class ReadlineBootstrap {
       }
 
       @Override
+      public Handler<String> getTermHandler() {
+        return null;
+      }
+
+      @Override
+      public void setTermHandler(Handler<String> handler) {
+      }
+
+      @Override
       public Handler<Dimension> getResizeHandler() {
         return resizeHandler;
       }

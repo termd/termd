@@ -20,8 +20,10 @@ import java.util.concurrent.Executor;
  */
 public class TelnetTtyConnection extends TelnetHandler implements TtyConnection {
 
-  private Dimension size = null;
+  private Dimension size;
+  private String terminalType;
   private Handler<Dimension> resizeHandler;
+  private Handler<String> termHandler;
   protected TelnetConnection conn;
   private final ReadBuffer readBuffer = new ReadBuffer(new Executor() {
     @Override
@@ -85,6 +87,14 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
+  protected void onTerminalType(String terminalType) {
+    this.terminalType = terminalType;
+    if (termHandler != null) {
+      termHandler.handle(terminalType);
+    }
+  }
+
+  @Override
   protected void onSize(int width, int height) {
     this.size = new Dimension(width, height);
     if (resizeHandler != null) {
@@ -102,6 +112,19 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
     this.resizeHandler = handler;
     if (handler != null && size != null) {
       handler.handle(size);
+    }
+  }
+
+  @Override
+  public Handler<String> getTermHandler() {
+    return termHandler;
+  }
+
+  @Override
+  public void setTermHandler(Handler<String> handler) {
+    termHandler = handler;
+    if (handler != null && terminalType != null) {
+      handler.handle(terminalType);
     }
   }
 

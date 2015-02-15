@@ -10,6 +10,7 @@ import io.termd.core.telnet.TelnetTestBase;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.TelnetClient;
+import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
 import org.junit.Test;
 
 import java.io.OutputStream;
@@ -25,12 +26,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
   protected boolean binary;
+  protected String term;
 
   protected final void assertConnect() throws Exception {
     client = new TelnetClient();
     client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
     if (binary) {
       client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
+    }
+    if (term != null) {
+      client.addOptionHandler(new TerminalTypeOptionHandler(term, false, false, true, false));
     }
     client.connect("localhost", 4000);
   }
@@ -230,6 +235,32 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     assertWrite("hello");
     assertWrite(3);
     await(latch);
+    assertWrite("bye");
+    await();
+  }
+
+  @Test
+  public void testTerminalType() throws Exception {
+    server(new Provider<TelnetHandler>() {
+      @Override
+      public TelnetHandler provide() {
+        return new TelnetTtyConnection() {
+          @Override
+          protected void onOpen(TelnetConnection conn) {
+            setTermHandler(new Handler<String>() {
+              @Override
+              public void handle(String event) {
+                assertEquals("xterm", event);
+                testComplete();
+              }
+            });
+            super.onOpen(conn);
+          }
+        };
+      }
+    });
+    term = "xterm";
+    assertConnect();
     assertWrite("bye");
     await();
   }

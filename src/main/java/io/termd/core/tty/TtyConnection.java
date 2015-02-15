@@ -10,6 +10,10 @@ import io.termd.core.util.Handler;
  */
 public interface TtyConnection {
 
+  Handler<String> getTermHandler();
+
+  void setTermHandler(Handler<String> handler);
+
   Handler<Dimension> getResizeHandler();
 
   void setResizeHandler(Handler<Dimension> handler);

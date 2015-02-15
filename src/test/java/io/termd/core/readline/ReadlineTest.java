@@ -120,6 +120,14 @@ public class ReadlineTest extends TestBase {
     public void readline(Handler<String> readlineHandler) {
       handler.readline(new TtyConnection() {
         @Override
+        public Handler<String> getTermHandler() {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public void setTermHandler(Handler<String> handler) {
+          throw new UnsupportedOperationException();
+        }
+        @Override
         public Handler<Dimension> getResizeHandler() {
           throw new UnsupportedOperationException();
         }
