@@ -19,7 +19,9 @@ package io.termd.core.telnet.netty;
 import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
+import io.termd.core.term.Capability;
 import io.termd.core.term.Device;
+import io.termd.core.term.Feature;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.TtyConnection;
@@ -109,6 +111,14 @@ public class ReadlineBootstrap {
         public void handle(String event) {
           TermInfo info = TermInfo.getDefault();
           Device device = info.getDevice(event);
+          Integer i = device.getFeature(Capability.max_colors);
+          StringBuilder msg = new StringBuilder("Your term is " + event + " and we found a description for it:\r\n");
+          for (Feature<?> feature : device.getFeatures()) {
+            Capability<?> capability = feature.getCapability();
+            msg.append(capability.name).append(" (").append(capability.description).
+                append("): ").append(feature.getValue()).append("\r\n");
+          }
+          conn.writeHandler().handle(Helper.toCodePoints(msg.toString()));
         }
       });
       conn.writeHandler().handle(Helper.toCodePoints("Welcome sir\r\n\r\n"));

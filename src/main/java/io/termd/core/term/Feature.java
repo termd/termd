@@ -33,6 +33,14 @@ public class Feature<T> {
     this.value = value;
   }
 
+  public T getValue() {
+    return value;
+  }
+
+  public Capability<T> getCapability() {
+    return capability;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {
