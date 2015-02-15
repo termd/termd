@@ -89,7 +89,8 @@ public class TermInfoParser {
 PARSER_END(TermInfoParser)
 
 <DEFAULT> TOKEN: {
-  <#BLANK: [" ","\t"]>
+  <#BLANK: [" ","\t"]> |
+  <#END_FEATURE: ","(<BLANK>)*>
 }
 
 <DEFAULT> TOKEN: {
@@ -118,14 +119,14 @@ PARSER_END(TermInfoParser)
 <PARSING_FEATURE_VALUE> TOKEN: {
   <START_STRING_VALUE: "="> : PARSING_STRING_VALUE |
   <START_NUMERIC_VALUE: "#"> : PARSING_NUMERIC_VALUE |
-  <END_BOOLEAN_VALUE: ","> : PARSING_FEATURE_LINE
+  <END_BOOLEAN_VALUE: <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
 <PARSING_STRING_VALUE> TOKEN: {
   <STRING_CHAR: ([" "-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])*> |
   <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
   <STRING_CARRET: ["^"]> : PARSING_STRING_CARRET |
-  <END_STRING_VALUE : ","> : PARSING_FEATURE_LINE
+  <END_STRING_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
 <PARSING_STRING_ESC> TOKEN: {
@@ -143,7 +144,7 @@ PARSER_END(TermInfoParser)
   <DEC_VALUE: ["1"-"9"](["0"-"9"])*> |
   <OCT_VALUE: (["0"-"7"])+> |
   <HEX_VALUE: "0x" (["0"-"9","A"-"F","a"-"f"])+> |
-  <END_NUMERIC_VALUE : ","> : PARSING_FEATURE_LINE
+  <END_NUMERIC_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
 void parseDatabase(ParserHandler handler):

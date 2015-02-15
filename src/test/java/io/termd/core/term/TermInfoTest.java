@@ -63,7 +63,7 @@ public class TermInfoTest {
     assertParseFeatureLine(" foo,\n", Feature.create("foo", true));
     assertParseFeatureLine(" foo@,\n", Feature.create("foo", false));
     assertParseFeatureLine(" foo,bar,\n", Feature.create("foo", true), Feature.create("bar", true));
-    assertParseFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create(" bar", true));
+    assertParseFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create("bar", true));
     assertParseFeatureLine(" foo=,\n", Feature.create("foo", ""));
     assertParseFeatureLine(" foo=\\s,\n", Feature.create("foo", " "));
     assertParseFeatureLine(" foo=\\\\,\n", Feature.create("foo", "\\"));
@@ -73,6 +73,7 @@ public class TermInfoTest {
     assertParseFeatureLine(" foo=^^,\n", Feature.create("foo", "^^"));
     assertParseFeatureLine(" foo=bar,\n", Feature.create("foo", "bar"));
     assertParseFeatureLine(" foo=bar,juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
+    assertParseFeatureLine(" foo=bar, juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
     assertParseFeatureLine(" foo,bar=juu,\n", Feature.create("foo", true), Feature.create("bar", "juu"));
     assertParseFeatureLine(" foo=bar,juu,\n", Feature.create("foo", "bar"), Feature.create("juu", true));
     assertParseFeatureLine(" foo=b\\,ar,\n", Feature.create("foo", "b,ar"));
