@@ -3,9 +3,9 @@ package io.termd.core.term;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-class Feature<T> {
+public class Feature<T> {
 
-  static <T> Feature<T> create(String name, T value) {
+  public static <T> Feature<T> create(String name, T value) {
     Capability<T> cap = null;
     if (value instanceof Boolean) {
       cap = (Capability<T>) Capability.getCapability(name, Boolean.class);
@@ -43,5 +43,17 @@ class Feature<T> {
       return capability.equals(that.capability) && value.equals(that.value);
     }
     return false;
+  }
+
+  @Override
+  public String toString() {
+    if (value instanceof Boolean) {
+      Boolean booleanValue = (Boolean) value;
+      return booleanValue ? capability.name : (capability.name + "@");
+    } else if (value instanceof Integer) {
+      return capability.name + "#" + value;
+    } else {
+      return capability.name + "=" + value;
+    }
   }
 }

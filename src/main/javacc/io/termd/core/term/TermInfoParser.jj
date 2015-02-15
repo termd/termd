@@ -1,0 +1,223 @@
+options {
+  STATIC = false;
+  SUPPORT_CLASS_VISIBILITY_PUBLIC = true;
+  ERROR_REPORTING = false;
+  JAVA_UNICODE_ESCAPE = true;
+  UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(TermInfoParser)
+
+package io.termd.core.term;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public class TermInfoParser {
+
+  public TermInfoParser(String s) {
+    this(new java.io.StringReader(s));
+  }
+
+  public List<String> parseHeaderLine() throws ParseException {
+    final List<String> headerLine = new ArrayList<String>();
+    parseHeaderLine(new ParserHandler() {
+      public void beginHeaderLine(String alias) { headerLine.add(alias); }
+      public void addHeader(String alias) { headerLine.add(alias); }
+    });
+    return headerLine;
+  }
+
+  public void parseFeatureLine() throws ParseException {
+    parseFeatureLine(new ParserHandler());
+  }
+
+  public void parseDevice() throws ParseException {
+    parseDevice(new ParserHandler());
+  }
+
+  public void parseDatabase() throws ParseException {
+    parseDatabase(new ParserHandler());
+  }
+
+  private String convertEscChar(String s) {
+    char c = s.charAt(0);
+    switch (c) {
+      case 'e':
+      case 'E':
+        c = 27;
+        break;
+      case 'a':
+        c = 7;
+        break;
+      case 'b':
+        c = 8;
+        break;
+      case 'r':
+        c = '\r';
+        break;
+      case 'n':
+        c = '\n';
+        break;
+      case 't':
+        c = '\t';
+        break;
+      case 'f':
+        c = 12;
+        break;
+      case 'A':
+        c = 1;
+        break;
+      case ':':
+      case ',':
+      case '^':
+      case '\\':
+        break;
+      case 's':
+        c = ' ';
+        break;
+      default:
+        throw new UnsupportedOperationException("Invalid escape :" + s);
+    }
+    return String.valueOf(c);
+  }
+}
+
+PARSER_END(TermInfoParser)
+
+<DEFAULT> TOKEN: {
+  <#BLANK: [" ","\t"]>
+}
+
+<DEFAULT> TOKEN: {
+  <START_FEATURE_LINE: <BLANK>> : PARSING_FEATURE_LINE |
+  <START_HEADER_LINE: (["!"-"\""]|["$"-"+"]|["-"-"{"]|["}"-"~"])([" "-"+"]|["-"-"{"]|["}"-"~"]|("," ~["\n"]))*> : PARSING_HEADER_LINE |
+  <START_COMMENT_LINE: "#"> : PARSING_COMMENT |
+  <EMPTY_LINE: "\n">
+}
+
+<PARSING_HEADER_LINE> TOKEN: {
+  <HEADER_VALUE: ([" "-"\""]|["$"-"+"]|["-"-"{"]|["}"-"~"])([" "-"+"]|["-"-"{"]|["}"-"~"]|("," ~["\n"]))*> |
+  <START_HEADER: "|"> |
+  <END_HEADER_LINE: "," "\n"> : DEFAULT
+}
+
+<PARSING_COMMENT> TOKEN: {
+  <ANY_CHAR: ~["\n"]> |
+  <END_COMMENT_LINE: "\n"> : DEFAULT
+}
+
+<PARSING_FEATURE_LINE> TOKEN: {
+  <START_FEATURE: (["\t"," "])* (["!"-"\""] | ["$"-"+"] | ["-"-"<"] | [">"-"]"] | ["_"-"~"])+> : PARSING_FEATURE_VALUE |
+  <END_FEATURE_LINE: (<BLANK>)*"\n"> : DEFAULT
+}
+
+<PARSING_FEATURE_VALUE> TOKEN: {
+  <START_STRING_VALUE: "="> : PARSING_STRING_VALUE |
+  <START_NUMERIC_VALUE: "#"> : PARSING_NUMERIC_VALUE |
+  <END_BOOLEAN_VALUE: ","> : PARSING_FEATURE_LINE
+}
+
+<PARSING_STRING_VALUE> TOKEN: {
+  <STRING_CHAR: ([" "-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])*> |
+  <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
+  <STRING_CARRET: ["^"]> : PARSING_STRING_CARRET |
+  <END_STRING_VALUE : ","> : PARSING_FEATURE_LINE
+}
+
+<PARSING_STRING_ESC> TOKEN: {
+  <ANY_ESC_VALUE: ["A","E","a","b","e","f","n","r","s","t",",","\\",":","^"]> : PARSING_STRING_VALUE |
+  <#OCTAL_DIGIT: ["0"-"7"]> |
+  <ESC_ZERO_OCTAL: "0" (<OCTAL_DIGIT><OCTAL_DIGIT>)? > : PARSING_STRING_VALUE |
+  <ESC_OTHER_OCTAL: ["1"-"7"] (<OCTAL_DIGIT><OCTAL_DIGIT>)? > : PARSING_STRING_VALUE
+}
+
+<PARSING_STRING_CARRET> TOKEN: {
+  <ANY_CARRET_VALUE: ~[]> : PARSING_STRING_VALUE
+}
+
+<PARSING_NUMERIC_VALUE> TOKEN: {
+  <DEC_VALUE: ["1"-"9"](["0"-"9"])*> |
+  <OCT_VALUE: (["0"-"7"])+> |
+  <HEX_VALUE: "0x" (["0"-"9","A"-"F","a"-"f"])+> |
+  <END_NUMERIC_VALUE : ","> : PARSING_FEATURE_LINE
+}
+
+void parseDatabase(ParserHandler handler):
+{}
+{
+  ( parseDevice(handler) | parseCommentLine() | <EMPTY_LINE> ) *
+  { handler.endDatabase(); }
+}
+
+void parseDevice(ParserHandler handler):
+{}
+{
+  parseHeaderLine(handler)
+  ( parseFeatureLine(handler) ) *
+  { handler.endDevice(); }
+}
+
+void parseCommentLine():
+{}
+{
+  <START_COMMENT_LINE> ( <ANY_CHAR> ) * <END_COMMENT_LINE>
+}
+
+void parseHeaderLine(ParserHandler handler):
+{ Token alias; }
+{
+  alias=<START_HEADER_LINE> { handler.beginHeaderLine(alias.image); } ( <START_HEADER> alias=<HEADER_VALUE> { handler.addHeader(alias.image); } ) *  <END_HEADER_LINE>
+  { handler.endHeaderLine(); }
+}
+
+void parseFeatureLine(ParserHandler handler):
+{}
+{
+  <START_FEATURE_LINE> ( parseFeature(handler) ) + <END_FEATURE_LINE>
+}
+
+void parseFeature(ParserHandler handler):
+{ Token name; }
+{
+  name=<START_FEATURE> ( parseBooleanFeature(name.image, handler) | parseStringFeature(name.image, handler) | parseNumericFeature(name.image, handler) )
+}
+
+void parseBooleanFeature(String name, ParserHandler handler):
+{}
+{
+  <END_BOOLEAN_VALUE> {
+    if (name.endsWith("@")) {
+      handler.addBooleanFeature(name.substring(0, name.length() - 1), false);
+    } else {
+      handler.addBooleanFeature(name, true);
+    }
+  }
+}
+
+void parseStringFeature(String name, ParserHandler handler):
+{ StringBuilder val = new StringBuilder(); Token c; }
+{
+  <START_STRING_VALUE> (
+    c=<STRING_CHAR> { val.append(c.image); } |
+    ( <STRING_ESC> (
+      ( c=<ANY_ESC_VALUE> { val.append(convertEscChar(c.image)); } ) |
+      c=<ESC_ZERO_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } |
+      c=<ESC_OTHER_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } ) ) |
+    ( <STRING_CARRET> c=<ANY_CARRET_VALUE> { val.append("^").append(c.image); } )
+  ) * <END_STRING_VALUE>
+  { handler.addStringFeature(name, val.toString()); }
+}
+
+void parseNumericFeature(String name, ParserHandler handler):
+{ Token val; }
+{
+  ( <START_NUMERIC_VALUE> (
+    val=<HEX_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image.substring(2), 16)); } |
+    val=<OCT_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image, 8)); } |
+    val=<DEC_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image)); }
+  ) <END_NUMERIC_VALUE> )
+}
