@@ -43,6 +43,20 @@ public class TermInfoParser {
     parseDatabase(new ParserHandler());
   }
 
+  private String convertControlChar(String s) {
+    char c = s.charAt(0);
+    if (c >= 64) {
+      if (c >= 'a' && c <= 'z') {
+        c = (char)(c - 'a' + 'A' - 64);
+      } else {
+        c -= 64;
+      }
+      return String.valueOf(c);
+    } else {
+        throw new UnsupportedOperationException("Invalid control :" + s);
+    }
+  }
+
   private String convertEscChar(String s) {
     char c = s.charAt(0);
     switch (c) {
@@ -84,6 +98,12 @@ public class TermInfoParser {
     }
     return String.valueOf(c);
   }
+
+  // For testing purposes we switch the lexical state before
+  public Op parseOp() throws ParseException {
+    token_source.SwitchTo(PARSING_STRING_OP);
+    return _parseOp();
+  }
 }
 
 PARSER_END(TermInfoParser)
@@ -123,21 +143,22 @@ PARSER_END(TermInfoParser)
 }
 
 <PARSING_STRING_VALUE> TOKEN: {
-  <STRING_CHAR: ([" "-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])*> |
+  <STRING_CHAR: ([" "-"$"] | ["&"-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])*> |
   <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
-  <STRING_CARRET: ["^"]> : PARSING_STRING_CARRET |
+  <STRING_CARET: ["^"]> : PARSING_STRING_CARET |
+  <STRING_OP: ["%"]> : PARSING_STRING_OP |
   <END_STRING_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
 <PARSING_STRING_ESC> TOKEN: {
   <ANY_ESC_VALUE: ["A","E","a","b","e","f","n","r","s","t",",","\\",":","^"]> : PARSING_STRING_VALUE |
   <#OCTAL_DIGIT: ["0"-"7"]> |
-  <ESC_ZERO_OCTAL: "0" (<OCTAL_DIGIT><OCTAL_DIGIT>)? > : PARSING_STRING_VALUE |
-  <ESC_OTHER_OCTAL: ["1"-"7"] (<OCTAL_DIGIT><OCTAL_DIGIT>)? > : PARSING_STRING_VALUE
+  <ESC_ZERO_OCTAL: "0" (<OCTAL_DIGIT><OCTAL_DIGIT>)?> : PARSING_STRING_VALUE |
+  <ESC_OTHER_OCTAL: ["1"-"7"] (<OCTAL_DIGIT><OCTAL_DIGIT>)?> : PARSING_STRING_VALUE
 }
 
-<PARSING_STRING_CARRET> TOKEN: {
-  <ANY_CARRET_VALUE: ~[]> : PARSING_STRING_VALUE
+<PARSING_STRING_CARET> TOKEN: {
+  <ANY_CARET_VALUE: ["A"-"Z","a"-"z","_","^","\\","]"]> : PARSING_STRING_VALUE
 }
 
 <PARSING_NUMERIC_VALUE> TOKEN: {
@@ -145,6 +166,36 @@ PARSER_END(TermInfoParser)
   <OCT_VALUE: (["0"-"7"])+> |
   <HEX_VALUE: "0x" (["0"-"9","A"-"F","a"-"f"])+> |
   <END_NUMERIC_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
+}
+
+<PARSING_STRING_OP> TOKEN: {
+  <OP_PUSH_PARAM: "p" ["1"-"9"]> : PARSING_STRING_VALUE |
+  <OP_PRINTF: (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > : PARSING_STRING_VALUE |
+  <OP_INTEGER_CONSTANT: "{" ( ["0"-"9"] )+ "}" > : PARSING_STRING_VALUE |
+  <OP_AND: "&"> : PARSING_STRING_VALUE |
+  <OP_OR: "|"> : PARSING_STRING_VALUE |
+  <OP_XOR: "^"> : PARSING_STRING_VALUE |
+  <OP_ESC: "%"> : PARSING_STRING_VALUE |
+  <OP_PRINT_POP: ["c","s"]> : PARSING_STRING_VALUE |
+  <OP_SET_POP_VARIABLE: "P" ["A"-"Z","a"-"z"]> : PARSING_STRING_VALUE |
+  <OP_GET_PUSH_VARIABLE: "g" ["A"-"Z","a"-"z"]> : PARSING_STRING_VALUE |
+  <OP_CHAR_CONSTANT: "'" ~[]  "'"> : PARSING_STRING_VALUE |
+  <OP_STRLEN: "l"> : PARSING_STRING_VALUE |
+  <OP_ARITHMETIC_PLUS: "+"> : PARSING_STRING_VALUE |
+  <OP_ARITHMETIC_MINUS: "-"> : PARSING_STRING_VALUE |
+  <OP_ARITHMETIC_MUL: "*"> : PARSING_STRING_VALUE |
+  <OP_ARITHMETIC_DIV: "/"> : PARSING_STRING_VALUE |
+  <OP_ARITHMETIC_MOD: "m"> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_EQ: "="> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_GT: ">"> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_LT: "<"> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_AND: "A"> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_OR: "O"> : PARSING_STRING_VALUE |
+  <OP_LOGICAL_NEG: ["~","!"]> : PARSING_STRING_VALUE |
+  <OP_EXPR_IF: "?"> : PARSING_STRING_VALUE |
+  <OP_EXPR_THEN: "t"> : PARSING_STRING_VALUE |
+  <OP_EXPR_ELSE: "e"> : PARSING_STRING_VALUE |
+  <OP_EXPR_FI: ";"> : PARSING_STRING_VALUE
 }
 
 void parseDatabase(ParserHandler handler):
@@ -208,17 +259,139 @@ void parseStringFeature(String name, ParserHandler handler):
       ( c=<ANY_ESC_VALUE> { val.append(convertEscChar(c.image)); } ) |
       c=<ESC_ZERO_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } |
       c=<ESC_OTHER_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } ) ) |
-    ( <STRING_CARRET> c=<ANY_CARRET_VALUE> { val.append("^").append(c.image); } )
+    ( <STRING_CARET> c=<ANY_CARET_VALUE> { val.append(convertControlChar(c.image)); } ) |
+    ( <STRING_OP> _parseOp()
+    )
   ) * <END_STRING_VALUE>
   { handler.addStringFeature(name, val.toString()); }
 }
 
+Op _parseOp():
+{ Op op; }
+{ ( op=parseOpPushParam() |
+    op=parseOpPrintf() |
+    op=parseOpIntegerConstant() |
+    op=parseOpBit() |
+    op=parseOpArithmetic() |
+    op=parseOpLogical() |
+    op=parseOpEsc() |
+    op=parseOpStrLen() |
+    op=parseOpPrintPop() |
+    op=parseOpVariable() |
+    op=parseOpCharConstant() |
+    op=parseOpExpr()
+  )
+  { return op; }
+}
+
+Op.Bit parseOpBit():
+{ Op.Bit op; }
+{ ( <OP_AND> { op=Op.Bit.AND; } | <OP_OR> { op=Op.Bit.OR; } | <OP_XOR> { op=Op.Bit.XOR; } )
+  { return op; }
+}
+
+Op.Arithmetic parseOpArithmetic():
+{ Op.Arithmetic op; }
+{ ( <OP_ARITHMETIC_PLUS> { op=Op.Arithmetic.PLUS; } |
+    <OP_ARITHMETIC_MINUS> { op=Op.Arithmetic.MINUS; } |
+    <OP_ARITHMETIC_MUL> { op=Op.Arithmetic.MUL; } |
+    <OP_ARITHMETIC_DIV> { op=Op.Arithmetic.DIV; } |
+    <OP_ARITHMETIC_MOD> { op=Op.Arithmetic.MOD; } )
+  { return op; }
+}
+
+Op.Logical parseOpLogical():
+{ Op.Logical op; }
+{ ( <OP_LOGICAL_EQ> { op=Op.Logical.EQ; } |
+    <OP_LOGICAL_GT> { op=Op.Logical.GT; } |
+    <OP_LOGICAL_LT> { op=Op.Logical.LT; } |
+    <OP_LOGICAL_AND> { op=Op.Logical.AND; } |
+    <OP_LOGICAL_OR> { op=Op.Logical.OR; } |
+    <OP_LOGICAL_NEG> { op=Op.Logical.NEG; }
+  )
+  { return op; }
+}
+
+Op.Expr parseOpExpr():
+{ Op.Expr op; }
+{ ( <OP_EXPR_IF> { op=Op.Expr.IF; } |
+    <OP_EXPR_THEN> { op=Op.Expr.THEN; } |
+    <OP_EXPR_ELSE> { op=Op.Expr.ELSE; } |
+    <OP_EXPR_FI> { op=Op.Expr.FI; }
+  )
+  { return op; }
+}
+
+Op.Esc parseOpEsc():
+{ Op.Esc op; }
+{ ( <OP_ESC> { op=Op.Esc.INSTANCE; } )
+  { return op; }
+}
+
+Op.StrLen parseOpStrLen():
+{ Op.StrLen op; }
+{ ( <OP_STRLEN> { op=Op.StrLen.INSTANCE; } )
+  { return op; }
+}
+
+Op.PushParam parseOpPushParam():
+{ Token t; }
+{ t=<OP_PUSH_PARAM>
+  { return new Op.PushParam(t.image.charAt(1) - '0'); }
+}
+
+Op.IntegerConstant parseOpIntegerConstant():
+{ Token t; }
+{ t=<OP_INTEGER_CONSTANT>
+  { return new Op.IntegerConstant(Integer.parseInt(t.image.substring(1, t.image.length() - 1))); }
+}
+
+Op parseOpPrintf():
+{ Token t; }
+{
+  t=<OP_PRINTF>
+  {
+    switch(t.image) {
+      case "s":
+        return Op.PrintPop.s;
+      case "+":
+        return Op.Arithmetic.PLUS;
+      case "-":
+        return Op.Arithmetic.MINUS;
+      default:
+        return Op.Printf.parse(t.image);
+    }
+  }
+}
+
+Op.PrintPop parseOpPrintPop():
+{ Token t; }
+{
+  t=<OP_PRINT_POP>
+  { return t.image.charAt(0) == 'c' ? Op.PrintPop.c : Op.PrintPop.s; }
+}
+
+Op parseOpVariable():
+{ Token t;}
+{
+  t=<OP_SET_POP_VARIABLE> { return new Op.SetPopVar(t.image.charAt(1)); } |
+  t=<OP_GET_PUSH_VARIABLE> { return new Op.GetPushVar(t.image.charAt(1)); }
+}
+
+Op.CharConstant parseOpCharConstant():
+{ Token t;}
+{
+  t=<OP_CHAR_CONSTANT>
+  { return new Op.CharConstant(t.image.charAt(1));  }
+}
+
 void parseNumericFeature(String name, ParserHandler handler):
-{ Token val; }
+{ Token t; }
 {
   ( <START_NUMERIC_VALUE> (
-    val=<HEX_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image.substring(2), 16)); } |
-    val=<OCT_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image, 8)); } |
-    val=<DEC_VALUE> { handler.addNumericFeature(name, Integer.parseInt(val.image)); }
+    t=<HEX_VALUE> { handler.addNumericFeature(name, Integer.parseInt(t.image.substring(2), 16)); } |
+    t=<OCT_VALUE> { handler.addNumericFeature(name, Integer.parseInt(t.image, 8)); } |
+    t=<DEC_VALUE> { handler.addNumericFeature(name, Integer.parseInt(t.image)); }
   ) <END_NUMERIC_VALUE> )
 }
+

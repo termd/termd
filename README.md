@@ -19,5 +19,9 @@ An open source terminal daemon library providing terminal handling in Java.
 
 ### Todo
 
+- handle % stuff in parser
+- ^X
+- foobar@ for any foobar, not only boolean and treat it as a removal
+
 Control flow.
 Try to use the maven install plugin to install artifacts with specific dependencies.

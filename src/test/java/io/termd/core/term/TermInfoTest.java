@@ -59,34 +59,203 @@ public class TermInfoTest {
 
   @Test
   public void testParseFeatureLine() throws Exception {
-    assertParseFeatureLine(" foo=bar\\\\,\n", Feature.create("foo", "bar\\"));
-    assertParseFeatureLine(" foo,\n", Feature.create("foo", true));
-    assertParseFeatureLine(" foo@,\n", Feature.create("foo", false));
-    assertParseFeatureLine(" foo,bar,\n", Feature.create("foo", true), Feature.create("bar", true));
-    assertParseFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create("bar", true));
-    assertParseFeatureLine(" foo=,\n", Feature.create("foo", ""));
-    assertParseFeatureLine(" foo=\\s,\n", Feature.create("foo", " "));
-    assertParseFeatureLine(" foo=\\\\,\n", Feature.create("foo", "\\"));
-    assertParseFeatureLine(" foo=\\,,\n", Feature.create("foo", ","));
-    assertParseFeatureLine(" foo=\\^,\n", Feature.create("foo", "^"));
-    assertParseFeatureLine(" foo=^\\,\n", Feature.create("foo", "^\\"));
-    assertParseFeatureLine(" foo=^^,\n", Feature.create("foo", "^^"));
-    assertParseFeatureLine(" foo=bar,\n", Feature.create("foo", "bar"));
-    assertParseFeatureLine(" foo=bar,juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
-    assertParseFeatureLine(" foo=bar, juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
-    assertParseFeatureLine(" foo,bar=juu,\n", Feature.create("foo", true), Feature.create("bar", "juu"));
-    assertParseFeatureLine(" foo=bar,juu,\n", Feature.create("foo", "bar"), Feature.create("juu", true));
-    assertParseFeatureLine(" foo=b\\,ar,\n", Feature.create("foo", "b,ar"));
-    assertParseFeatureLine(" foo#1234,\n", Feature.create("foo", 1234));
-    assertParseFeatureLine(" foo#0,\n", Feature.create("foo", 0));
-    assertParseFeatureLine(" foo#0x1234,\n", Feature.create("foo", 0x1234));
-    assertParseFeatureLine(" foo#01234,\n", Feature.create("foo", 01234));
+    assertFeatureLine(" foo=bar\\\\,\n", Feature.create("foo", "bar\\"));
+    assertFeatureLine(" foo,\n", Feature.create("foo", true));
+    assertFeatureLine(" foo@,\n", Feature.create("foo", false));
+    assertFeatureLine(" foo,bar,\n", Feature.create("foo", true), Feature.create("bar", true));
+    assertFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create("bar", true));
+    assertFeatureLine(" foo=,\n", Feature.create("foo", ""));
+    assertFeatureLine(" foo=\\s,\n", Feature.create("foo", " "));
+    assertFeatureLine(" foo=\\\\,\n", Feature.create("foo", "\\"));
+    assertFeatureLine(" foo=\\,,\n", Feature.create("foo", ","));
+    assertFeatureLine(" foo=\\^,\n", Feature.create("foo", "^"));
+    assertFeatureLine(" foo=^\\,\n", Feature.create("foo", Character.toString((char) 28)));
+    assertFeatureLine(" foo=^^,\n", Feature.create("foo", Character.toString((char) 30)));
+    assertFeatureLine(" foo=bar,\n", Feature.create("foo", "bar"));
+    assertFeatureLine(" foo=bar,juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
+    assertFeatureLine(" foo=bar, juu=daa,\n", Feature.create("foo", "bar"), Feature.create("juu", "daa"));
+    assertFeatureLine(" foo,bar=juu,\n", Feature.create("foo", true), Feature.create("bar", "juu"));
+    assertFeatureLine(" foo=bar,juu,\n", Feature.create("foo", "bar"), Feature.create("juu", true));
+    assertFeatureLine(" foo=b\\,ar,\n", Feature.create("foo", "b,ar"));
+    assertFeatureLine(" foo#1234,\n", Feature.create("foo", 1234));
+    assertFeatureLine(" foo#0,\n", Feature.create("foo", 0));
+    assertFeatureLine(" foo#0x1234,\n", Feature.create("foo", 0x1234));
+    assertFeatureLine(" foo#01234,\n", Feature.create("foo", 01234));
     failParseFeatureLine(" ");
     failParseFeatureLine(" foo,");
     failParseFeatureLine(" foo#,\n");
     failParseFeatureLine(" foo#a,\n");
   }
 
+  @Test
+  public void testStringParameterized() {
+    String[] tests = {
+        // Parameters
+        "%p1",
+        "%p2",
+        "%p3",
+        "%p4",
+        "%p5",
+        "%p6",
+        "%p7",
+        "%p7",
+        "%p8",
+        "%p9",
+        // Printf
+        "%d",
+        "%o",
+        "%x",
+        "%X",
+        "%s",
+        "%+d",
+        "%#d",
+        "% d",
+        //
+//        "%{1}",
+    };
+    for (int i = 0;i < tests.length;i += 1) {
+      String info = " " + Capability.acs_chars.name + "=" + tests[i] + ",\n";
+      assertParseFeatureLine(info);
+    }
+  }
+
+  @Test
+  public void testOpParam() {
+    assertParseOp("p1", new Op.PushParam(1));
+    assertParseOp("p2", new Op.PushParam(2));
+    assertParseOp("p3", new Op.PushParam(3));
+    assertParseOp("p4", new Op.PushParam(4));
+    assertParseOp("p5", new Op.PushParam(5));
+    assertParseOp("p6", new Op.PushParam(6));
+    assertParseOp("p7", new Op.PushParam(7));
+    assertParseOp("p8", new Op.PushParam(8));
+    assertParseOp("p9", new Op.PushParam(9));
+  }
+
+  @Test
+  public void testOpIntegerConstant() {
+    assertParseOp("{0}", new Op.IntegerConstant(0));
+    assertParseOp("{1}", new Op.IntegerConstant(1));
+    assertParseOp("{01}", new Op.IntegerConstant(1));
+    assertParseOp("{2}", new Op.IntegerConstant(2));
+    assertParseOp("{10}", new Op.IntegerConstant(10));
+    assertParseOp("{11}", new Op.IntegerConstant(11));
+  }
+
+  @Test
+  public void testOpPrintf() throws ParseException {
+
+    // Specifier
+    assertParseOpPrintf("d", null, null, null, 'd');
+    assertParseOpPrintf("o", null, null, null, 'o');
+    assertParseOpPrintf("x", null, null, null, 'x');
+    assertParseOpPrintf("X", null, null, null, 'X');
+
+    // Flags
+    assertParseOpPrintf("#", '#', null, null, null);
+    assertParseOpPrintf(" ", ' ', null, null, null);
+    assertParseOpPrintf(":#", '#', null, null, null);
+    assertParseOpPrintf(":-", '-', null, null, null);
+    assertParseOpPrintf(":+", '+', null, null, null);
+    assertParseOpPrintf(": ", ' ', null, null, null);
+
+    // Width
+    assertParseOpPrintf("0", null, "0", null, null);
+    assertParseOpPrintf("10", null, "10", null, null);
+
+    // Precision
+    assertParseOpPrintf(".0", null, null, "0", null);
+    assertParseOpPrintf(".10", null, null, "10", null);
+
+    // Various
+    assertParseOpPrintf(" 10", ' ', "10", null, null);
+    assertParseOpPrintf(":-16s", '-', "16", null, 's');
+    assertParseOpPrintf(":-16.16s", '-', "16", "16", 's');
+    assertParseOpPrintf("03d", null, "03", null, 'd');
+  }
+
+  @Test
+  public void testOpVariable() {
+    assertParseOp("Pa", new Op.SetPopVar('a'));
+    assertParseOp("Pz", new Op.SetPopVar('z'));
+    assertParseOp("PA", new Op.SetPopVar('A'));
+    assertParseOp("PZ", new Op.SetPopVar('Z'));
+    assertParseOp("ga", new Op.GetPushVar('a'));
+    assertParseOp("gz", new Op.GetPushVar('z'));
+    assertParseOp("gA", new Op.GetPushVar('A'));
+    assertParseOp("gZ", new Op.GetPushVar('Z'));
+  }
+
+  @Test
+  public void testOpBit() {
+    assertParseOp("&", Op.Bit.AND);
+    assertParseOp("|", Op.Bit.OR);
+    assertParseOp("^", Op.Bit.XOR);
+  }
+
+  @Test
+  public void testOpLogical() {
+    assertParseOp("=", Op.Logical.EQ);
+    assertParseOp(">", Op.Logical.GT);
+    assertParseOp("<", Op.Logical.LT);
+    assertParseOp("A", Op.Logical.AND);
+    assertParseOp("O", Op.Logical.OR);
+    assertParseOp("!", Op.Logical.NEG);
+    assertParseOp("~", Op.Logical.NEG);
+  }
+
+  @Test
+  public void testOpArithmetic() {
+    assertParseOp("+", Op.Arithmetic.PLUS);
+    assertParseOp("-", Op.Arithmetic.MINUS);
+    assertParseOp("*", Op.Arithmetic.MUL);
+    assertParseOp("/", Op.Arithmetic.DIV);
+    assertParseOp("m", Op.Arithmetic.MOD);
+  }
+
+  @Test
+  public void testOpExpr() {
+    assertParseOp("?", Op.Expr.IF);
+    assertParseOp("t", Op.Expr.THEN);
+    assertParseOp("e", Op.Expr.ELSE);
+    assertParseOp(";", Op.Expr.FI);
+  }
+
+  @Test
+  public void testOpEsc() {
+    assertParseOp("%", Op.Esc.INSTANCE);
+  }
+
+  @Test
+  public void testOpStrLen() {
+    assertParseOp("l", Op.StrLen.INSTANCE);
+  }
+
+  @Test
+  public void testOpCharConstant() {
+    assertParseOp("'a'", new Op.CharConstant('a'));
+    assertParseOp("'%'", new Op.CharConstant('%'));
+    assertParseOp("'\''", new Op.CharConstant('\''));
+  }
+
+  @Test
+  public void testOpPrintPop() {
+    assertParseOp("c", Op.PrintPop.c);
+    assertParseOp("s", Op.PrintPop.s);
+  }
+
+  private void assertParseOpPrintf(String s, Character flag, String width, String precision, Character specifier) {
+    assertParseOp(s, new Op.Printf(flag, width, precision, specifier));
+  }
+
+  private void assertParseOp(String s, Op expected) {
+    try {
+      Op op = new TermInfoParser(s).parseOp();
+      assertEquals(expected, op);
+    } catch (ParseException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   @Test
   public void testStringSpecialCharsFeature() {
@@ -108,16 +277,22 @@ public class TermInfoTest {
         "\\030", String.valueOf((char) 24),
         "\\101", String.valueOf((char) 65),
         "\\01ab", String.valueOf((char) 0) + "1ab",
+        "^c", String.valueOf((char)('C' - 64)),
     };
     for (int i = 0;i < tests.length;i += 2) {
       String info = " " + Capability.acs_chars.name + "=" + tests[i] + ",\n";
-      assertParseFeatureLine(info, Feature.create(Capability.acs_chars.name, tests[i + 1]));
+      assertFeatureLine(info, Feature.create(Capability.acs_chars.name, tests[i + 1]));
     }
   }
 
-  private void assertParseFeatureLine(String s, Feature<?>... expected) {
-    final List<Feature<?>> features = new ArrayList<>();
+  private void assertFeatureLine(String s, Feature<?>... expected) {
+    List<Feature<?>> features = assertParseFeatureLine(s);
+    assertEquals(Arrays.asList(expected), features);
+  }
+
+  private List<Feature<?>> assertParseFeatureLine(String s) {
     try {
+      final List<Feature<?>> features = new ArrayList<>();
       TermInfoParser parser = new TermInfoParser(s);
       ParserHandler handler = new ParserHandler() {
         @Override
@@ -134,10 +309,10 @@ public class TermInfoTest {
         }
       };
       parser.parseFeatureLine(handler);
+      return features;
     } catch (ParseException e) {
       throw new AssertionError(e);
     }
-    assertEquals(Arrays.asList(expected), features);
   }
 
   private void failParseFeatureLine(String s) {
