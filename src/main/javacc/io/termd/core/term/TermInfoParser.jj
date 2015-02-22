@@ -100,7 +100,7 @@ public class TermInfoParser {
   }
 
   // For testing purposes we switch the lexical state before
-  public Op parseSingleOp() throws ParseException {
+  public OpCode parseSingleOpCode() throws ParseException {
     token_source.SwitchTo(PARSING_STRING_VALUE);
     return parseChar();
   }
@@ -147,34 +147,34 @@ PARSER_END(TermInfoParser)
   <STRING_QUOTE: "'"> |
   <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
   <STRING_CARET: ["^"]> : PARSING_STRING_CARET |
-  <OP_PUSH_PARAM: "%p" ["1"-"9"]> |
-  <OP_PRINTF: "%" (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > |
-  <OP_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
-  <OP_AND: "%&"> |
-  <OP_OR: "%|"> |
-  <OP_XOR: "%^"> |
-  <OP_ESC: "%%"> |
-  <OP_PRINT_POP: "%" ["c","s"]> |
-  <OP_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
-  <OP_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
-  <OP_CHAR_CONSTANT: "%'"> |
-  <OP_PUSH_STRLEN: "%l"> |
-  <OP_ARITHMETIC_PLUS: "%+"> |
-  <OP_ARITHMETIC_MINUS: "%-"> |
-  <OP_ARITHMETIC_MUL: "%*"> |
-  <OP_ARITHMETIC_DIV: "%/"> |
-  <OP_ARITHMETIC_MOD: "%m"> |
-  <OP_LOGICAL_EQ: "%="> |
-  <OP_LOGICAL_GT: "%>"> |
-  <OP_LOGICAL_LT: "%<"> |
-  <OP_LOGICAL_AND: "%A"> |
-  <OP_LOGICAL_OR: "%O"> |
-  <OP_LOGICAL_NEG: "%" ["~","!"]> |
-  <OP_ADD_1_TO_PARAMS: "%i"> |
-  <OP_EXPR_IF: "%?"> |
-  <OP_EXPR_THEN: "%t"> |
-  <OP_EXPR_ELSE: "%e"> |
-  <OP_EXPR_FI: "%;"> |
+  <OP_CODE_PUSH_PARAM: "%p" ["1"-"9"]> |
+  <OP_CODE_PRINTF: "%" (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > |
+  <OP_CODE_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
+  <OP_CODE_AND: "%&"> |
+  <OP_CODE_OR: "%|"> |
+  <OP_CODE_XOR: "%^"> |
+  <OP_CODE_ESC: "%%"> |
+  <OP_CODE_PRINT_POP: "%" ["c","s"]> |
+  <OP_CODE_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
+  <OP_CODE_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
+  <OP_CODE_CHAR_CONSTANT: "%'"> |
+  <OP_CODE_PUSH_STRLEN: "%l"> |
+  <OP_CODE_ARITHMETIC_PLUS: "%+"> |
+  <OP_CODE_ARITHMETIC_MINUS: "%-"> |
+  <OP_CODE_ARITHMETIC_MUL: "%*"> |
+  <OP_CODE_ARITHMETIC_DIV: "%/"> |
+  <OP_CODE_ARITHMETIC_MOD: "%m"> |
+  <OP_CODE_LOGICAL_EQ: "%="> |
+  <OP_CODE_LOGICAL_GT: "%>"> |
+  <OP_CODE_LOGICAL_LT: "%<"> |
+  <OP_CODE_LOGICAL_AND: "%A"> |
+  <OP_CODE_LOGICAL_OR: "%O"> |
+  <OP_CODE_LOGICAL_NEG: "%" ["~","!"]> |
+  <OP_CODE_ADD_1_TO_PARAMS: "%i"> |
+  <OP_CODE_EXPR_IF: "%?"> |
+  <OP_CODE_EXPR_THEN: "%t"> |
+  <OP_CODE_EXPR_ELSE: "%e"> |
+  <OP_CODE_EXPR_FI: "%;"> |
   <END_STRING_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
@@ -249,16 +249,16 @@ void parseBooleanFeature(String name, ParserHandler handler):
 }
 
 void parseStringFeature(String name, ParserHandler handler):
-{ List<Op> value = new ArrayList<Op>(); Op op; }
+{ List<OpCode> value = new ArrayList<OpCode>(); OpCode opcode; }
 {
   try {
     <START_STRING_VALUE> (
-      op=parseChar()
+      opcode=parseChar()
       {
-        if (op instanceof Op.Constant && value.size() > 0 && value.get(value.size() - 1) instanceof Op.Constant) {
-          value.set(value.size() - 1, new Op.Constant("" + value.get(value.size() - 1) + op));
+        if (opcode instanceof OpCode.Constant && value.size() > 0 && value.get(value.size() - 1) instanceof OpCode.Constant) {
+          value.set(value.size() - 1, new OpCode.Constant("" + value.get(value.size() - 1) + opcode));
         } else {
-          value.add(op);
+          value.add(opcode);
         }
       }
     ) * <END_STRING_VALUE>
@@ -274,156 +274,156 @@ void parseStringFeature(String name, ParserHandler handler):
   }
 }
 
-Op parseChar():
-{ Op op; }
+OpCode parseChar():
+{ OpCode opcode; }
 {
-  ( op=parseLiteral() | op=parseOp() ) { return op; }
+  ( opcode=parseLiteral() | opcode=parseOpCode() ) { return opcode; }
 }
 
-Op.Constant parseLiteral():
-{ Op.Constant op;Token t; }
-{ ( t=<STRING_CHAR> { op=new Op.Constant(t.image); } |
-    <STRING_QUOTE> { op=new Op.Constant("'"); } |
+OpCode.Constant parseLiteral():
+{ OpCode.Constant opcode;Token t; }
+{ ( t=<STRING_CHAR> { opcode=new OpCode.Constant(t.image); } |
+    <STRING_QUOTE> { opcode=new OpCode.Constant("'"); } |
     ( <STRING_ESC> (
-      ( t=<ANY_ESC_VALUE> { op=new Op.Constant(convertEscChar(t.image)); } ) |
-        t=<ESC_ZERO_OCTAL> { op=new Op.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
-        t=<ESC_OTHER_OCTAL> { op=new Op.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); }
+      ( t=<ANY_ESC_VALUE> { opcode=new OpCode.Constant(convertEscChar(t.image)); } ) |
+        t=<ESC_ZERO_OCTAL> { opcode=new OpCode.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
+        t=<ESC_OTHER_OCTAL> { opcode=new OpCode.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); }
       )
     ) |
-    ( <STRING_CARET> t=<ANY_CARET_VALUE> { op=new Op.Constant(convertControlChar(t.image)); } )
+    ( <STRING_CARET> t=<ANY_CARET_VALUE> { opcode=new OpCode.Constant(convertControlChar(t.image)); } )
   )
-  { return op; }
+  { return opcode; }
 }
 
-Op parseOp():
-{ Op op; }
-{ ( op=parseOpPushParam() |
-    op=parseOpPrintf() |
-    op=parseOpIntegerConstant() |
-    op=parseOpBit() |
-    op=parseOpArithmetic() |
-    op=parseOpLogical() |
-    op=parseOpEsc() |
-    op=parseOpAdd1ToParams() |
-    op=parseOpPushStrLen() |
-    op=parseOpPrintPop() |
-    op=parseOpVariable() |
-    op=parseOpConstant() |
-    op=parseOpExpr()
+OpCode parseOpCode():
+{ OpCode opcode; }
+{ ( opcode=parseOpCodePushParam() |
+    opcode=parseOpCodePrintf() |
+    opcode=parseOpCodeIntegerConstant() |
+    opcode=parseOpCodeBit() |
+    opcode=parseOpCodeArithmetic() |
+    opcode=parseOpCodeLogical() |
+    opcode=parseOpCodeEsc() |
+    opcode=parseOpCodeAdd1ToParams() |
+    opcode=parseOpCodePushStrLen() |
+    opcode=parseOpCodePrintPop() |
+    opcode=parseOpCodeVariable() |
+    opcode=parseOpCodeConstant() |
+    opcode=parseOpCodeExpr()
   )
-  { return op; }
+  { return opcode; }
 }
 
-Op.If parseOpExpr():
-{ Op op;List<Op> expr=new ArrayList<Op>();Op.Then thenPart; }
-{ ( <OP_EXPR_IF> (op=parseChar(){expr.add(op);})+ thenPart=parseThen() <OP_EXPR_FI> )
-  { return new Op.If(expr,thenPart); }
+OpCode.If parseOpCodeExpr():
+{ OpCode opcode;List<OpCode> expr=new ArrayList<OpCode>();OpCode.Then thenPart; }
+{ ( <OP_CODE_EXPR_IF> (opcode=parseChar(){expr.add(opcode);})+ thenPart=parseThen() <OP_CODE_EXPR_FI> )
+  { return new OpCode.If(expr,thenPart); }
 }
 
-Op.Then parseThen():
-{ Op op;List<Op> expr=new ArrayList<Op>();List<Op> elseExpr=new ArrayList<Op>();ElsePart elsePart=null;Op.Then thenPart; }
-{  <OP_EXPR_THEN> (op=parseChar(){expr.add(op);})+
+OpCode.Then parseThen():
+{ OpCode opcode;List<OpCode> expr=new ArrayList<OpCode>();List<OpCode> elseExpr=new ArrayList<OpCode>();ElsePart elsePart=null;OpCode.Then thenPart; }
+{  <OP_CODE_EXPR_THEN> (opcode=parseChar(){expr.add(opcode);})+
   (
-    <OP_EXPR_ELSE> (op=parseChar(){elseExpr.add(op);})+ {elsePart=new Op.Else(elseExpr);} (thenPart=parseThen(){elsePart=new Op.If(elseExpr,thenPart);})?
+    <OP_CODE_EXPR_ELSE> (opcode=parseChar(){elseExpr.add(opcode);})+ {elsePart=new OpCode.Else(elseExpr);} (thenPart=parseThen(){elsePart=new OpCode.If(elseExpr,thenPart);})?
   )?
-  { return new Op.Then(expr,elsePart); }
+  { return new OpCode.Then(expr,elsePart); }
 }
 
-Op.Bit parseOpBit():
-{ Op.Bit op; }
-{ ( <OP_AND> { op=Op.Bit.AND; } | <OP_OR> { op=Op.Bit.OR; } | <OP_XOR> { op=Op.Bit.XOR; } )
-  { return op; }
+OpCode.Bit parseOpCodeBit():
+{ OpCode.Bit opcode; }
+{ ( <OP_CODE_AND> { opcode=OpCode.Bit.AND; } | <OP_CODE_OR> { opcode=OpCode.Bit.OR; } | <OP_CODE_XOR> { opcode=OpCode.Bit.XOR; } )
+  { return opcode; }
 }
 
-Op.Arithmetic parseOpArithmetic():
-{ Op.Arithmetic op; }
-{ ( <OP_ARITHMETIC_PLUS> { op=Op.Arithmetic.PLUS; } |
-    <OP_ARITHMETIC_MINUS> { op=Op.Arithmetic.MINUS; } |
-    <OP_ARITHMETIC_MUL> { op=Op.Arithmetic.MUL; } |
-    <OP_ARITHMETIC_DIV> { op=Op.Arithmetic.DIV; } |
-    <OP_ARITHMETIC_MOD> { op=Op.Arithmetic.MOD; } )
-  { return op; }
+OpCode.Arithmetic parseOpCodeArithmetic():
+{ OpCode.Arithmetic opcode; }
+{ ( <OP_CODE_ARITHMETIC_PLUS> { opcode=OpCode.Arithmetic.PLUS; } |
+    <OP_CODE_ARITHMETIC_MINUS> { opcode=OpCode.Arithmetic.MINUS; } |
+    <OP_CODE_ARITHMETIC_MUL> { opcode=OpCode.Arithmetic.MUL; } |
+    <OP_CODE_ARITHMETIC_DIV> { opcode=OpCode.Arithmetic.DIV; } |
+    <OP_CODE_ARITHMETIC_MOD> { opcode=OpCode.Arithmetic.MOD; } )
+  { return opcode; }
 }
 
-Op.Logical parseOpLogical():
-{ Op.Logical op; }
-{ ( <OP_LOGICAL_EQ> { op=Op.Logical.EQ; } |
-    <OP_LOGICAL_GT> { op=Op.Logical.GT; } |
-    <OP_LOGICAL_LT> { op=Op.Logical.LT; } |
-    <OP_LOGICAL_AND> { op=Op.Logical.AND; } |
-    <OP_LOGICAL_OR> { op=Op.Logical.OR; } |
-    <OP_LOGICAL_NEG> { op=Op.Logical.NEG; }
+OpCode.Logical parseOpCodeLogical():
+{ OpCode.Logical opcode; }
+{ ( <OP_CODE_LOGICAL_EQ> { opcode=OpCode.Logical.EQ; } |
+    <OP_CODE_LOGICAL_GT> { opcode=OpCode.Logical.GT; } |
+    <OP_CODE_LOGICAL_LT> { opcode=OpCode.Logical.LT; } |
+    <OP_CODE_LOGICAL_AND> { opcode=OpCode.Logical.AND; } |
+    <OP_CODE_LOGICAL_OR> { opcode=OpCode.Logical.OR; } |
+    <OP_CODE_LOGICAL_NEG> { opcode=OpCode.Logical.NEG; }
   )
-  { return op; }
+  { return opcode; }
 }
 
-Op.Esc parseOpEsc():
-{ Op.Esc op; }
-{ ( <OP_ESC> { op=Op.Esc.INSTANCE; } )
-  { return op; }
+OpCode.Esc parseOpCodeEsc():
+{ OpCode.Esc opcode; }
+{ ( <OP_CODE_ESC> { opcode=OpCode.Esc.INSTANCE; } )
+  { return opcode; }
 }
 
-Op.Add1ToParams parseOpAdd1ToParams():
-{ Op.Add1ToParams op; }
-{ ( <OP_ADD_1_TO_PARAMS> { op=Op.Add1ToParams.INSTANCE; } )
-  { return op; }
+OpCode.Add1ToParams parseOpCodeAdd1ToParams():
+{ OpCode.Add1ToParams opcode; }
+{ ( <OP_CODE_ADD_1_TO_PARAMS> { opcode=OpCode.Add1ToParams.INSTANCE; } )
+  { return opcode; }
 }
 
-Op.PushStrLen parseOpPushStrLen():
-{ Op.PushStrLen op; }
-{ ( <OP_PUSH_STRLEN> { op=Op.PushStrLen.INSTANCE; } )
-  { return op; }
+OpCode.PushStrLen parseOpCodePushStrLen():
+{ OpCode.PushStrLen opcode; }
+{ ( <OP_CODE_PUSH_STRLEN> { opcode=OpCode.PushStrLen.INSTANCE; } )
+  { return opcode; }
 }
 
-Op.PushParam parseOpPushParam():
+OpCode.PushParam parseOpCodePushParam():
 { Token t; }
-{ t=<OP_PUSH_PARAM>
-  { return new Op.PushParam(t.image.charAt(2) - '0'); }
+{ t=<OP_CODE_PUSH_PARAM>
+  { return new OpCode.PushParam(t.image.charAt(2) - '0'); }
 }
 
-Op.IntegerConstant parseOpIntegerConstant():
+OpCode.IntegerConstant parseOpCodeIntegerConstant():
 { Token t; }
-{ t=<OP_INTEGER_CONSTANT>
-  { return new Op.IntegerConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
+{ t=<OP_CODE_INTEGER_CONSTANT>
+  { return new OpCode.IntegerConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
 }
 
-Op parseOpPrintf():
+OpCode parseOpCodePrintf():
 { Token t; }
 {
-  t=<OP_PRINTF>
+  t=<OP_CODE_PRINTF>
   {
     switch(t.image) {
       case "%s":
-        return Op.PrintPop.s;
+        return OpCode.PrintPop.s;
       case "%+":
-        return Op.Arithmetic.PLUS;
+        return OpCode.Arithmetic.PLUS;
       case "%-":
-        return Op.Arithmetic.MINUS;
+        return OpCode.Arithmetic.MINUS;
       default:
-        return Op.Printf.parse(t.image);
+        return OpCode.Printf.parse(t.image);
     }
   }
 }
 
-Op.PrintPop parseOpPrintPop():
+OpCode.PrintPop parseOpCodePrintPop():
 { Token t; }
 {
-  t=<OP_PRINT_POP>
-  { return t.image.charAt(1) == 'c' ? Op.PrintPop.c : Op.PrintPop.s; }
+  t=<OP_CODE_PRINT_POP>
+  { return t.image.charAt(1) == 'c' ? OpCode.PrintPop.c : OpCode.PrintPop.s; }
 }
 
-Op parseOpVariable():
+OpCode parseOpCodeVariable():
 { Token t;}
 {
-  t=<OP_SET_POP_VARIABLE> { return new Op.SetPopVar(t.image.charAt(2)); } |
-  t=<OP_GET_PUSH_VARIABLE> { return new Op.GetPushVar(t.image.charAt(2)); }
+  t=<OP_CODE_SET_POP_VARIABLE> { return new OpCode.SetPopVar(t.image.charAt(2)); } |
+  t=<OP_CODE_GET_PUSH_VARIABLE> { return new OpCode.GetPushVar(t.image.charAt(2)); }
 }
 
-Op.Constant parseOpConstant():
-{ Op.Constant op; }
+OpCode.Constant parseOpCodeConstant():
+{ OpCode.Constant opcode; }
 {
-  <OP_CHAR_CONSTANT> op=parseLiteral() <STRING_QUOTE>
-  { return op;  }
+  <OP_CODE_CHAR_CONSTANT> opcode=parseLiteral() <STRING_QUOTE>
+  { return opcode;  }
 }
 
 void parseNumericFeature(String name, ParserHandler handler):

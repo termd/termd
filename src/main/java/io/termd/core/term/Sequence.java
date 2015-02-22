@@ -7,16 +7,16 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Sequence implements Iterable<Op> {
+public class Sequence implements Iterable<OpCode> {
 
-  private final List<Op> value;
+  private final List<OpCode> value;
 
-  public Sequence(List<Op> value) {
+  public Sequence(List<OpCode> value) {
     this.value = value;
   }
 
   public Sequence(String s) {
-    value = Collections.<Op>singletonList(new Op.Constant(s));
+    value = Collections.<OpCode>singletonList(new OpCode.Constant(s));
   }
 
   public int size() {
@@ -24,14 +24,14 @@ public class Sequence implements Iterable<Op> {
   }
 
   @Override
-  public Iterator<Op> iterator() {
+  public Iterator<OpCode> iterator() {
     return value.iterator();
   }
 
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
-    for (Op op : value) {
+    for (OpCode op : value) {
       op.toString(buffer);
     }
     return buffer.toString();

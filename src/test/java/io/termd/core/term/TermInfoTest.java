@@ -65,7 +65,7 @@ public class TermInfoTest {
     assertFeatureLine(" foo@,\n", Feature.create("foo", false));
     assertFeatureLine(" foo,bar,\n", Feature.create("foo", true), Feature.create("bar", true));
     assertFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create("bar", true));
-    assertFeatureLine(" foo=,\n", Feature.create("foo", new Sequence(Collections.<Op>emptyList())));
+    assertFeatureLine(" foo=,\n", Feature.create("foo", new Sequence(Collections.<OpCode>emptyList())));
     assertFeatureLine(" foo=\\s,\n", Feature.create("foo", new Sequence(" ")));
     assertFeatureLine(" foo=\\\\,\n", Feature.create("foo", new Sequence("\\")));
     assertFeatureLine(" foo=\\,,\n", Feature.create("foo", new Sequence(",")));
@@ -124,25 +124,25 @@ public class TermInfoTest {
 
   @Test
   public void testOpParam() {
-    assertParseInstr("%p1", new Op.PushParam(1));
-    assertParseInstr("%p2", new Op.PushParam(2));
-    assertParseInstr("%p3", new Op.PushParam(3));
-    assertParseInstr("%p4", new Op.PushParam(4));
-    assertParseInstr("%p5", new Op.PushParam(5));
-    assertParseInstr("%p6", new Op.PushParam(6));
-    assertParseInstr("%p7", new Op.PushParam(7));
-    assertParseInstr("%p8", new Op.PushParam(8));
-    assertParseInstr("%p9", new Op.PushParam(9));
+    assertParseInstr("%p1", new OpCode.PushParam(1));
+    assertParseInstr("%p2", new OpCode.PushParam(2));
+    assertParseInstr("%p3", new OpCode.PushParam(3));
+    assertParseInstr("%p4", new OpCode.PushParam(4));
+    assertParseInstr("%p5", new OpCode.PushParam(5));
+    assertParseInstr("%p6", new OpCode.PushParam(6));
+    assertParseInstr("%p7", new OpCode.PushParam(7));
+    assertParseInstr("%p8", new OpCode.PushParam(8));
+    assertParseInstr("%p9", new OpCode.PushParam(9));
   }
 
   @Test
   public void testOpIntegerConstant() {
-    assertParseInstr("%{0}", new Op.IntegerConstant(0));
-    assertParseInstr("%{1}", new Op.IntegerConstant(1));
-    assertParseInstr("%{01}", new Op.IntegerConstant(1));
-    assertParseInstr("%{2}", new Op.IntegerConstant(2));
-    assertParseInstr("%{10}", new Op.IntegerConstant(10));
-    assertParseInstr("%{11}", new Op.IntegerConstant(11));
+    assertParseInstr("%{0}", new OpCode.IntegerConstant(0));
+    assertParseInstr("%{1}", new OpCode.IntegerConstant(1));
+    assertParseInstr("%{01}", new OpCode.IntegerConstant(1));
+    assertParseInstr("%{2}", new OpCode.IntegerConstant(2));
+    assertParseInstr("%{10}", new OpCode.IntegerConstant(10));
+    assertParseInstr("%{11}", new OpCode.IntegerConstant(11));
   }
 
   @Test
@@ -179,100 +179,100 @@ public class TermInfoTest {
 
   @Test
   public void testOpVariable() {
-    assertParseInstr("%Pa", new Op.SetPopVar('a'));
-    assertParseInstr("%Pz", new Op.SetPopVar('z'));
-    assertParseInstr("%PA", new Op.SetPopVar('A'));
-    assertParseInstr("%PZ", new Op.SetPopVar('Z'));
-    assertParseInstr("%ga", new Op.GetPushVar('a'));
-    assertParseInstr("%gz", new Op.GetPushVar('z'));
-    assertParseInstr("%gA", new Op.GetPushVar('A'));
-    assertParseInstr("%gZ", new Op.GetPushVar('Z'));
+    assertParseInstr("%Pa", new OpCode.SetPopVar('a'));
+    assertParseInstr("%Pz", new OpCode.SetPopVar('z'));
+    assertParseInstr("%PA", new OpCode.SetPopVar('A'));
+    assertParseInstr("%PZ", new OpCode.SetPopVar('Z'));
+    assertParseInstr("%ga", new OpCode.GetPushVar('a'));
+    assertParseInstr("%gz", new OpCode.GetPushVar('z'));
+    assertParseInstr("%gA", new OpCode.GetPushVar('A'));
+    assertParseInstr("%gZ", new OpCode.GetPushVar('Z'));
   }
 
   @Test
   public void testOpBit() {
-    assertParseInstr("%&", Op.Bit.AND);
-    assertParseInstr("%|", Op.Bit.OR);
-    assertParseInstr("%^", Op.Bit.XOR);
+    assertParseInstr("%&", OpCode.Bit.AND);
+    assertParseInstr("%|", OpCode.Bit.OR);
+    assertParseInstr("%^", OpCode.Bit.XOR);
   }
 
   @Test
   public void testOpLogical() {
-    assertParseInstr("%=", Op.Logical.EQ);
-    assertParseInstr("%>", Op.Logical.GT);
-    assertParseInstr("%<", Op.Logical.LT);
-    assertParseInstr("%A", Op.Logical.AND);
-    assertParseInstr("%O", Op.Logical.OR);
-    assertParseInstr("%!", Op.Logical.NEG);
-    assertParseInstr("%~", Op.Logical.NEG);
+    assertParseInstr("%=", OpCode.Logical.EQ);
+    assertParseInstr("%>", OpCode.Logical.GT);
+    assertParseInstr("%<", OpCode.Logical.LT);
+    assertParseInstr("%A", OpCode.Logical.AND);
+    assertParseInstr("%O", OpCode.Logical.OR);
+    assertParseInstr("%!", OpCode.Logical.NEG);
+    assertParseInstr("%~", OpCode.Logical.NEG);
   }
 
   @Test
   public void testOpArithmetic() {
-    assertParseInstr("%+", Op.Arithmetic.PLUS);
-    assertParseInstr("%-", Op.Arithmetic.MINUS);
-    assertParseInstr("%*", Op.Arithmetic.MUL);
-    assertParseInstr("%/", Op.Arithmetic.DIV);
-    assertParseInstr("%m", Op.Arithmetic.MOD);
+    assertParseInstr("%+", OpCode.Arithmetic.PLUS);
+    assertParseInstr("%-", OpCode.Arithmetic.MINUS);
+    assertParseInstr("%*", OpCode.Arithmetic.MUL);
+    assertParseInstr("%/", OpCode.Arithmetic.DIV);
+    assertParseInstr("%m", OpCode.Arithmetic.MOD);
   }
 
   @Test
   public void testOpAdd1ToParams() {
-    assertParseInstr("%i", Op.Add1ToParams.INSTANCE);
+    assertParseInstr("%i", OpCode.Add1ToParams.INSTANCE);
   }
 
   @Test
   public void testIfThenElse() {
-    List<Op> p1 = Arrays.<Op>asList(new Op.PushParam(1));
-    List<Op> p2 = Arrays.<Op>asList(new Op.PushParam(2));
-    List<Op> p3 = Arrays.<Op>asList(new Op.PushParam(3));
-    List<Op> p4 = Arrays.<Op>asList(new Op.PushParam(4));
-    List<Op> p5 = Arrays.<Op>asList(new Op.PushParam(5));
-    List<Op> p6 = Arrays.<Op>asList(new Op.PushParam(6));
-    List<Op> p7 = Arrays.<Op>asList(new Op.PushParam(7));
-    assertParseInstr("%?%p1%t%p2%;", new Op.If(p1, new Op.Then(p2)));
-    assertParseInstr("%?%p1%t%p2%e%p3%;", new Op.If(p1, new Op.Then(p2, new Op.Else(p3))));
-    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4)))));
-    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.Else(p5))))));
-    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.If(p5, new Op.Then(p6)))))));
-    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%e%p7%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.If(p5, new Op.Then(p6, new Op.Else(p7))))))));
-    List<Op> p1p2 = Arrays.<Op>asList(new Op.PushParam(1), new Op.PushParam(2));
-    List<Op> p3p4 = Arrays.<Op>asList(new Op.PushParam(3), new Op.PushParam(4));
-    List<Op> p5p6 = Arrays.<Op>asList(new Op.PushParam(5), new Op.PushParam(6));
-    assertParseInstr("%?%p1%p2%t%p3%p4%e%p5%p6%;", new Op.If(p1p2, new Op.Then(p3p4, new Op.Else(p5p6))));
+    List<OpCode> p1 = Arrays.<OpCode>asList(new OpCode.PushParam(1));
+    List<OpCode> p2 = Arrays.<OpCode>asList(new OpCode.PushParam(2));
+    List<OpCode> p3 = Arrays.<OpCode>asList(new OpCode.PushParam(3));
+    List<OpCode> p4 = Arrays.<OpCode>asList(new OpCode.PushParam(4));
+    List<OpCode> p5 = Arrays.<OpCode>asList(new OpCode.PushParam(5));
+    List<OpCode> p6 = Arrays.<OpCode>asList(new OpCode.PushParam(6));
+    List<OpCode> p7 = Arrays.<OpCode>asList(new OpCode.PushParam(7));
+    assertParseInstr("%?%p1%t%p2%;", new OpCode.If(p1, new OpCode.Then(p2)));
+    assertParseInstr("%?%p1%t%p2%e%p3%;", new OpCode.If(p1, new OpCode.Then(p2, new OpCode.Else(p3))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%;", new OpCode.If(p1, new OpCode.Then(p2, new OpCode.If(p3, new OpCode.Then(p4)))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%;", new OpCode.If(p1, new OpCode.Then(p2, new OpCode.If(p3, new OpCode.Then(p4, new OpCode.Else(p5))))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%;", new OpCode.If(p1, new OpCode.Then(p2, new OpCode.If(p3, new OpCode.Then(p4, new OpCode.If(p5, new OpCode.Then(p6)))))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%e%p7%;", new OpCode.If(p1, new OpCode.Then(p2, new OpCode.If(p3, new OpCode.Then(p4, new OpCode.If(p5, new OpCode.Then(p6, new OpCode.Else(p7))))))));
+    List<OpCode> p1p2 = Arrays.<OpCode>asList(new OpCode.PushParam(1), new OpCode.PushParam(2));
+    List<OpCode> p3p4 = Arrays.<OpCode>asList(new OpCode.PushParam(3), new OpCode.PushParam(4));
+    List<OpCode> p5p6 = Arrays.<OpCode>asList(new OpCode.PushParam(5), new OpCode.PushParam(6));
+    assertParseInstr("%?%p1%p2%t%p3%p4%e%p5%p6%;", new OpCode.If(p1p2, new OpCode.Then(p3p4, new OpCode.Else(p5p6))));
   }
 
   @Test
   public void testOpEsc() {
-    assertParseInstr("%%", Op.Esc.INSTANCE);
+    assertParseInstr("%%", OpCode.Esc.INSTANCE);
   }
 
   @Test
   public void testOpStrLen() {
-    assertParseInstr("%l", Op.PushStrLen.INSTANCE);
+    assertParseInstr("%l", OpCode.PushStrLen.INSTANCE);
   }
 
   @Test
   public void testOpCharConstant() {
-    assertParseInstr("%'a'", new Op.Constant("a"));
-    assertParseInstr("%'\''", new Op.Constant("'"));
-    assertParseInstr("%'\\123'", new Op.Constant(Character.toString((char) 83)));
-    assertParseInstr("%'\\0'", new Op.Constant(Character.toString((char) 0)));
+    assertParseInstr("%'a'", new OpCode.Constant("a"));
+    assertParseInstr("%'\''", new OpCode.Constant("'"));
+    assertParseInstr("%'\\123'", new OpCode.Constant(Character.toString((char) 83)));
+    assertParseInstr("%'\\0'", new OpCode.Constant(Character.toString((char) 0)));
   }
 
   @Test
   public void testOpPrintPop() {
-    assertParseInstr("%c", Op.PrintPop.c);
-    assertParseInstr("%s", Op.PrintPop.s);
+    assertParseInstr("%c", OpCode.PrintPop.c);
+    assertParseInstr("%s", OpCode.PrintPop.s);
   }
 
   private void assertParseOpPrintf(String s, Character flag, String width, String precision, Character specifier) {
-    assertParseInstr(s, new Op.Printf(flag, width, precision, specifier));
+    assertParseInstr(s, new OpCode.Printf(flag, width, precision, specifier));
   }
 
-  private void assertParseInstr(String s, Op expected) {
+  private void assertParseInstr(String s, OpCode expected) {
     try {
-      Op op = new TermInfoParser(s).parseSingleOp();
+      OpCode op = new TermInfoParser(s).parseSingleOpCode();
       assertEquals(expected, op);
     } catch (ParseException e) {
       throw new AssertionError(e);

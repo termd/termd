@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Op {
+public abstract class OpCode {
 
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -17,7 +17,7 @@ public abstract class Op {
 
   protected abstract void toString(StringBuilder sb);
 
-  public static class PushParam extends Op {
+  public static class PushParam extends OpCode {
 
     private final int index;
 
@@ -48,7 +48,7 @@ public abstract class Op {
   }
 
   // %'c'
-  public static class Constant extends Op {
+  public static class Constant extends OpCode {
     final String value;
     public Constant(String value) {
       this.value = value;
@@ -71,7 +71,7 @@ public abstract class Op {
   }
 
   // %%
-  public static class Esc extends Op {
+  public static class Esc extends OpCode {
     public static final Esc INSTANCE = new Esc();
     private Esc() {
     }
@@ -83,7 +83,7 @@ public abstract class Op {
   }
 
   // %l
-  public static class PushStrLen extends Op {
+  public static class PushStrLen extends OpCode {
     public static final PushStrLen INSTANCE = new PushStrLen();
     private PushStrLen() {
     }
@@ -94,7 +94,7 @@ public abstract class Op {
   }
 
   // %%
-  public static class Add1ToParams extends Op {
+  public static class Add1ToParams extends OpCode {
     public static final Add1ToParams INSTANCE = new Add1ToParams();
     private Add1ToParams() {
     }
@@ -106,7 +106,7 @@ public abstract class Op {
 
   // %c
   // %s
-  public abstract static class PrintPop extends Op {
+  public abstract static class PrintPop extends OpCode {
     public static final PrintPop c = new PrintPop() {
       @Override
       protected void toString(StringBuilder sb) {
@@ -123,7 +123,7 @@ public abstract class Op {
     }
   }
 
-  public static class SetPopVar extends Op {
+  public static class SetPopVar extends OpCode {
     private final char value;
     public SetPopVar(char value) {
       this.value = value;
@@ -145,7 +145,7 @@ public abstract class Op {
     }
   }
 
-  public static class GetPushVar extends Op {
+  public static class GetPushVar extends OpCode {
     private final char value;
     public GetPushVar(char value) {
       this.value = value;
@@ -167,7 +167,7 @@ public abstract class Op {
     }
   }
 
-  public static class Bit extends Op {
+  public static class Bit extends OpCode {
 
     public static final Bit OR = new Bit('|');
     public static final Bit AND = new Bit('&');
@@ -185,7 +185,7 @@ public abstract class Op {
     }
   }
 
-  public static class Logical extends Op {
+  public static class Logical extends OpCode {
 
     public static final Logical EQ = new Logical('=');
     public static final Logical GT = new Logical('>');
@@ -206,7 +206,7 @@ public abstract class Op {
     }
   }
 
-  public static class Arithmetic extends Op {
+  public static class Arithmetic extends OpCode {
 
     public static final Arithmetic PLUS = new Arithmetic('+');
     public static final Arithmetic MINUS = new Arithmetic('-');
@@ -226,7 +226,7 @@ public abstract class Op {
     }
   }
 
-  public static class IntegerConstant extends Op {
+  public static class IntegerConstant extends OpCode {
 
     private final int value;
 
@@ -243,8 +243,8 @@ public abstract class Op {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Op.IntegerConstant) {
-        Op.IntegerConstant that = (IntegerConstant) obj;
+      if (obj instanceof OpCode.IntegerConstant) {
+        OpCode.IntegerConstant that = (IntegerConstant) obj;
         return value == that.value;
       }
       return false;
@@ -256,7 +256,7 @@ public abstract class Op {
     }
   }
 
-  public static class Printf extends Op {
+  public static class Printf extends OpCode {
 
     private static final Pattern p = Pattern.compile("%:?([-+# ])?([0-9]+)?(?:\\.([0-9]+))?([doxXs])?");
 
@@ -305,8 +305,8 @@ public abstract class Op {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Op.Printf) {
-        Op.Printf that = (Printf) obj;
+      if (obj instanceof OpCode.Printf) {
+        OpCode.Printf that = (Printf) obj;
         return
             (flag == null ? that.flag == null : flag.equals(that.flag)) &&
             (width == null ? that.width == null : width.equals(that.width)) &&
@@ -334,12 +334,12 @@ public abstract class Op {
     }
   }
 
-  public static class If extends Op implements ElsePart {
+  public static class If extends OpCode implements ElsePart {
 
-    final List<Op> expr;
+    final List<OpCode> expr;
     final Then thenPart;
 
-    public If(List<Op> expr, Then thenPart) {
+    public If(List<OpCode> expr, Then thenPart) {
       this.expr = expr;
       this.thenPart = thenPart;
     }
@@ -359,7 +359,7 @@ public abstract class Op {
     @Override
     protected void toString(StringBuilder sb) {
       sb.append("%?");
-      for (Op op : expr) {
+      for (OpCode op : expr) {
         op.toString(sb);
       }
       thenPart.toString(sb);
@@ -369,9 +369,9 @@ public abstract class Op {
 
   public static class Else implements ElsePart {
 
-    final List<Op> expr;
+    final List<OpCode> expr;
 
-    public Else(List<Op> expr) {
+    public Else(List<OpCode> expr) {
       this.expr = expr;
     }
 
@@ -389,7 +389,7 @@ public abstract class Op {
 
     protected void toString(StringBuilder sb) {
       sb.append("%e");
-      for (Op op : expr) {
+      for (OpCode op : expr) {
         op.toString(sb);
       }
     }
@@ -397,15 +397,15 @@ public abstract class Op {
 
   public static class Then {
 
-    final List<Op> expr;
+    final List<OpCode> expr;
     final ElsePart elsePart;
 
-    public Then(List<Op> expr, ElsePart elsePart) {
+    public Then(List<OpCode> expr, ElsePart elsePart) {
       this.expr = expr;
       this.elsePart = elsePart;
     }
 
-    public Then(List<Op> expr) {
+    public Then(List<OpCode> expr) {
       this.expr = expr;
       this.elsePart = null;
     }
@@ -424,7 +424,7 @@ public abstract class Op {
 
     protected void toString(StringBuilder sb) {
       sb.append("%t");
-      for (Op op : expr) {
+      for (OpCode op : expr) {
         op.toString(sb);
       }
       if (elsePart instanceof Else) {
