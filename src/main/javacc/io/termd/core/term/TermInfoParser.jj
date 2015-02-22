@@ -100,9 +100,9 @@ public class TermInfoParser {
   }
 
   // For testing purposes we switch the lexical state before
-  public Op parseOp() throws ParseException {
-    token_source.SwitchTo(PARSING_STRING_OP);
-    return _parseOp();
+  public Op parseSingleOp() throws ParseException {
+    token_source.SwitchTo(PARSING_STRING_VALUE);
+    return parseChar();
   }
 }
 
@@ -143,10 +143,37 @@ PARSER_END(TermInfoParser)
 }
 
 <PARSING_STRING_VALUE> TOKEN: {
-  <STRING_CHAR: ([" "-"$"] | ["&"-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])*> |
+  <STRING_CHAR: ([" "-"$"] | "&" | ["("-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])+> |
+  <STRING_QUOTE: "'"> |
   <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
   <STRING_CARET: ["^"]> : PARSING_STRING_CARET |
-  <STRING_OP: ["%"]> : PARSING_STRING_OP |
+  <OP_PUSH_PARAM: "%p" ["1"-"9"]> |
+  <OP_PRINTF: "%" (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > |
+  <OP_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
+  <OP_AND: "%&"> |
+  <OP_OR: "%|"> |
+  <OP_XOR: "%^"> |
+  <OP_ESC: "%%"> |
+  <OP_PRINT_POP: "%" ["c","s"]> |
+  <OP_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
+  <OP_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
+  <OP_CHAR_CONSTANT: "%'"> |
+  <OP_PUSH_STRLEN: "%l"> |
+  <OP_ARITHMETIC_PLUS: "%+"> |
+  <OP_ARITHMETIC_MINUS: "%-"> |
+  <OP_ARITHMETIC_MUL: "%*"> |
+  <OP_ARITHMETIC_DIV: "%/"> |
+  <OP_ARITHMETIC_MOD: "%m"> |
+  <OP_LOGICAL_EQ: "%="> |
+  <OP_LOGICAL_GT: "%>"> |
+  <OP_LOGICAL_LT: "%<"> |
+  <OP_LOGICAL_AND: "%A"> |
+  <OP_LOGICAL_OR: "%O"> |
+  <OP_LOGICAL_NEG: "%" ["~","!"]> |
+  <OP_EXPR_IF: "%?"> |
+  <OP_EXPR_THEN: "%t"> |
+  <OP_EXPR_ELSE: "%e"> |
+  <OP_EXPR_FI: "%;"> |
   <END_STRING_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
 }
 
@@ -166,36 +193,6 @@ PARSER_END(TermInfoParser)
   <OCT_VALUE: (["0"-"7"])+> |
   <HEX_VALUE: "0x" (["0"-"9","A"-"F","a"-"f"])+> |
   <END_NUMERIC_VALUE : <END_FEATURE>> : PARSING_FEATURE_LINE
-}
-
-<PARSING_STRING_OP> TOKEN: {
-  <OP_PUSH_PARAM: "p" ["1"-"9"]> : PARSING_STRING_VALUE |
-  <OP_PRINTF: (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > : PARSING_STRING_VALUE |
-  <OP_INTEGER_CONSTANT: "{" ( ["0"-"9"] )+ "}" > : PARSING_STRING_VALUE |
-  <OP_AND: "&"> : PARSING_STRING_VALUE |
-  <OP_OR: "|"> : PARSING_STRING_VALUE |
-  <OP_XOR: "^"> : PARSING_STRING_VALUE |
-  <OP_ESC: "%"> : PARSING_STRING_VALUE |
-  <OP_PRINT_POP: ["c","s"]> : PARSING_STRING_VALUE |
-  <OP_SET_POP_VARIABLE: "P" ["A"-"Z","a"-"z"]> : PARSING_STRING_VALUE |
-  <OP_GET_PUSH_VARIABLE: "g" ["A"-"Z","a"-"z"]> : PARSING_STRING_VALUE |
-  <OP_CHAR_CONSTANT: "'" ~[]  "'"> : PARSING_STRING_VALUE |
-  <OP_STRLEN: "l"> : PARSING_STRING_VALUE |
-  <OP_ARITHMETIC_PLUS: "+"> : PARSING_STRING_VALUE |
-  <OP_ARITHMETIC_MINUS: "-"> : PARSING_STRING_VALUE |
-  <OP_ARITHMETIC_MUL: "*"> : PARSING_STRING_VALUE |
-  <OP_ARITHMETIC_DIV: "/"> : PARSING_STRING_VALUE |
-  <OP_ARITHMETIC_MOD: "m"> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_EQ: "="> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_GT: ">"> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_LT: "<"> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_AND: "A"> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_OR: "O"> : PARSING_STRING_VALUE |
-  <OP_LOGICAL_NEG: ["~","!"]> : PARSING_STRING_VALUE |
-  <OP_EXPR_IF: "?"> : PARSING_STRING_VALUE |
-  <OP_EXPR_THEN: "t"> : PARSING_STRING_VALUE |
-  <OP_EXPR_ELSE: "e"> : PARSING_STRING_VALUE |
-  <OP_EXPR_FI: ";"> : PARSING_STRING_VALUE
 }
 
 void parseDatabase(ParserHandler handler):
@@ -229,7 +226,7 @@ void parseHeaderLine(ParserHandler handler):
 void parseFeatureLine(ParserHandler handler):
 {}
 {
-  <START_FEATURE_LINE> ( parseFeature(handler) ) + <END_FEATURE_LINE>
+  ( <START_FEATURE_LINE> ( parseFeature(handler) ) + <END_FEATURE_LINE> )
 }
 
 void parseFeature(ParserHandler handler):
@@ -251,22 +248,46 @@ void parseBooleanFeature(String name, ParserHandler handler):
 }
 
 void parseStringFeature(String name, ParserHandler handler):
-{ StringBuilder val = new StringBuilder(); Token c; }
+{ List<Op> block = new ArrayList<Op>(); Op op; }
 {
-  <START_STRING_VALUE> (
-    c=<STRING_CHAR> { val.append(c.image); } |
-    ( <STRING_ESC> (
-      ( c=<ANY_ESC_VALUE> { val.append(convertEscChar(c.image)); } ) |
-      c=<ESC_ZERO_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } |
-      c=<ESC_OTHER_OCTAL> { val.append((char)Integer.parseInt(c.image, 8)); } ) ) |
-    ( <STRING_CARET> c=<ANY_CARET_VALUE> { val.append(convertControlChar(c.image)); } ) |
-    ( <STRING_OP> _parseOp()
-    )
-  ) * <END_STRING_VALUE>
-  { handler.addStringFeature(name, val.toString()); }
+  try {
+    <START_STRING_VALUE> (
+      op=parseChar() {block.add(op);}
+    ) * <END_STRING_VALUE>
+    { handler.addStringFeature(name, block); }
+  } catch (ParseException e) {
+    // Deep error recovery
+    System.out.println("Coult not parse feature " + name);
+    Token t;
+    do {
+      t = getNextToken();
+    }
+    while (t.kind != END_STRING_VALUE);
+  }
 }
 
-Op _parseOp():
+Op parseChar():
+{ Op op; }
+{
+  ( op=parseLiteral() | op=parseOp() ) { return op; }
+}
+
+Op.Constant parseLiteral():
+{ Op.Constant op;Token t; }
+{ ( t=<STRING_CHAR> { op=new Op.Constant(t.image); } |
+    <STRING_QUOTE> { op=new Op.Constant("'"); } |
+    ( <STRING_ESC> (
+      ( t=<ANY_ESC_VALUE> { op=new Op.Constant(convertEscChar(t.image)); } ) |
+        t=<ESC_ZERO_OCTAL> { op=new Op.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
+        t=<ESC_OTHER_OCTAL> { op=new Op.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); }
+      )
+    ) |
+    ( <STRING_CARET> t=<ANY_CARET_VALUE> { op=new Op.Constant(convertControlChar(t.image)); } )
+  )
+  { return op; }
+}
+
+Op parseOp():
 { Op op; }
 { ( op=parseOpPushParam() |
     op=parseOpPrintf() |
@@ -275,13 +296,28 @@ Op _parseOp():
     op=parseOpArithmetic() |
     op=parseOpLogical() |
     op=parseOpEsc() |
-    op=parseOpStrLen() |
+    op=parseOpPushStrLen() |
     op=parseOpPrintPop() |
     op=parseOpVariable() |
-    op=parseOpCharConstant() |
+    op=parseOpConstant() |
     op=parseOpExpr()
   )
   { return op; }
+}
+
+Op.If parseOpExpr():
+{ Op op;List<Op> expr=new ArrayList<Op>();Op.Then thenPart; }
+{ ( <OP_EXPR_IF> (op=parseChar(){expr.add(op);})+ thenPart=parseThen() <OP_EXPR_FI> )
+  { return new Op.If(expr,thenPart); }
+}
+
+Op.Then parseThen():
+{ Op op;List<Op> expr=new ArrayList<Op>();List<Op> elseExpr=new ArrayList<Op>();ElsePart elsePart=null;Op.Then thenPart; }
+{  <OP_EXPR_THEN> (op=parseChar(){expr.add(op);})+
+  (
+    <OP_EXPR_ELSE> (op=parseChar(){elseExpr.add(op);})+ {elsePart=new Op.Else(elseExpr);} (thenPart=parseThen(){elsePart=new Op.If(elseExpr,thenPart);})?
+  )?
+  { return new Op.Then(expr,elsePart); }
 }
 
 Op.Bit parseOpBit():
@@ -312,38 +348,28 @@ Op.Logical parseOpLogical():
   { return op; }
 }
 
-Op.Expr parseOpExpr():
-{ Op.Expr op; }
-{ ( <OP_EXPR_IF> { op=Op.Expr.IF; } |
-    <OP_EXPR_THEN> { op=Op.Expr.THEN; } |
-    <OP_EXPR_ELSE> { op=Op.Expr.ELSE; } |
-    <OP_EXPR_FI> { op=Op.Expr.FI; }
-  )
-  { return op; }
-}
-
 Op.Esc parseOpEsc():
 { Op.Esc op; }
 { ( <OP_ESC> { op=Op.Esc.INSTANCE; } )
   { return op; }
 }
 
-Op.StrLen parseOpStrLen():
-{ Op.StrLen op; }
-{ ( <OP_STRLEN> { op=Op.StrLen.INSTANCE; } )
+Op.PushStrLen parseOpPushStrLen():
+{ Op.PushStrLen op; }
+{ ( <OP_PUSH_STRLEN> { op=Op.PushStrLen.INSTANCE; } )
   { return op; }
 }
 
 Op.PushParam parseOpPushParam():
 { Token t; }
 { t=<OP_PUSH_PARAM>
-  { return new Op.PushParam(t.image.charAt(1) - '0'); }
+  { return new Op.PushParam(t.image.charAt(2) - '0'); }
 }
 
 Op.IntegerConstant parseOpIntegerConstant():
 { Token t; }
 { t=<OP_INTEGER_CONSTANT>
-  { return new Op.IntegerConstant(Integer.parseInt(t.image.substring(1, t.image.length() - 1))); }
+  { return new Op.IntegerConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
 }
 
 Op parseOpPrintf():
@@ -352,11 +378,11 @@ Op parseOpPrintf():
   t=<OP_PRINTF>
   {
     switch(t.image) {
-      case "s":
+      case "%s":
         return Op.PrintPop.s;
-      case "+":
+      case "%+":
         return Op.Arithmetic.PLUS;
-      case "-":
+      case "%-":
         return Op.Arithmetic.MINUS;
       default:
         return Op.Printf.parse(t.image);
@@ -368,21 +394,21 @@ Op.PrintPop parseOpPrintPop():
 { Token t; }
 {
   t=<OP_PRINT_POP>
-  { return t.image.charAt(0) == 'c' ? Op.PrintPop.c : Op.PrintPop.s; }
+  { return t.image.charAt(1) == 'c' ? Op.PrintPop.c : Op.PrintPop.s; }
 }
 
 Op parseOpVariable():
 { Token t;}
 {
-  t=<OP_SET_POP_VARIABLE> { return new Op.SetPopVar(t.image.charAt(1)); } |
-  t=<OP_GET_PUSH_VARIABLE> { return new Op.GetPushVar(t.image.charAt(1)); }
+  t=<OP_SET_POP_VARIABLE> { return new Op.SetPopVar(t.image.charAt(2)); } |
+  t=<OP_GET_PUSH_VARIABLE> { return new Op.GetPushVar(t.image.charAt(2)); }
 }
 
-Op.CharConstant parseOpCharConstant():
-{ Token t;}
+Op.Constant parseOpConstant():
+{ Op.Constant op; }
 {
-  t=<OP_CHAR_CONSTANT>
-  { return new Op.CharConstant(t.image.charAt(1));  }
+  <OP_CHAR_CONSTANT> op=parseLiteral() <STRING_QUOTE>
+  { return op;  }
 }
 
 void parseNumericFeature(String name, ParserHandler handler):

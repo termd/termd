@@ -1,12 +1,21 @@
 package io.termd.core.term;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Op {
+public abstract class Op {
+
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    toString(sb);
+    return sb.toString();
+  }
+
+  protected abstract void toString(StringBuilder sb);
 
   public static class PushParam extends Op {
 
@@ -31,12 +40,17 @@ public class Op {
       }
       return false;
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append('p').append(index);
+    }
   }
 
   // %'c'
-  public static class CharConstant extends Op {
-    private final char value;
-    public CharConstant(char value) {
+  public static class Constant extends Op {
+    private final String value;
+    public Constant(String value) {
       this.value = value;
     }
     @Override
@@ -44,11 +58,15 @@ public class Op {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof CharConstant) {
-        CharConstant that = (CharConstant) obj;
-        return value == that.value;
+      if (obj instanceof Constant) {
+        Constant that = (Constant) obj;
+        return value.equals(that.value);
       }
       return false;
+    }
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append(value);
     }
   }
 
@@ -57,20 +75,39 @@ public class Op {
     public static final Esc INSTANCE = new Esc();
     private Esc() {
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%%");
+    }
   }
 
   // %%
-  public static class StrLen extends Op {
-    public static final StrLen INSTANCE = new StrLen();
-    private StrLen() {
+  public static class PushStrLen extends Op {
+    public static final PushStrLen INSTANCE = new PushStrLen();
+    private PushStrLen() {
+    }
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%l");
     }
   }
 
   // %c
   // %s
-  public static class PrintPop extends Op {
-    public static final PrintPop c = new PrintPop();
-    public static final PrintPop s = new PrintPop();
+  public abstract static class PrintPop extends Op {
+    public static final PrintPop c = new PrintPop() {
+      @Override
+      protected void toString(StringBuilder sb) {
+        sb.append("%c");
+      }
+    };
+    public static final PrintPop s = new PrintPop() {
+      @Override
+      protected void toString(StringBuilder sb) {
+        sb.append("%s");
+      }
+    };
     private PrintPop() {
     }
   }
@@ -91,6 +128,10 @@ public class Op {
       }
       return false;
     }
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%P").append(value);
+    }
   }
 
   public static class GetPushVar extends Op {
@@ -109,83 +150,68 @@ public class Op {
       }
       return false;
     }
-  }
-
-  public static class Expr extends Op {
-
-    public static final Expr IF = new Expr("IF");
-    public static final Expr THEN = new Expr("EXPR");
-    public static final Expr ELSE = new Expr("ELSE");
-    public static final Expr FI = new Expr("FI");
-
-    final String name;
-
-    private Expr(String name) {
-      this.name = name;
-    }
-
     @Override
-    public String toString() {
-      return "Op.Expr[" + name + "]";
+    protected void toString(StringBuilder sb) {
+      sb.append("%g").append(value);
     }
   }
 
   public static class Bit extends Op {
 
-    public static final Bit OR = new Bit("OR");
-    public static final Bit AND = new Bit("AND");
-    public static final Bit XOR = new Bit("XOR");
+    public static final Bit OR = new Bit('|');
+    public static final Bit AND = new Bit('&');
+    public static final Bit XOR = new Bit('^');
 
-    final String name;
+    private final char value;
 
-    private Bit(String name) {
-      this.name = name;
+    private Bit(char value) {
+      this.value = value;
     }
 
     @Override
-    public String toString() {
-      return "Op.Bit[" + name + "]";
+    protected void toString(StringBuilder sb) {
+      sb.append('%').append(value);
     }
   }
 
   public static class Logical extends Op {
 
-    public static final Logical EQ = new Logical("EQ");
-    public static final Logical GT = new Logical("GT");
-    public static final Logical LT = new Logical("LT");
-    public static final Logical AND = new Logical("AND");
-    public static final Logical OR = new Logical("OR");
-    public static final Logical NEG = new Logical("NEG");
+    public static final Logical EQ = new Logical('=');
+    public static final Logical GT = new Logical('>');
+    public static final Logical LT = new Logical('<');
+    public static final Logical AND = new Logical('A');
+    public static final Logical OR = new Logical('O');
+    public static final Logical NEG = new Logical('!');
 
-    final String name;
+    final char value;
 
-    private Logical(String name) {
-      this.name = name;
+    private Logical(char value) {
+      this.value = value;
     }
 
     @Override
-    public String toString() {
-      return "Op.Logical[" + name + "]";
+    protected void toString(StringBuilder sb) {
+      sb.append('%').append(value);
     }
   }
 
   public static class Arithmetic extends Op {
 
-    public static final Arithmetic PLUS = new Arithmetic("PLUS");
-    public static final Arithmetic MINUS = new Arithmetic("MINUS");
-    public static final Arithmetic MUL = new Arithmetic("MUL");
-    public static final Arithmetic DIV = new Arithmetic("DIV");
-    public static final Arithmetic MOD = new Arithmetic("MOD");
+    public static final Arithmetic PLUS = new Arithmetic('+');
+    public static final Arithmetic MINUS = new Arithmetic('-');
+    public static final Arithmetic MUL = new Arithmetic('*');
+    public static final Arithmetic DIV = new Arithmetic('/');
+    public static final Arithmetic MOD = new Arithmetic('m');
 
-    final String name;
+    final char value;
 
-    private Arithmetic(String name) {
-      this.name = name;
+    private Arithmetic(char value) {
+      this.value = value;
     }
 
     @Override
-    public String toString() {
-      return "Op.Arithmetic[" + name + "]";
+    protected void toString(StringBuilder sb) {
+      sb.append('%').append(value);
     }
   }
 
@@ -212,11 +238,16 @@ public class Op {
       }
       return false;
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%{").append(value).append("}");
+    }
   }
 
   public static class Printf extends Op {
 
-    private static final Pattern p = Pattern.compile(":?([-+# ])?([0-9]+)?(?:\\.([0-9]+))?([doxXs])?");
+    private static final Pattern p = Pattern.compile("%:?([-+# ])?([0-9]+)?(?:\\.([0-9]+))?([doxXs])?");
 
     public static Printf parse(String s) {
       Matcher m = p.matcher(s);
@@ -275,9 +306,121 @@ public class Op {
     }
 
     @Override
-    public String toString() {
-      return "Op.Printf[flag=" + flag + ",width=" + width + ",precision=" + precision + ",specified=" + specifier + "]";
+    protected void toString(StringBuilder sb) {
+      sb.append("%:");
+      if (flag != null) {
+        sb.append(flag);
+      }
+      if (width != null) {
+        sb.append(width);
+      }
+      if (precision != null) {
+        sb.append(".").append(precision);
+      }
+      if (specifier != null) {
+        sb.append(specifier);
+      }
     }
   }
 
+  public static class If extends Op implements ElsePart {
+
+    final List<Op> expr;
+    final Then thenPart;
+
+    public If(List<Op> expr, Then thenPart) {
+      this.expr = expr;
+      this.thenPart = thenPart;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof If) {
+        If that = (If) obj;
+        return expr.equals(that.expr) && thenPart.equals(that.thenPart);
+      }
+      return false;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%?");
+      for (Op op : expr) {
+        op.toString(sb);
+      }
+      thenPart.toString(sb);
+      sb.append("%;");
+    }
+  }
+
+  public static class Else implements ElsePart {
+
+    final List<Op> expr;
+
+    public Else(List<Op> expr) {
+      this.expr = expr;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof Else) {
+        Else that = (Else) obj;
+        return expr.equals(that.expr);
+      }
+      return false;
+    }
+
+    protected void toString(StringBuilder sb) {
+      sb.append("%e");
+      for (Op op : expr) {
+        op.toString(sb);
+      }
+    }
+  }
+
+  public static class Then {
+
+    final List<Op> expr;
+    final ElsePart elsePart;
+
+    public Then(List<Op> expr, ElsePart elsePart) {
+      this.expr = expr;
+      this.elsePart = elsePart;
+    }
+
+    public Then(List<Op> expr) {
+      this.expr = expr;
+      this.elsePart = null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof Then) {
+        Then that = (Then) obj;
+        return expr.equals(that.expr) && (elsePart == null ? that.elsePart == null : elsePart.equals(that.elsePart));
+      }
+      return false;
+    }
+
+    protected void toString(StringBuilder sb) {
+      sb.append("%t");
+      for (Op op : expr) {
+        op.toString(sb);
+      }
+      if (elsePart instanceof Else) {
+        ((Else) elsePart).toString(sb);
+      } else if (elsePart instanceof If) {
+        ((If) elsePart).toString(sb);
+      }
+    }
+  }
 }

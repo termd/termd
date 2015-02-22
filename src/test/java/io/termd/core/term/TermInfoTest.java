@@ -113,144 +113,160 @@ public class TermInfoTest {
         //
 //        "%{1}",
     };
+/*
     for (int i = 0;i < tests.length;i += 1) {
       String info = " " + Capability.acs_chars.name + "=" + tests[i] + ",\n";
       assertParseFeatureLine(info);
     }
+*/
   }
 
   @Test
   public void testOpParam() {
-    assertParseOp("p1", new Op.PushParam(1));
-    assertParseOp("p2", new Op.PushParam(2));
-    assertParseOp("p3", new Op.PushParam(3));
-    assertParseOp("p4", new Op.PushParam(4));
-    assertParseOp("p5", new Op.PushParam(5));
-    assertParseOp("p6", new Op.PushParam(6));
-    assertParseOp("p7", new Op.PushParam(7));
-    assertParseOp("p8", new Op.PushParam(8));
-    assertParseOp("p9", new Op.PushParam(9));
+    assertParseInstr("%p1", new Op.PushParam(1));
+    assertParseInstr("%p2", new Op.PushParam(2));
+    assertParseInstr("%p3", new Op.PushParam(3));
+    assertParseInstr("%p4", new Op.PushParam(4));
+    assertParseInstr("%p5", new Op.PushParam(5));
+    assertParseInstr("%p6", new Op.PushParam(6));
+    assertParseInstr("%p7", new Op.PushParam(7));
+    assertParseInstr("%p8", new Op.PushParam(8));
+    assertParseInstr("%p9", new Op.PushParam(9));
   }
 
   @Test
   public void testOpIntegerConstant() {
-    assertParseOp("{0}", new Op.IntegerConstant(0));
-    assertParseOp("{1}", new Op.IntegerConstant(1));
-    assertParseOp("{01}", new Op.IntegerConstant(1));
-    assertParseOp("{2}", new Op.IntegerConstant(2));
-    assertParseOp("{10}", new Op.IntegerConstant(10));
-    assertParseOp("{11}", new Op.IntegerConstant(11));
+    assertParseInstr("%{0}", new Op.IntegerConstant(0));
+    assertParseInstr("%{1}", new Op.IntegerConstant(1));
+    assertParseInstr("%{01}", new Op.IntegerConstant(1));
+    assertParseInstr("%{2}", new Op.IntegerConstant(2));
+    assertParseInstr("%{10}", new Op.IntegerConstant(10));
+    assertParseInstr("%{11}", new Op.IntegerConstant(11));
   }
 
   @Test
   public void testOpPrintf() throws ParseException {
 
     // Specifier
-    assertParseOpPrintf("d", null, null, null, 'd');
-    assertParseOpPrintf("o", null, null, null, 'o');
-    assertParseOpPrintf("x", null, null, null, 'x');
-    assertParseOpPrintf("X", null, null, null, 'X');
+    assertParseOpPrintf("%d", null, null, null, 'd');
+    assertParseOpPrintf("%o", null, null, null, 'o');
+    assertParseOpPrintf("%x", null, null, null, 'x');
+    assertParseOpPrintf("%X", null, null, null, 'X');
 
     // Flags
-    assertParseOpPrintf("#", '#', null, null, null);
-    assertParseOpPrintf(" ", ' ', null, null, null);
-    assertParseOpPrintf(":#", '#', null, null, null);
-    assertParseOpPrintf(":-", '-', null, null, null);
-    assertParseOpPrintf(":+", '+', null, null, null);
-    assertParseOpPrintf(": ", ' ', null, null, null);
+    assertParseOpPrintf("%#", '#', null, null, null);
+    assertParseOpPrintf("% ", ' ', null, null, null);
+    assertParseOpPrintf("%:#", '#', null, null, null);
+    assertParseOpPrintf("%:-", '-', null, null, null);
+    assertParseOpPrintf("%:+", '+', null, null, null);
+    assertParseOpPrintf("%: ", ' ', null, null, null);
 
     // Width
-    assertParseOpPrintf("0", null, "0", null, null);
-    assertParseOpPrintf("10", null, "10", null, null);
+    assertParseOpPrintf("%0", null, "0", null, null);
+    assertParseOpPrintf("%10", null, "10", null, null);
 
     // Precision
-    assertParseOpPrintf(".0", null, null, "0", null);
-    assertParseOpPrintf(".10", null, null, "10", null);
+    assertParseOpPrintf("%.0", null, null, "0", null);
+    assertParseOpPrintf("%.10", null, null, "10", null);
 
     // Various
-    assertParseOpPrintf(" 10", ' ', "10", null, null);
-    assertParseOpPrintf(":-16s", '-', "16", null, 's');
-    assertParseOpPrintf(":-16.16s", '-', "16", "16", 's');
-    assertParseOpPrintf("03d", null, "03", null, 'd');
+    assertParseOpPrintf("% 10", ' ', "10", null, null);
+    assertParseOpPrintf("%:-16s", '-', "16", null, 's');
+    assertParseOpPrintf("%:-16.16s", '-', "16", "16", 's');
+    assertParseOpPrintf("%03d", null, "03", null, 'd');
   }
 
   @Test
   public void testOpVariable() {
-    assertParseOp("Pa", new Op.SetPopVar('a'));
-    assertParseOp("Pz", new Op.SetPopVar('z'));
-    assertParseOp("PA", new Op.SetPopVar('A'));
-    assertParseOp("PZ", new Op.SetPopVar('Z'));
-    assertParseOp("ga", new Op.GetPushVar('a'));
-    assertParseOp("gz", new Op.GetPushVar('z'));
-    assertParseOp("gA", new Op.GetPushVar('A'));
-    assertParseOp("gZ", new Op.GetPushVar('Z'));
+    assertParseInstr("%Pa", new Op.SetPopVar('a'));
+    assertParseInstr("%Pz", new Op.SetPopVar('z'));
+    assertParseInstr("%PA", new Op.SetPopVar('A'));
+    assertParseInstr("%PZ", new Op.SetPopVar('Z'));
+    assertParseInstr("%ga", new Op.GetPushVar('a'));
+    assertParseInstr("%gz", new Op.GetPushVar('z'));
+    assertParseInstr("%gA", new Op.GetPushVar('A'));
+    assertParseInstr("%gZ", new Op.GetPushVar('Z'));
   }
 
   @Test
   public void testOpBit() {
-    assertParseOp("&", Op.Bit.AND);
-    assertParseOp("|", Op.Bit.OR);
-    assertParseOp("^", Op.Bit.XOR);
+    assertParseInstr("%&", Op.Bit.AND);
+    assertParseInstr("%|", Op.Bit.OR);
+    assertParseInstr("%^", Op.Bit.XOR);
   }
 
   @Test
   public void testOpLogical() {
-    assertParseOp("=", Op.Logical.EQ);
-    assertParseOp(">", Op.Logical.GT);
-    assertParseOp("<", Op.Logical.LT);
-    assertParseOp("A", Op.Logical.AND);
-    assertParseOp("O", Op.Logical.OR);
-    assertParseOp("!", Op.Logical.NEG);
-    assertParseOp("~", Op.Logical.NEG);
+    assertParseInstr("%=", Op.Logical.EQ);
+    assertParseInstr("%>", Op.Logical.GT);
+    assertParseInstr("%<", Op.Logical.LT);
+    assertParseInstr("%A", Op.Logical.AND);
+    assertParseInstr("%O", Op.Logical.OR);
+    assertParseInstr("%!", Op.Logical.NEG);
+    assertParseInstr("%~", Op.Logical.NEG);
   }
 
   @Test
   public void testOpArithmetic() {
-    assertParseOp("+", Op.Arithmetic.PLUS);
-    assertParseOp("-", Op.Arithmetic.MINUS);
-    assertParseOp("*", Op.Arithmetic.MUL);
-    assertParseOp("/", Op.Arithmetic.DIV);
-    assertParseOp("m", Op.Arithmetic.MOD);
+    assertParseInstr("%+", Op.Arithmetic.PLUS);
+    assertParseInstr("%-", Op.Arithmetic.MINUS);
+    assertParseInstr("%*", Op.Arithmetic.MUL);
+    assertParseInstr("%/", Op.Arithmetic.DIV);
+    assertParseInstr("%m", Op.Arithmetic.MOD);
   }
 
   @Test
-  public void testOpExpr() {
-    assertParseOp("?", Op.Expr.IF);
-    assertParseOp("t", Op.Expr.THEN);
-    assertParseOp("e", Op.Expr.ELSE);
-    assertParseOp(";", Op.Expr.FI);
+  public void testIfThenElse() {
+    List<Op> p1 = Arrays.<Op>asList(new Op.PushParam(1));
+    List<Op> p2 = Arrays.<Op>asList(new Op.PushParam(2));
+    List<Op> p3 = Arrays.<Op>asList(new Op.PushParam(3));
+    List<Op> p4 = Arrays.<Op>asList(new Op.PushParam(4));
+    List<Op> p5 = Arrays.<Op>asList(new Op.PushParam(5));
+    List<Op> p6 = Arrays.<Op>asList(new Op.PushParam(6));
+    List<Op> p7 = Arrays.<Op>asList(new Op.PushParam(7));
+    assertParseInstr("%?%p1%t%p2%;", new Op.If(p1, new Op.Then(p2)));
+    assertParseInstr("%?%p1%t%p2%e%p3%;", new Op.If(p1, new Op.Then(p2, new Op.Else(p3))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4)))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.Else(p5))))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.If(p5, new Op.Then(p6)))))));
+    assertParseInstr("%?%p1%t%p2%e%p3%t%p4%e%p5%t%p6%e%p7%;", new Op.If(p1, new Op.Then(p2, new Op.If(p3, new Op.Then(p4, new Op.If(p5, new Op.Then(p6, new Op.Else(p7))))))));
+    List<Op> p1p2 = Arrays.<Op>asList(new Op.PushParam(1), new Op.PushParam(2));
+    List<Op> p3p4 = Arrays.<Op>asList(new Op.PushParam(3), new Op.PushParam(4));
+    List<Op> p5p6 = Arrays.<Op>asList(new Op.PushParam(5), new Op.PushParam(6));
+    assertParseInstr("%?%p1%p2%t%p3%p4%e%p5%p6%;", new Op.If(p1p2, new Op.Then(p3p4, new Op.Else(p5p6))));
   }
 
   @Test
   public void testOpEsc() {
-    assertParseOp("%", Op.Esc.INSTANCE);
+    assertParseInstr("%%", Op.Esc.INSTANCE);
   }
 
   @Test
   public void testOpStrLen() {
-    assertParseOp("l", Op.StrLen.INSTANCE);
+    assertParseInstr("%l", Op.PushStrLen.INSTANCE);
   }
 
   @Test
   public void testOpCharConstant() {
-    assertParseOp("'a'", new Op.CharConstant('a'));
-    assertParseOp("'%'", new Op.CharConstant('%'));
-    assertParseOp("'\''", new Op.CharConstant('\''));
+    assertParseInstr("%'a'", new Op.Constant("a"));
+    assertParseInstr("%'\''", new Op.Constant("'"));
+    assertParseInstr("%'\\123'", new Op.Constant(Character.toString((char) 83)));
+    assertParseInstr("%'\\0'", new Op.Constant(Character.toString((char) 0)));
   }
 
   @Test
   public void testOpPrintPop() {
-    assertParseOp("c", Op.PrintPop.c);
-    assertParseOp("s", Op.PrintPop.s);
+    assertParseInstr("%c", Op.PrintPop.c);
+    assertParseInstr("%s", Op.PrintPop.s);
   }
 
   private void assertParseOpPrintf(String s, Character flag, String width, String precision, Character specifier) {
-    assertParseOp(s, new Op.Printf(flag, width, precision, specifier));
+    assertParseInstr(s, new Op.Printf(flag, width, precision, specifier));
   }
 
-  private void assertParseOp(String s, Op expected) {
+  private void assertParseInstr(String s, Op expected) {
     try {
-      Op op = new TermInfoParser(s).parseOp();
+      Op op = new TermInfoParser(s).parseSingleOp();
       assertEquals(expected, op);
     } catch (ParseException e) {
       throw new AssertionError(e);
