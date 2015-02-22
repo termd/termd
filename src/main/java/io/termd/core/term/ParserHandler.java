@@ -15,15 +15,7 @@ public class ParserHandler {
 
   public void addBooleanFeature(String name, boolean value) {}
 
-  public void addStringFeature(String name, String value) {}
-
-  public void addStringFeature(String name, List<Op> value) {
-    StringBuilder buffer = new StringBuilder();
-    for (Op op : value) {
-      op.toString(buffer);
-    }
-    addStringFeature(name, buffer.toString());
-  }
+  public void addStringFeature(String name, StringValue value) {}
 
   public void addNumericFeature(String name, int value) {}
 

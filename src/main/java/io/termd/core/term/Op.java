@@ -49,7 +49,7 @@ public abstract class Op {
 
   // %'c'
   public static class Constant extends Op {
-    private final String value;
+    final String value;
     public Constant(String value) {
       this.value = value;
     }

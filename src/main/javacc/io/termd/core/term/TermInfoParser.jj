@@ -248,13 +248,20 @@ void parseBooleanFeature(String name, ParserHandler handler):
 }
 
 void parseStringFeature(String name, ParserHandler handler):
-{ List<Op> block = new ArrayList<Op>(); Op op; }
+{ List<Op> value = new ArrayList<Op>(); Op op; }
 {
   try {
     <START_STRING_VALUE> (
-      op=parseChar() {block.add(op);}
+      op=parseChar()
+      {
+        if (op instanceof Op.Constant && value.size() > 0 && value.get(value.size() - 1) instanceof Op.Constant) {
+          value.set(value.size() - 1, new Op.Constant("" + value.get(value.size() - 1) + op));
+        } else {
+          value.add(op);
+        }
+      }
     ) * <END_STRING_VALUE>
-    { handler.addStringFeature(name, block); }
+    { handler.addStringFeature(name, new StringValue(value)); }
   } catch (ParseException e) {
     // Deep error recovery
     System.out.println("Coult not parse feature " + name);

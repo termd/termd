@@ -1,7 +1,6 @@
 package io.termd.core.term;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,9 +43,9 @@ public class TermInfoBuilder extends ParserHandler {
   }
 
   @Override
-  public void addStringFeature(String name, String value) {
+  public void addStringFeature(String name, StringValue value) {
     if ("use".equals(name)) {
-      entry.uses.add(value);
+      entry.uses.add(value.toString());
     } else {
       entry.features.add(Feature.create(name, value));
     }
