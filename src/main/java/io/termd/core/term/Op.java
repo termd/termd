@@ -93,6 +93,17 @@ public abstract class Op {
     }
   }
 
+  // %%
+  public static class Add1ToParams extends Op {
+    public static final Add1ToParams INSTANCE = new Add1ToParams();
+    private Add1ToParams() {
+    }
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%i");
+    }
+  }
+
   // %c
   // %s
   public abstract static class PrintPop extends Op {

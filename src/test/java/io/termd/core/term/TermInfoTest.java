@@ -217,6 +217,11 @@ public class TermInfoTest {
   }
 
   @Test
+  public void testOpAdd1ToParams() {
+    assertParseInstr("%i", Op.Add1ToParams.INSTANCE);
+  }
+
+  @Test
   public void testIfThenElse() {
     List<Op> p1 = Arrays.<Op>asList(new Op.PushParam(1));
     List<Op> p2 = Arrays.<Op>asList(new Op.PushParam(2));

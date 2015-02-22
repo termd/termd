@@ -170,6 +170,7 @@ PARSER_END(TermInfoParser)
   <OP_LOGICAL_AND: "%A"> |
   <OP_LOGICAL_OR: "%O"> |
   <OP_LOGICAL_NEG: "%" ["~","!"]> |
+  <OP_ADD_1_TO_PARAMS: "%i"> |
   <OP_EXPR_IF: "%?"> |
   <OP_EXPR_THEN: "%t"> |
   <OP_EXPR_ELSE: "%e"> |
@@ -303,6 +304,7 @@ Op parseOp():
     op=parseOpArithmetic() |
     op=parseOpLogical() |
     op=parseOpEsc() |
+    op=parseOpAdd1ToParams() |
     op=parseOpPushStrLen() |
     op=parseOpPrintPop() |
     op=parseOpVariable() |
@@ -358,6 +360,12 @@ Op.Logical parseOpLogical():
 Op.Esc parseOpEsc():
 { Op.Esc op; }
 { ( <OP_ESC> { op=Op.Esc.INSTANCE; } )
+  { return op; }
+}
+
+Op.Add1ToParams parseOpAdd1ToParams():
+{ Op.Add1ToParams op; }
+{ ( <OP_ADD_1_TO_PARAMS> { op=Op.Add1ToParams.INSTANCE; } )
   { return op; }
 }
 
