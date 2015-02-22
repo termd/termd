@@ -153,7 +153,7 @@ PARSER_END(TermInfoParser)
   <OP_CODE_AND: "%&"> |
   <OP_CODE_OR: "%|"> |
   <OP_CODE_XOR: "%^"> |
-  <OP_CODE_ESC: "%%"> |
+  <OP_CODE_PERCENT: "%%"> |
   <OP_CODE_PRINT_POP: "%" ["c","s"]> |
   <OP_CODE_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
   <OP_CODE_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
@@ -255,8 +255,8 @@ void parseStringFeature(String name, ParserHandler handler):
     <START_STRING_VALUE> (
       opcode=parseChar()
       {
-        if (opcode instanceof OpCode.Constant && value.size() > 0 && value.get(value.size() - 1) instanceof OpCode.Constant) {
-          value.set(value.size() - 1, new OpCode.Constant("" + value.get(value.size() - 1) + opcode));
+        if (opcode instanceof OpCode.StringConstant && value.size() > 0 && value.get(value.size() - 1) instanceof OpCode.StringConstant) {
+          value.set(value.size() - 1, new OpCode.StringConstant("" + value.get(value.size() - 1) + opcode));
         } else {
           value.add(opcode);
         }
@@ -277,20 +277,20 @@ void parseStringFeature(String name, ParserHandler handler):
 OpCode parseChar():
 { OpCode opcode; }
 {
-  ( opcode=parseLiteral() | opcode=parseOpCode() ) { return opcode; }
+  ( opcode=parseStringLiteral() | opcode=parseOpCode() ) { return opcode; }
 }
 
-OpCode.Constant parseLiteral():
-{ OpCode.Constant opcode;Token t; }
-{ ( t=<STRING_CHAR> { opcode=new OpCode.Constant(t.image); } |
-    <STRING_QUOTE> { opcode=new OpCode.Constant("'"); } |
+OpCode.StringConstant parseStringLiteral():
+{ OpCode.StringConstant opcode;Token t; }
+{ ( t=<STRING_CHAR> { opcode=new OpCode.StringConstant(t.image); } |
+    <STRING_QUOTE> { opcode=new OpCode.StringConstant("'"); } |
     ( <STRING_ESC> (
-      ( t=<ANY_ESC_VALUE> { opcode=new OpCode.Constant(convertEscChar(t.image)); } ) |
-        t=<ESC_ZERO_OCTAL> { opcode=new OpCode.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
-        t=<ESC_OTHER_OCTAL> { opcode=new OpCode.Constant(Character.toString((char) Integer.parseInt(t.image, 8))); }
+      ( t=<ANY_ESC_VALUE> { opcode=new OpCode.StringConstant(convertEscChar(t.image)); } ) |
+        t=<ESC_ZERO_OCTAL> { opcode=new OpCode.StringConstant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
+        t=<ESC_OTHER_OCTAL> { opcode=new OpCode.StringConstant(Character.toString((char) Integer.parseInt(t.image, 8))); }
       )
     ) |
-    ( <STRING_CARET> t=<ANY_CARET_VALUE> { opcode=new OpCode.Constant(convertControlChar(t.image)); } )
+    ( <STRING_CARET> t=<ANY_CARET_VALUE> { opcode=new OpCode.StringConstant(convertControlChar(t.image)); } )
   )
   { return opcode; }
 }
@@ -303,12 +303,12 @@ OpCode parseOpCode():
     opcode=parseOpCodeBit() |
     opcode=parseOpCodeArithmetic() |
     opcode=parseOpCodeLogical() |
-    opcode=parseOpCodeEsc() |
+    opcode=parseOpCodePercent() |
     opcode=parseOpCodeAdd1ToParams() |
     opcode=parseOpCodePushStrLen() |
     opcode=parseOpCodePrintPop() |
     opcode=parseOpCodeVariable() |
-    opcode=parseOpCodeConstant() |
+    opcode=parseOpCodeCharConstant() |
     opcode=parseOpCodeExpr()
   )
   { return opcode; }
@@ -357,9 +357,9 @@ OpCode.Logical parseOpCodeLogical():
   { return opcode; }
 }
 
-OpCode.Esc parseOpCodeEsc():
-{ OpCode.Esc opcode; }
-{ ( <OP_CODE_ESC> { opcode=OpCode.Esc.INSTANCE; } )
+OpCode.Percent parseOpCodePercent():
+{ OpCode.Percent opcode; }
+{ ( <OP_CODE_PERCENT> { opcode=OpCode.Percent.INSTANCE; } )
   { return opcode; }
 }
 
@@ -419,10 +419,10 @@ OpCode parseOpCodeVariable():
   t=<OP_CODE_GET_PUSH_VARIABLE> { return new OpCode.GetPushVar(t.image.charAt(2)); }
 }
 
-OpCode.Constant parseOpCodeConstant():
-{ OpCode.Constant opcode; }
+OpCode.StringConstant parseOpCodeCharConstant():
+{ OpCode.StringConstant opcode; }
 {
-  <OP_CODE_CHAR_CONSTANT> opcode=parseLiteral() <STRING_QUOTE>
+  <OP_CODE_CHAR_CONSTANT> opcode=parseStringLiteral() <STRING_QUOTE>
   { return opcode;  }
 }
 

@@ -16,7 +16,7 @@ public class Sequence implements Iterable<OpCode> {
   }
 
   public Sequence(String s) {
-    value = Collections.<OpCode>singletonList(new OpCode.Constant(s));
+    value = Collections.<OpCode>singletonList(new OpCode.StringConstant(s));
   }
 
   public int size() {

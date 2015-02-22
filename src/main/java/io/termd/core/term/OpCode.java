@@ -48,9 +48,9 @@ public abstract class OpCode {
   }
 
   // %'c'
-  public static class Constant extends OpCode {
+  public static class StringConstant extends OpCode {
     final String value;
-    public Constant(String value) {
+    public StringConstant(String value) {
       this.value = value;
     }
     @Override
@@ -58,8 +58,8 @@ public abstract class OpCode {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Constant) {
-        Constant that = (Constant) obj;
+      if (obj instanceof StringConstant) {
+        StringConstant that = (StringConstant) obj;
         return value.equals(that.value);
       }
       return false;
@@ -70,10 +70,40 @@ public abstract class OpCode {
     }
   }
 
+  public static class IntegerConstant extends OpCode {
+
+    private final int value;
+
+    public IntegerConstant(int value) {
+      this.value = value;
+    }
+
+    public int getValue() {
+      return value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof OpCode.IntegerConstant) {
+        OpCode.IntegerConstant that = (IntegerConstant) obj;
+        return value == that.value;
+      }
+      return false;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%{").append(value).append("}");
+    }
+  }
+
   // %%
-  public static class Esc extends OpCode {
-    public static final Esc INSTANCE = new Esc();
-    private Esc() {
+  public static class Percent extends OpCode {
+    public static final Percent INSTANCE = new Percent();
+    private Percent() {
     }
 
     @Override
@@ -223,36 +253,6 @@ public abstract class OpCode {
     @Override
     protected void toString(StringBuilder sb) {
       sb.append('%').append(value);
-    }
-  }
-
-  public static class IntegerConstant extends OpCode {
-
-    private final int value;
-
-    public IntegerConstant(int value) {
-      this.value = value;
-    }
-
-    public int getValue() {
-      return value;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == this) {
-        return true;
-      }
-      if (obj instanceof OpCode.IntegerConstant) {
-        OpCode.IntegerConstant that = (IntegerConstant) obj;
-        return value == that.value;
-      }
-      return false;
-    }
-
-    @Override
-    protected void toString(StringBuilder sb) {
-      sb.append("%{").append(value).append("}");
     }
   }
 

@@ -244,7 +244,7 @@ public class TermInfoTest {
 
   @Test
   public void testOpEsc() {
-    assertParseInstr("%%", OpCode.Esc.INSTANCE);
+    assertParseInstr("%%", OpCode.Percent.INSTANCE);
   }
 
   @Test
@@ -254,10 +254,10 @@ public class TermInfoTest {
 
   @Test
   public void testOpCharConstant() {
-    assertParseInstr("%'a'", new OpCode.Constant("a"));
-    assertParseInstr("%'\''", new OpCode.Constant("'"));
-    assertParseInstr("%'\\123'", new OpCode.Constant(Character.toString((char) 83)));
-    assertParseInstr("%'\\0'", new OpCode.Constant(Character.toString((char) 0)));
+    assertParseInstr("%'a'", new OpCode.StringConstant("a"));
+    assertParseInstr("%'\''", new OpCode.StringConstant("'"));
+    assertParseInstr("%'\\123'", new OpCode.StringConstant(Character.toString((char) 83)));
+    assertParseInstr("%'\\0'", new OpCode.StringConstant(Character.toString((char) 0)));
   }
 
   @Test
