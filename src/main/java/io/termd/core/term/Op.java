@@ -43,7 +43,7 @@ public abstract class Op {
 
     @Override
     protected void toString(StringBuilder sb) {
-      sb.append('p').append(index);
+      sb.append("%p").append(index);
     }
   }
 
@@ -82,7 +82,7 @@ public abstract class Op {
     }
   }
 
-  // %%
+  // %l
   public static class PushStrLen extends Op {
     public static final PushStrLen INSTANCE = new PushStrLen();
     private PushStrLen() {
