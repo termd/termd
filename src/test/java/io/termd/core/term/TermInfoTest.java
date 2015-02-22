@@ -27,7 +27,7 @@ public class TermInfoTest {
   public void testParseHeaderLine() throws Exception {
     assertParseHeaderLine("foo,\n", "foo");
     assertParseHeaderLine("foo bar,\n", "foo bar");
-    assertParseHeaderLine("foo,bar,\n" ,"foo,bar");
+    assertParseHeaderLine("foo,bar,\n", "foo,bar");
     assertParseHeaderLine("foo|bar,\n", "foo", "bar");
     assertParseHeaderLine("foo|bar juu,\n", "foo", "bar juu");
     assertParseHeaderLine("foo|bar,juu,\n", "foo", "bar,juu");
@@ -137,12 +137,12 @@ public class TermInfoTest {
 
   @Test
   public void testOpIntegerConstant() {
-    assertParseInstr("%{0}", new OpCode.IntegerConstant(0));
-    assertParseInstr("%{1}", new OpCode.IntegerConstant(1));
-    assertParseInstr("%{01}", new OpCode.IntegerConstant(1));
-    assertParseInstr("%{2}", new OpCode.IntegerConstant(2));
-    assertParseInstr("%{10}", new OpCode.IntegerConstant(10));
-    assertParseInstr("%{11}", new OpCode.IntegerConstant(11));
+    assertParseInstr("%{0}", new OpCode.PushConstant(0));
+    assertParseInstr("%{1}", new OpCode.PushConstant(1));
+    assertParseInstr("%{01}", new OpCode.PushConstant(1));
+    assertParseInstr("%{2}", new OpCode.PushConstant(2));
+    assertParseInstr("%{10}", new OpCode.PushConstant(10));
+    assertParseInstr("%{11}", new OpCode.PushConstant(11));
   }
 
   @Test
@@ -253,11 +253,11 @@ public class TermInfoTest {
   }
 
   @Test
-  public void testOpCharConstant() {
-    assertParseInstr("%'a'", new OpCode.StringConstant("a"));
-    assertParseInstr("%'\''", new OpCode.StringConstant("'"));
-    assertParseInstr("%'\\123'", new OpCode.StringConstant(Character.toString((char) 83)));
-    assertParseInstr("%'\\0'", new OpCode.StringConstant(Character.toString((char) 0)));
+  public void testOpPushConstant() {
+    assertParseInstr("%'a'", new OpCode.PushConstant('a'));
+    assertParseInstr("%'\''", new OpCode.PushConstant('\''));
+    assertParseInstr("%'\\123'", new OpCode.PushConstant((char) 83));
+    assertParseInstr("%'\\0'", new OpCode.PushConstant(0));
   }
 
   @Test
@@ -385,11 +385,11 @@ public class TermInfoTest {
   public void testUse() {
     TermInfo info = assertBuildDevices(
         "a,\n" +
-        " bw,\n" +
-        "b,\n" +
-        " use=a,\n" +
-        "c,\n" +
-        " use=a,bw@,\n"
+            " bw,\n" +
+            "b,\n" +
+            " use=a,\n" +
+            "c,\n" +
+            " use=a,bw@,\n"
     );
     assertTrue(info.getDevice("a").getFeature(Capability.auto_left_margin));
     assertTrue(info.getDevice("b").getFeature(Capability.auto_left_margin));

@@ -47,10 +47,10 @@ public abstract class OpCode {
     }
   }
 
-  // %'c'
-  public static class StringConstant extends OpCode {
+  // Synthetic opcode for string literal
+  public static class Literal extends OpCode {
     final String value;
-    public StringConstant(String value) {
+    public Literal(String value) {
       this.value = value;
     }
     @Override
@@ -58,8 +58,8 @@ public abstract class OpCode {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof StringConstant) {
-        StringConstant that = (StringConstant) obj;
+      if (obj instanceof Literal) {
+        Literal that = (Literal) obj;
         return value.equals(that.value);
       }
       return false;
@@ -70,11 +70,12 @@ public abstract class OpCode {
     }
   }
 
-  public static class IntegerConstant extends OpCode {
+  // %'A' or %{65}
+  public static class PushConstant extends OpCode {
 
     private final int value;
 
-    public IntegerConstant(int value) {
+    public PushConstant(int value) {
       this.value = value;
     }
 
@@ -87,8 +88,8 @@ public abstract class OpCode {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof OpCode.IntegerConstant) {
-        OpCode.IntegerConstant that = (IntegerConstant) obj;
+      if (obj instanceof OpCode.PushConstant) {
+        OpCode.PushConstant that = (PushConstant) obj;
         return value == that.value;
       }
       return false;

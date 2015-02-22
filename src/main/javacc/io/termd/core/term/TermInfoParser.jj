@@ -143,13 +143,13 @@ PARSER_END(TermInfoParser)
 }
 
 <PARSING_STRING_VALUE> TOKEN: {
-  <STRING_CHAR: ([" "-"$"] | "&" | ["("-"+"] | ["-"-"["] | ["]"] | ["_"-"~"])+> |
+  <STRING_CHAR: [" "-"$"] | "&" | ["("-"+"] | ["-"-"["] | ["]"] | ["_"-"~"]> |
   <STRING_QUOTE: "'"> |
   <STRING_ESC: ["\\"]> : PARSING_STRING_ESC |
   <STRING_CARET: ["^"]> : PARSING_STRING_CARET |
   <OP_CODE_PUSH_PARAM: "%p" ["1"-"9"]> |
   <OP_CODE_PRINTF: "%" (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > |
-  <OP_CODE_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
+  <OP_CODE_PUSH_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
   <OP_CODE_AND: "%&"> |
   <OP_CODE_OR: "%|"> |
   <OP_CODE_XOR: "%^"> |
@@ -157,7 +157,7 @@ PARSER_END(TermInfoParser)
   <OP_CODE_PRINT_POP: "%" ["c","s"]> |
   <OP_CODE_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
   <OP_CODE_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
-  <OP_CODE_CHAR_CONSTANT: "%'"> |
+  <OP_CODE_PUSH_CHAR_CONSTANT: "%'"> |
   <OP_CODE_PUSH_STRLEN: "%l"> |
   <OP_CODE_ARITHMETIC_PLUS: "%+"> |
   <OP_CODE_ARITHMETIC_MINUS: "%-"> |
@@ -255,8 +255,8 @@ void parseStringFeature(String name, ParserHandler handler):
     <START_STRING_VALUE> (
       opcode=parseChar()
       {
-        if (opcode instanceof OpCode.StringConstant && value.size() > 0 && value.get(value.size() - 1) instanceof OpCode.StringConstant) {
-          value.set(value.size() - 1, new OpCode.StringConstant("" + value.get(value.size() - 1) + opcode));
+        if (opcode instanceof OpCode.Literal && value.size() > 0 && value.get(value.size() - 1) instanceof OpCode.Literal) {
+          value.set(value.size() - 1, new OpCode.Literal("" + value.get(value.size() - 1) + opcode));
         } else {
           value.add(opcode);
         }
@@ -280,26 +280,32 @@ OpCode parseChar():
   ( opcode=parseStringLiteral() | opcode=parseOpCode() ) { return opcode; }
 }
 
-OpCode.StringConstant parseStringLiteral():
-{ OpCode.StringConstant opcode;Token t; }
-{ ( t=<STRING_CHAR> { opcode=new OpCode.StringConstant(t.image); } |
-    <STRING_QUOTE> { opcode=new OpCode.StringConstant("'"); } |
+OpCode.Literal parseStringLiteral():
+{ StringBuilder buffer = new StringBuilder(); char c; }
+{ ( c=parseCharLiteral() { buffer.append(c); } )+
+  { return new OpCode.Literal(buffer.toString()); }
+}
+
+char parseCharLiteral():
+{ char c;Token t; }
+{ ( t=<STRING_CHAR> { c=t.image.charAt(0); } |
+    <STRING_QUOTE> { c='\''; } |
     ( <STRING_ESC> (
-      ( t=<ANY_ESC_VALUE> { opcode=new OpCode.StringConstant(convertEscChar(t.image)); } ) |
-        t=<ESC_ZERO_OCTAL> { opcode=new OpCode.StringConstant(Character.toString((char) Integer.parseInt(t.image, 8))); } |
-        t=<ESC_OTHER_OCTAL> { opcode=new OpCode.StringConstant(Character.toString((char) Integer.parseInt(t.image, 8))); }
+      ( t=<ANY_ESC_VALUE> { c=convertEscChar(t.image).charAt(0); } ) |
+        t=<ESC_ZERO_OCTAL> { c=(char) Integer.parseInt(t.image, 8); } |
+        t=<ESC_OTHER_OCTAL> { c=(char) Integer.parseInt(t.image, 8); }
       )
     ) |
-    ( <STRING_CARET> t=<ANY_CARET_VALUE> { opcode=new OpCode.StringConstant(convertControlChar(t.image)); } )
+    ( <STRING_CARET> t=<ANY_CARET_VALUE> { c=convertControlChar(t.image).charAt(0); } )
   )
-  { return opcode; }
+  { return c; }
 }
 
 OpCode parseOpCode():
 { OpCode opcode; }
 { ( opcode=parseOpCodePushParam() |
     opcode=parseOpCodePrintf() |
-    opcode=parseOpCodeIntegerConstant() |
+    opcode=parseOpCodePushIntegerConstant() |
     opcode=parseOpCodeBit() |
     opcode=parseOpCodeArithmetic() |
     opcode=parseOpCodeLogical() |
@@ -308,7 +314,7 @@ OpCode parseOpCode():
     opcode=parseOpCodePushStrLen() |
     opcode=parseOpCodePrintPop() |
     opcode=parseOpCodeVariable() |
-    opcode=parseOpCodeCharConstant() |
+    opcode=parseOpCodePushCharConstant() |
     opcode=parseOpCodeExpr()
   )
   { return opcode; }
@@ -381,10 +387,10 @@ OpCode.PushParam parseOpCodePushParam():
   { return new OpCode.PushParam(t.image.charAt(2) - '0'); }
 }
 
-OpCode.IntegerConstant parseOpCodeIntegerConstant():
+OpCode.PushConstant parseOpCodePushIntegerConstant():
 { Token t; }
-{ t=<OP_CODE_INTEGER_CONSTANT>
-  { return new OpCode.IntegerConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
+{ t=<OP_CODE_PUSH_INTEGER_CONSTANT>
+  { return new OpCode.PushConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
 }
 
 OpCode parseOpCodePrintf():
@@ -419,11 +425,11 @@ OpCode parseOpCodeVariable():
   t=<OP_CODE_GET_PUSH_VARIABLE> { return new OpCode.GetPushVar(t.image.charAt(2)); }
 }
 
-OpCode.StringConstant parseOpCodeCharConstant():
-{ OpCode.StringConstant opcode; }
+OpCode.PushConstant parseOpCodePushCharConstant():
+{ char c; }
 {
-  <OP_CODE_CHAR_CONSTANT> opcode=parseStringLiteral() <STRING_QUOTE>
-  { return opcode;  }
+  <OP_CODE_PUSH_CHAR_CONSTANT> c=parseCharLiteral() <STRING_QUOTE>
+  { return new OpCode.PushConstant(c);  }
 }
 
 void parseNumericFeature(String name, ParserHandler handler):
