@@ -262,7 +262,7 @@ void parseStringFeature(String name, ParserHandler handler):
         }
       }
     ) * <END_STRING_VALUE>
-    { handler.addStringFeature(name, new StringValue(value)); }
+    { handler.addStringFeature(name, new Sequence(value)); }
   } catch (ParseException e) {
     // Deep error recovery
     System.out.println("Coult not parse feature " + name);

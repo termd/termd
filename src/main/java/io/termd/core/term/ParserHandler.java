@@ -1,7 +1,5 @@
 package io.termd.core.term;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -15,7 +13,7 @@ public class ParserHandler {
 
   public void addBooleanFeature(String name, boolean value) {}
 
-  public void addStringFeature(String name, StringValue value) {}
+  public void addStringFeature(String name, Sequence value) {}
 
   public void addNumericFeature(String name, int value) {}
 

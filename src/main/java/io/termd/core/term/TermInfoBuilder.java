@@ -43,7 +43,7 @@ public class TermInfoBuilder extends ParserHandler {
   }
 
   @Override
-  public void addStringFeature(String name, StringValue value) {
+  public void addStringFeature(String name, Sequence value) {
     if ("use".equals(name)) {
       entry.uses.add(value.toString());
     } else {

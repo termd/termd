@@ -7,15 +7,15 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class StringValue implements Iterable<Op> {
+public class Sequence implements Iterable<Op> {
 
   private final List<Op> value;
 
-  public StringValue(List<Op> value) {
+  public Sequence(List<Op> value) {
     this.value = value;
   }
 
-  public StringValue(String s) {
+  public Sequence(String s) {
     value = Collections.<Op>singletonList(new Op.Constant(s));
   }
 
@@ -42,8 +42,8 @@ public class StringValue implements Iterable<Op> {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof StringValue) {
-      StringValue that = (StringValue) obj;
+    if (obj instanceof Sequence) {
+      Sequence that = (Sequence) obj;
       return value.equals(that.value);
     }
     return false;

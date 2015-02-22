@@ -60,24 +60,24 @@ public class TermInfoTest {
 
   @Test
   public void testParseFeatureLine() throws Exception {
-    assertFeatureLine(" foo=bar\\\\,\n", Feature.create("foo", new StringValue("bar\\")));
+    assertFeatureLine(" foo=bar\\\\,\n", Feature.create("foo", new Sequence("bar\\")));
     assertFeatureLine(" foo,\n", Feature.create("foo", true));
     assertFeatureLine(" foo@,\n", Feature.create("foo", false));
     assertFeatureLine(" foo,bar,\n", Feature.create("foo", true), Feature.create("bar", true));
     assertFeatureLine(" foo, bar,\n", Feature.create("foo", true), Feature.create("bar", true));
-    assertFeatureLine(" foo=,\n", Feature.create("foo", new StringValue(Collections.<Op>emptyList())));
-    assertFeatureLine(" foo=\\s,\n", Feature.create("foo", new StringValue(" ")));
-    assertFeatureLine(" foo=\\\\,\n", Feature.create("foo", new StringValue("\\")));
-    assertFeatureLine(" foo=\\,,\n", Feature.create("foo", new StringValue(",")));
-    assertFeatureLine(" foo=\\^,\n", Feature.create("foo", new StringValue("^")));
-    assertFeatureLine(" foo=^\\,\n", Feature.create("foo", new StringValue(Character.toString((char) 28))));
-    assertFeatureLine(" foo=^^,\n", Feature.create("foo", new StringValue(Character.toString((char) 30))));
-    assertFeatureLine(" foo=bar,\n", Feature.create("foo", new StringValue("bar")));
-    assertFeatureLine(" foo=bar,juu=daa,\n", Feature.create("foo", new StringValue("bar")), Feature.create("juu", new StringValue("daa")));
-    assertFeatureLine(" foo=bar, juu=daa,\n", Feature.create("foo", new StringValue("bar")), Feature.create("juu", new StringValue("daa")));
-    assertFeatureLine(" foo,bar=juu,\n", Feature.create("foo", true), Feature.create("bar", new StringValue("juu")));
-    assertFeatureLine(" foo=bar,juu,\n", Feature.create("foo", new StringValue("bar")), Feature.create("juu", true));
-    assertFeatureLine(" foo=b\\,ar,\n", Feature.create("foo", new StringValue("b,ar")));
+    assertFeatureLine(" foo=,\n", Feature.create("foo", new Sequence(Collections.<Op>emptyList())));
+    assertFeatureLine(" foo=\\s,\n", Feature.create("foo", new Sequence(" ")));
+    assertFeatureLine(" foo=\\\\,\n", Feature.create("foo", new Sequence("\\")));
+    assertFeatureLine(" foo=\\,,\n", Feature.create("foo", new Sequence(",")));
+    assertFeatureLine(" foo=\\^,\n", Feature.create("foo", new Sequence("^")));
+    assertFeatureLine(" foo=^\\,\n", Feature.create("foo", new Sequence(Character.toString((char) 28))));
+    assertFeatureLine(" foo=^^,\n", Feature.create("foo", new Sequence(Character.toString((char) 30))));
+    assertFeatureLine(" foo=bar,\n", Feature.create("foo", new Sequence("bar")));
+    assertFeatureLine(" foo=bar,juu=daa,\n", Feature.create("foo", new Sequence("bar")), Feature.create("juu", new Sequence("daa")));
+    assertFeatureLine(" foo=bar, juu=daa,\n", Feature.create("foo", new Sequence("bar")), Feature.create("juu", new Sequence("daa")));
+    assertFeatureLine(" foo,bar=juu,\n", Feature.create("foo", true), Feature.create("bar", new Sequence("juu")));
+    assertFeatureLine(" foo=bar,juu,\n", Feature.create("foo", new Sequence("bar")), Feature.create("juu", true));
+    assertFeatureLine(" foo=b\\,ar,\n", Feature.create("foo", new Sequence("b,ar")));
     assertFeatureLine(" foo#1234,\n", Feature.create("foo", 1234));
     assertFeatureLine(" foo#0,\n", Feature.create("foo", 0));
     assertFeatureLine(" foo#0x1234,\n", Feature.create("foo", 0x1234));
@@ -303,7 +303,7 @@ public class TermInfoTest {
     };
     for (int i = 0;i < tests.length;i += 2) {
       String info = " " + Capability.acs_chars.name + "=" + tests[i] + ",\n";
-      assertFeatureLine(info, Feature.create(Capability.acs_chars.name, new StringValue(tests[i + 1])));
+      assertFeatureLine(info, Feature.create(Capability.acs_chars.name, new Sequence(tests[i + 1])));
     }
   }
 
@@ -322,7 +322,7 @@ public class TermInfoTest {
           features.add(Feature.create(name, value));
         }
         @Override
-        public void addStringFeature(String name, StringValue value) {
+        public void addStringFeature(String name, Sequence value) {
           features.add(Feature.create(name, value));
         }
         @Override

@@ -11,8 +11,8 @@ public class Feature<T> {
       cap = (Capability<T>) Capability.getCapability(name, Boolean.class);
     } else if (value instanceof Integer) {
       cap = (Capability<T>) Capability.getCapability(name, Integer.class);
-    } else if (value instanceof StringValue) {
-      cap = (Capability<T>) Capability.getCapability(name, StringValue.class);
+    } else if (value instanceof Sequence) {
+      cap = (Capability<T>) Capability.getCapability(name, Sequence.class);
     }
     if (cap == null) {
       cap = new Capability<>((Class<T>) value.getClass(), null, name, null, null);
