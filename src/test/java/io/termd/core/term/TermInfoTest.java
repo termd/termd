@@ -211,6 +211,7 @@ public class TermInfoTest {
     assertParseInstr("%&", OpCode.Bit.AND);
     assertParseInstr("%|", OpCode.Bit.OR);
     assertParseInstr("%^", OpCode.Bit.XOR);
+    assertParseInstr("%~", OpCode.Bit.NEG);
   }
 
   @Test
@@ -221,7 +222,6 @@ public class TermInfoTest {
     assertParseInstr("%A", OpCode.Logical.AND);
     assertParseInstr("%O", OpCode.Logical.OR);
     assertParseInstr("%!", OpCode.Logical.NEG);
-    assertParseInstr("%~", OpCode.Logical.NEG);
   }
 
   @Test

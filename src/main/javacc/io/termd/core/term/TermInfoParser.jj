@@ -161,9 +161,10 @@ PARSER_END(TermInfoParser)
   <OP_CODE_PUSH_PARAM: "%p" ["1"-"9"]> |
   <OP_CODE_PRINTF: "%" (":")? (["-","+","#"," "])? (["0"-"9"])* ("."(["0"-"9"])+)? (["d","o","x","X","s"])? > |
   <OP_CODE_PUSH_INTEGER_CONSTANT: "%{" ( ["0"-"9"] )+ "}" > |
-  <OP_CODE_AND: "%&"> |
-  <OP_CODE_OR: "%|"> |
-  <OP_CODE_XOR: "%^"> |
+  <OP_CODE_BIT_AND: "%&"> |
+  <OP_CODE_BIT_OR: "%|"> |
+  <OP_CODE_BIT_XOR: "%^"> |
+  <OP_CODE_BIT_NEG: "%~"> |
   <OP_CODE_PERCENT: "%%"> |
   <OP_CODE_PRINT_POP: "%" ["c","s"]> |
   <OP_CODE_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
@@ -180,7 +181,7 @@ PARSER_END(TermInfoParser)
   <OP_CODE_LOGICAL_LT: "%<"> |
   <OP_CODE_LOGICAL_AND: "%A"> |
   <OP_CODE_LOGICAL_OR: "%O"> |
-  <OP_CODE_LOGICAL_NEG: "%" ["~","!"]> |
+  <OP_CODE_LOGICAL_NEG: "%!"> |
   <OP_CODE_ADD_1_TO_PARAMS: "%i"> |
   <OP_CODE_EXPR_IF: "%?"> |
   <OP_CODE_EXPR_THEN: "%t"> |
@@ -348,7 +349,10 @@ OpCode.Then parseThen():
 
 OpCode.Bit parseOpCodeBit():
 { OpCode.Bit opcode; }
-{ ( <OP_CODE_AND> { opcode=OpCode.Bit.AND; } | <OP_CODE_OR> { opcode=OpCode.Bit.OR; } | <OP_CODE_XOR> { opcode=OpCode.Bit.XOR; } )
+{ ( <OP_CODE_BIT_AND> { opcode=OpCode.Bit.AND; } |
+    <OP_CODE_BIT_OR> { opcode=OpCode.Bit.OR; } |
+    <OP_CODE_BIT_XOR> { opcode=OpCode.Bit.XOR; } |
+    <OP_CODE_BIT_NEG> { opcode=OpCode.Bit.NEG; } )
   { return opcode; }
 }
 

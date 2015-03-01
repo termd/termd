@@ -252,6 +252,7 @@ public abstract class OpCode {
     public static final Bit OR = new Bit('|');
     public static final Bit AND = new Bit('&');
     public static final Bit XOR = new Bit('^');
+    public static final Bit NEG = new Bit('~');
 
     private final char value;
 
