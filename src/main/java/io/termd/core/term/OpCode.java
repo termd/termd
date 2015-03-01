@@ -1,6 +1,5 @@
 package io.termd.core.term;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,7 +87,7 @@ public abstract class OpCode {
 
     @Override
     public void eval(EvalContext context) {
-      context.write(value);
+      context.writeString(value);
     }
   }
 
@@ -186,20 +185,19 @@ public abstract class OpCode {
 
   // %c
   // %s
-  public abstract static class PrintPop extends OpCode {
-    public static final PrintPop c = new PrintPop() {
-      @Override
-      protected void toString(StringBuilder sb) {
-        sb.append("%c");
-      }
-    };
-    public static final PrintPop s = new PrintPop() {
-      @Override
-      protected void toString(StringBuilder sb) {
-        sb.append("%s");
-      }
-    };
-    private PrintPop() {
+  public static class PrintChar extends OpCode {
+    public static final PrintChar INSTANCE = new PrintChar();
+    private PrintChar() {
+    }
+    @Override
+    protected void toString(StringBuilder sb) {
+      sb.append("%c");
+    }
+    @Override
+    public void eval(EvalContext context) {
+      String s = context.pop();
+      int codePoint = Integer.parseInt(s);
+      context.writeCodePoint(codePoint);
     }
   }
 
@@ -296,7 +294,14 @@ public abstract class OpCode {
 
   public static class Arithmetic extends OpCode {
 
-    public static final Arithmetic PLUS = new Arithmetic('+');
+    public static final Arithmetic PLUS = new Arithmetic('+') {
+      @Override
+      public void eval(EvalContext context) {
+        int op1 = Integer.parseInt(context.pop());
+        int op2 = Integer.parseInt(context.pop());
+        context.push(Integer.toString(op1 + op2));
+      }
+    };
     public static final Arithmetic MINUS = new Arithmetic('-');
     public static final Arithmetic MUL = new Arithmetic('*');
     public static final Arithmetic DIV = new Arithmetic('/');
@@ -398,10 +403,16 @@ public abstract class OpCode {
       }
       if (specifier != null) {
         switch (specifier) {
-          case 'd':
-            int i = Integer.parseInt(context.pop());
-            context.write(i);
+          case 'd': {
+            int value = Integer.parseInt(context.pop());
+            context.writeNumber(value);
             break;
+          }
+          case 's': {
+            String s = context.pop();
+            context.writeString(s);
+            break;
+          }
           default:
             super.eval(context);
         }

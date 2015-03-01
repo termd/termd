@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -279,8 +278,8 @@ public class TermInfoTest {
 
   @Test
   public void testOpPrintPop() {
-    assertParseInstr("%c", OpCode.PrintPop.c);
-    assertParseInstr("%s", OpCode.PrintPop.s);
+    assertParseInstr("%c", OpCode.PrintChar.INSTANCE);
+    assertParseInstr("%s", new OpCode.Printf(null, null, null, 's'));
   }
 
   private void assertParseOpPrintf(String s, Character flag, String width, String precision, Character specifier) {
@@ -495,6 +494,9 @@ public class TermInfoTest {
     assertSequenceEquals("\033[43m", setb.eval("6"));
     assertSequenceEquals("\033[47m", setb.eval("7"));
     assertSequenceEquals("\033[412m", setb.eval("12"));
+
+    Sequence pfkey = TermInfo.getDefault().getDevice("tvi924").getFeature(Capability.pkey_key);
+    assertEquals("\033|2foo\031", pfkey.eval("1", "foo"));
   }
 
   @Test
@@ -555,6 +557,22 @@ public class TermInfoTest {
   }
 
   @Test
+  public void testEvalArithmeticPlus() {
+    EvalContext context = new EvalContext().push("0").push("0");
+    OpCode.Arithmetic.PLUS.eval(context);
+    assertEquals("0", context.pop());
+    context = new EvalContext().push("0").push("10");
+    OpCode.Arithmetic.PLUS.eval(context);
+    assertEquals("10", context.pop());
+    context = new EvalContext().push("10").push("0");
+    OpCode.Arithmetic.PLUS.eval(context);
+    assertEquals("10", context.pop());
+    context = new EvalContext().push("10").push("5");
+    OpCode.Arithmetic.PLUS.eval(context);
+    assertEquals("15", context.pop());
+  }
+
+  @Test
   public void testEvalLogicalEq() {
     EvalContext context = new EvalContext().push("0").push("0");
     OpCode.Logical.EQ.eval(context);
@@ -595,5 +613,19 @@ public class TermInfoTest {
       opCode.eval(new EvalContext(new String[0], result)) ;
       assertEquals(test[1], result.toString());
     }
+  }
+
+  @Test
+  public void testEvalPrintChar() throws Exception {
+    EvalContext context = new EvalContext().push("65");
+    OpCode.PrintChar.INSTANCE.eval(context);
+    assertEquals("A", context.result.toString());
+  }
+
+  @Test
+  public void testEvalPrintf() throws Exception {
+    EvalContext context = new EvalContext().push("hello");
+    new OpCode.Printf(null, null, null, 's').eval(context);
+    assertEquals("hello", context.result.toString());
   }
 }

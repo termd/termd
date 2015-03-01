@@ -44,11 +44,15 @@ public class EvalContext {
     return this;
   }
 
-  public void write(String s) {
+  public void writeString(String s) {
     result.append(s);
   }
 
-  public void write(int number) {
+  public void writeNumber(int number) {
     result.append(number);
+  }
+
+  public void writeCodePoint(int codePoint) {
+    result.appendCodePoint(codePoint);
   }
 }

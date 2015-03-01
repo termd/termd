@@ -166,7 +166,7 @@ PARSER_END(TermInfoParser)
   <OP_CODE_BIT_XOR: "%^"> |
   <OP_CODE_BIT_NEG: "%~"> |
   <OP_CODE_PERCENT: "%%"> |
-  <OP_CODE_PRINT_POP: "%" ["c","s"]> |
+  <OP_CODE_PRINT_CHAR: "%c"> |
   <OP_CODE_SET_POP_VARIABLE: "%P" ["A"-"Z","a"-"z"]> |
   <OP_CODE_GET_PUSH_VARIABLE: "%g" ["A"-"Z","a"-"z"]> |
   <OP_CODE_PUSH_CHAR_CONSTANT: "%'"> |
@@ -324,7 +324,7 @@ OpCode parseOpCode():
     opcode=parseOpCodePercent() |
     opcode=parseOpCodeAdd1ToParams() |
     opcode=parseOpCodePushStrLen() |
-    opcode=parseOpCodePrintPop() |
+    opcode=parseOpCodePrintChar() |
     opcode=parseOpCodeVariable() |
     opcode=parseOpCodePushCharConstant() |
     opcode=parseOpCodeExpr()
@@ -414,8 +414,6 @@ OpCode parseOpCodePrintf():
   t=<OP_CODE_PRINTF>
   {
     switch(t.image) {
-      case "%s":
-        return OpCode.PrintPop.s;
       case "%+":
         return OpCode.Arithmetic.PLUS;
       case "%-":
@@ -426,11 +424,11 @@ OpCode parseOpCodePrintf():
   }
 }
 
-OpCode.PrintPop parseOpCodePrintPop():
-{ Token t; }
+OpCode.PrintChar parseOpCodePrintChar():
+{ }
 {
-  t=<OP_CODE_PRINT_POP>
-  { return t.image.charAt(1) == 'c' ? OpCode.PrintPop.c : OpCode.PrintPop.s; }
+  <OP_CODE_PRINT_CHAR>
+  { return OpCode.PrintChar.INSTANCE; }
 }
 
 OpCode parseOpCodeVariable():
