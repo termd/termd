@@ -94,4 +94,33 @@ public class Helper {
     ret.add(s.substring(prev));
     return ret;
   }
+
+  /**
+   * Escape a string to be printable in a terminal: any non printable char is replaced by its
+   * octal escape and the {@code \} char is replaced by the @{code \\} sequence.
+   *
+   * @param s the string to escape
+   * @return the escaped string
+   */
+  public static String escape(String s) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0;i < s.length();i++) {
+      char c = s.charAt(i);
+      if (c == 0) {
+        sb.append("\\0");
+      }  else if (c < 32) {
+        sb.append("\\");
+        String octal = Integer.toOctalString(c);
+        for (int j = octal.length();j < 3;j++) {
+          sb.append('0');
+        }
+        sb.append(octal);
+      } else if (c == '\\') {
+        sb.append("\\\\");
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
 }

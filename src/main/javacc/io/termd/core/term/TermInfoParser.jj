@@ -99,6 +99,17 @@ public class TermInfoParser {
     return String.valueOf(c);
   }
 
+  public Sequence parseSequence() throws ParseException {
+    token_source.SwitchTo(PARSING_FEATURE_VALUE);
+    final Sequence[] ref = new Sequence[1];
+    parseStringFeature("", new ParserHandler() {
+      public void addStringFeature(String name, Sequence value) {
+        ref[0] = value;
+      }
+    });
+    return ref[0];
+  }
+
   // For testing purposes we switch the lexical state before
   public OpCode parseSingleOpCode() throws ParseException {
     token_source.SwitchTo(PARSING_STRING_VALUE);
@@ -390,7 +401,7 @@ OpCode.PushParam parseOpCodePushParam():
 OpCode.PushConstant parseOpCodePushIntegerConstant():
 { Token t; }
 { t=<OP_CODE_PUSH_INTEGER_CONSTANT>
-  { return new OpCode.PushConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1))); }
+  { return new OpCode.PushConstant(Integer.parseInt(t.image.substring(2, t.image.length() - 1)), true); }
 }
 
 OpCode parseOpCodePrintf():
@@ -429,7 +440,7 @@ OpCode.PushConstant parseOpCodePushCharConstant():
 { char c; }
 {
   <OP_CODE_PUSH_CHAR_CONSTANT> c=parseCharLiteral() <STRING_QUOTE>
-  { return new OpCode.PushConstant(c);  }
+  { return new OpCode.PushConstant(c, false);  }
 }
 
 void parseNumericFeature(String name, ParserHandler handler):

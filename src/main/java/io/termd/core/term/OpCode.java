@@ -1,5 +1,6 @@
 package io.termd.core.term;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,6 +16,10 @@ public abstract class OpCode {
     return sb.toString();
   }
 
+  public void eval(EvalContext context) {
+    throw new UnsupportedOperationException(getClass().getSimpleName() + " operation not implemented");
+  }
+
   protected abstract void toString(StringBuilder sb);
 
   public static class PushParam extends OpCode {
@@ -22,6 +27,9 @@ public abstract class OpCode {
     private final int index;
 
     public PushParam(int index) {
+      if (index < 1 || index > 9) {
+        throw new IllegalArgumentException("Parameter index must be between 1 and 9");
+      }
       this.index = index;
     }
 
@@ -44,6 +52,15 @@ public abstract class OpCode {
     @Override
     protected void toString(StringBuilder sb) {
       sb.append("%p").append(index);
+    }
+
+    @Override
+    public void eval(EvalContext context) {
+      int ptr = index - 1;
+      if (ptr >= context.getParametersLength()) {
+        throw new IllegalArgumentException("Not enough parameters");
+      }
+      context.push(context.getParameter(ptr));
     }
   }
 
@@ -68,15 +85,22 @@ public abstract class OpCode {
     protected void toString(StringBuilder sb) {
       sb.append(value);
     }
+
+    @Override
+    public void eval(EvalContext context) {
+      context.write(value);
+    }
   }
 
   // %'A' or %{65}
   public static class PushConstant extends OpCode {
 
     private final int value;
+    private final boolean literal;
 
-    public PushConstant(int value) {
+    public PushConstant(int value, boolean literal) {
       this.value = value;
+      this.literal = literal;
     }
 
     public int getValue() {
@@ -90,14 +114,29 @@ public abstract class OpCode {
       }
       if (obj instanceof OpCode.PushConstant) {
         OpCode.PushConstant that = (PushConstant) obj;
-        return value == that.value;
+        return value == that.value && literal == that.literal;
       }
       return false;
     }
 
     @Override
     protected void toString(StringBuilder sb) {
-      sb.append("%{").append(value).append("}");
+      if (literal) {
+        sb.append("%{").append(value).append("}");
+      } else {
+        sb.append("%'").append((char)value).append("'");
+      }
+    }
+
+    @Override
+    public void eval(EvalContext context) {
+      StringBuilder sb = new StringBuilder();
+      if (literal) {
+        sb.append(value);
+      } else {
+        sb.appendCodePoint(value);
+      }
+      context.push(sb.toString());
     }
   }
 
@@ -132,6 +171,16 @@ public abstract class OpCode {
     @Override
     protected void toString(StringBuilder sb) {
       sb.append("%i");
+    }
+
+    @Override
+    public void eval(EvalContext context) {
+      if (context.getParametersLength() < 2) {
+        throw new IllegalArgumentException("Missing parameters");
+      }
+      for (int i = 0;i < 2; i++) {
+        context.setParameter(i, Integer.toString((Integer.parseInt(context.getParameter(i)) + 1)));
+      }
     }
   }
 
@@ -218,7 +267,14 @@ public abstract class OpCode {
 
   public static class Logical extends OpCode {
 
-    public static final Logical EQ = new Logical('=');
+    public static final Logical EQ = new Logical('=') {
+      @Override
+      public void eval(EvalContext context) {
+        int op1 = Integer.parseInt(context.pop());
+        int op2 = Integer.parseInt(context.pop());
+        context.push(op1 == op2 ? "1" : "0");
+      }
+    };
     public static final Logical GT = new Logical('>');
     public static final Logical LT = new Logical('<');
     public static final Logical AND = new Logical('A');
@@ -333,6 +389,23 @@ public abstract class OpCode {
         sb.append(specifier);
       }
     }
+
+    @Override
+    public void eval(EvalContext context) {
+      if (flag != null || width != null || precision != null) {
+        super.eval(context);
+      }
+      if (specifier != null) {
+        switch (specifier) {
+          case 'd':
+            int i = Integer.parseInt(context.pop());
+            context.write(i);
+            break;
+          default:
+            super.eval(context);
+        }
+      }
+    }
   }
 
   public static class If extends OpCode implements ElsePart {
@@ -366,9 +439,17 @@ public abstract class OpCode {
       thenPart.toString(sb);
       sb.append("%;");
     }
+
+    @Override
+    public void eval(EvalContext context) {
+      for (OpCode opCode : expr) {
+        opCode.eval(context);
+      }
+      thenPart.eval(context);
+    }
   }
 
-  public static class Else implements ElsePart {
+  public static class Else extends OpCode implements ElsePart {
 
     final List<OpCode> expr;
 
@@ -394,9 +475,16 @@ public abstract class OpCode {
         op.toString(sb);
       }
     }
+
+    @Override
+    public void eval(EvalContext context) {
+      for (OpCode opCode : expr) {
+        opCode.eval(context);
+      }
+    }
   }
 
-  public static class Then {
+  public static class Then extends OpCode {
 
     final List<OpCode> expr;
     final ElsePart elsePart;
@@ -432,6 +520,22 @@ public abstract class OpCode {
         ((Else) elsePart).toString(sb);
       } else if (elsePart instanceof If) {
         ((If) elsePart).toString(sb);
+      }
+    }
+
+    @Override
+    public void eval(EvalContext context) {
+      int cond = Integer.parseInt(context.pop());
+      if (cond != 0) {
+        for (OpCode opCode : expr) {
+          opCode.eval(context);
+        }
+      } else {
+        if (elsePart instanceof If) {
+          ((If) elsePart).eval(context);
+        } else if (elsePart instanceof Else) {
+          ((Else) elsePart).eval(context);
+        }
       }
     }
   }

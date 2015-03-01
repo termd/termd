@@ -2,6 +2,7 @@ package io.termd.core.term;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -21,6 +22,22 @@ public class Sequence implements Iterable<OpCode> {
 
   public int size() {
     return value.size();
+  }
+
+  public String eval(String... parameters) {
+    StringBuilder buffer = new StringBuilder();
+    eval(parameters, buffer);
+    return buffer.toString();
+  }
+
+  public void eval(String[] parameters, StringBuilder result) {
+    eval(new EvalContext(parameters, result));
+  }
+
+  public void eval(EvalContext context) {
+    for (OpCode op : value) {
+      op.eval(context);
+    }
   }
 
   @Override
