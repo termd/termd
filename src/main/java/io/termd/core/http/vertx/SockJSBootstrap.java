@@ -1,7 +1,8 @@
 package io.termd.core.http.vertx;
 
+import io.termd.core.tty.TtyConnection;
+import io.termd.core.util.Handler;
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.buffer.Buffer;
@@ -9,6 +10,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.HttpServerResponse;
 import org.vertx.java.core.http.impl.MimeMapping;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.sockjs.SockJSSocket;
@@ -20,13 +22,22 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineBootstrap {
+public class SockJSBootstrap {
 
-  public static void main(String[] args) throws Exception {
-    final CountDownLatch latch = new CountDownLatch(1);
+  final String host;
+  final int port;
+  final Handler<TtyConnection> handler;
+
+  public SockJSBootstrap(String host, int port, Handler<TtyConnection> handler) {
+    this.host = host;
+    this.port = port;
+    this.handler = handler;
+  }
+
+  public void bootstrap(final Handler<AsyncResult<Void>> completionHandler) {
     final Vertx vertx = VertxFactory.newVertx();
     HttpServer httpServer = vertx.createHttpServer();
-    httpServer.requestHandler(new Handler<HttpServerRequest>() {
+    httpServer.requestHandler(new org.vertx.java.core.Handler<HttpServerRequest>() {
       @Override
       public void handle(HttpServerRequest req) {
 
@@ -35,7 +46,7 @@ public class ReadlineBootstrap {
         if ("/".equals(path)) {
           path = "/index.html";
         }
-        URL res = ReadlineBootstrap.class.getResource("/io/termd/core/http" + path);
+        URL res = SockJSBootstrap.class.getResource("/io/termd/core/http" + path);
         HttpServerResponse resp = req.response();
         try {
           if (res != null) {
@@ -68,16 +79,34 @@ public class ReadlineBootstrap {
     });
     SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
     JsonObject config = new JsonObject().putString("prefix", "/term");
-    sockJSServer.installApp(config, new Handler<SockJSSocket>() {
+    sockJSServer.installApp(config, new org.vertx.java.core.Handler<SockJSSocket>() {
       @Override
       public void handle(final SockJSSocket socket) {
         SockJSTtyConnection conn = new SockJSTtyConnection(vertx, socket);
-        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(conn);
+        handler.handle(conn);
       }
     });
-    httpServer.listen(8080, new Handler<AsyncResult<HttpServer>>() {
+    httpServer.listen(port, host, new org.vertx.java.core.Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> event) {
+        if (event.succeeded()) {
+          completionHandler.handle(new DefaultFutureResult<>((Void) null));
+        } else {
+          completionHandler.handle(new DefaultFutureResult<Void>(event.cause()));
+        }
+      }
+    });
+  }
+
+  public static void main(String[] args) throws Exception {
+    SockJSBootstrap bootstrap = new SockJSBootstrap(
+        "localhost",
+        8080,
+        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE);
+    final CountDownLatch latch = new CountDownLatch(1);
+    bootstrap.bootstrap(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> event) {
         if (event.succeeded()) {
           System.out.println("Server started on " + 8080);
         } else {
@@ -89,5 +118,4 @@ public class ReadlineBootstrap {
     });
     latch.await();
   }
-
 }

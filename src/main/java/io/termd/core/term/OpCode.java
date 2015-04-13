@@ -401,6 +401,7 @@ public abstract class OpCode {
       if (flag != null || width != null || precision != null) {
         super.eval(context);
       }
+      StringBuilder format = new StringBuilder();
       if (specifier != null) {
         switch (specifier) {
           case 'd': {

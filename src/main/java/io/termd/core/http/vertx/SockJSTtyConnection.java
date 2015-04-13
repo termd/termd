@@ -9,6 +9,7 @@ import io.termd.core.tty.SignalDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
 import io.termd.core.util.Handler;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
@@ -22,14 +23,14 @@ import java.util.concurrent.Executor;
  */
 public class SockJSTtyConnection implements TtyConnection {
 
-  private final Vertx vertx;
   private final SockJSSocket socket;
   private Dimension size = null;
   private Handler<Dimension> resizeHandler;
+  private final Context context;
   private final ReadBuffer readBuffer = new ReadBuffer(new Executor() {
     @Override
     public void execute(final Runnable command) {
-      vertx.runOnContext(new org.vertx.java.core.Handler<Void>() {
+      context.runOnContext(new org.vertx.java.core.Handler<Void>() {
         @Override
         public void handle(Void event) {
           command.run();
@@ -48,7 +49,7 @@ public class SockJSTtyConnection implements TtyConnection {
 
   public SockJSTtyConnection(Vertx vertx, SockJSSocket socket) {
     this.socket = socket;
-    this.vertx = vertx;
+    this.context = vertx.currentContext();
 
     socket.dataHandler(new org.vertx.java.core.Handler<Buffer>() {
       @Override
@@ -87,8 +88,13 @@ public class SockJSTtyConnection implements TtyConnection {
   }
 
   @Override
-  public void schedule(Runnable task) {
-    throw new UnsupportedOperationException("todo");
+  public void schedule(final Runnable task) {
+    context.runOnContext(new org.vertx.java.core.Handler<Void>() {
+      @Override
+      public void handle(Void v) {
+        task.run();
+      }
+    });
   }
 
   @Override
