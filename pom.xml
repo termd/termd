@@ -31,6 +31,14 @@
     <url>git@github.com:termd/termd.git</url>
   </scm>
 
+  <properties>
+    <version.org.slf4j>1.7.7</version.org.slf4j>
+
+    <!-- maven-compiler-plugin -->
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+  </properties>
+
   <dependencies>
 
     <!-- Vert.x -->
@@ -81,6 +89,18 @@
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-core</artifactId>
       <version>2.0.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.org.slf4j}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${version.org.slf4j}</version>
     </dependency>
 
     <dependency>
@@ -139,27 +159,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>2.4</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.1</version>
-        <configuration>
-          <additionalparam>-Xdoclint:none</additionalparam>
-        </configuration>
       </plugin>
     </plugins>
   </build>

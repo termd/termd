@@ -56,7 +56,7 @@ public class SockJSBootstrap {
     SockJSHandler sockJSHandler = SockJSHandler.create(vertx, new SockJSHandlerOptions());
     sockJSHandler.socketHandler(socket -> {
       SockJSTtyConnection conn = new SockJSTtyConnection(socket);
-      handler.accept(conn);
+      handler.accept(conn.getTtyConnection());
     });
     router.route("/term/*").handler(sockJSHandler);
     router.route().handler(ctx -> {

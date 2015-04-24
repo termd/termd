@@ -92,9 +92,6 @@ public class BinaryEncoder implements Consumer<int[]> {
       }
     }
     drainByteBuffer();
-
-
-
   }
 
   private void drainByteBuffer() {
