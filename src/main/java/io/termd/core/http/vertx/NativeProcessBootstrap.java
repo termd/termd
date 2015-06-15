@@ -6,45 +6,41 @@ import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
-import org.vertx.java.core.AsyncResult;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NativeProcessBootstrap implements Handler<TtyConnection> {
+public class NativeProcessBootstrap implements Consumer<TtyConnection> {
 
 
   @Override
-  public void handle(final TtyConnection conn) {
+  public void accept(final TtyConnection conn) {
     InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
     Keymap keymap = new Keymap(inputrc);
     Readline readline = new Readline(keymap);
     for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
       readline.addFunction(function);
     }
-    conn.setTermHandler(new Handler<String>() {
-      @Override
-      public void handle(String term) {
-        // Not used yet but we should propagage this to the process builder
-        System.out.println("CLIENT $TERM=" + term);
-      }
+    conn.setTermHandler(term -> {
+      // Not used yet but we should propagage this to the process builder
+      System.out.println("CLIENT $TERM=" + term);
     });
-    conn.writeHandler().handle(Helper.toCodePoints("Welcome sir\r\n\r\n"));
+    conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n\r\n"));
     read(conn, readline);
   }
 
   public void read(final TtyConnection conn, final Readline readline) {
-    readline.readline(conn, "% ", new Handler<String>() {
+    readline.readline(conn, "% ", new Consumer<String>() {
       @Override
-      public void handle(String line) {
+      public void accept(String line) {
         Task task = new Task(conn, readline, line);
         task.start();
       }
@@ -67,36 +63,28 @@ public class NativeProcessBootstrap implements Handler<TtyConnection> {
 
       private final Charset charset = StandardCharsets.UTF_8; // We suppose the process out/err uses UTF-8
       private final InputStream in;
-      private final BinaryDecoder decoder = new BinaryDecoder(charset, new Handler<int[]>() {
-        @Override
-        public void handle(final int[] codepoints) {
-          conn.schedule(new Runnable() {
-            @Override
-            public void run() {
+      private final BinaryDecoder decoder = new BinaryDecoder(charset, codepoints -> conn.schedule(() -> {
 
-              // Replace any \n by \r\n (need to improve that somehow...)
-              int len = codepoints.length;
-              for (int i = 0;i < codepoints.length;i++) {
-                if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-                  len++;
-                }
-              }
-              int ptr = 0;
-              int[] corrected = new int[len];
-              for (int i = 0;i < codepoints.length;i++) {
-                if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-                  corrected[ptr++] = '\r';
-                  corrected[ptr++] = '\n';
-                } else {
-                  corrected[ptr++] = codepoints[i];
-                }
-              }
-
-              conn.writeHandler().handle(corrected);
-            }
-          });
+        // Replace any \n by \r\n (need to improve that somehow...)
+        int len = codepoints.length;
+        for (int i = 0;i < codepoints.length;i++) {
+          if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
+            len++;
+          }
         }
-      });
+        int ptr = 0;
+        int[] corrected = new int[len];
+        for (int i = 0;i < codepoints.length;i++) {
+          if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
+            corrected[ptr++] = '\r';
+            corrected[ptr++] = '\n';
+          } else {
+            corrected[ptr++] = codepoints[i];
+          }
+        }
+
+        conn.writeHandler().accept(corrected);
+      }));
 
       public Pipe(InputStream in) {
         this.in = in;
@@ -124,10 +112,10 @@ public class NativeProcessBootstrap implements Handler<TtyConnection> {
       ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
       try {
         final Process process = builder.start();
-        conn.setSignalHandler(new Handler<Signal>() {
+        conn.setSignalHandler(new Consumer<Signal>() {
           boolean interrupted; // Signal state
           @Override
-          public void handle(Signal signal) {
+          public void accept(Signal signal) {
             if (signal == Signal.INT) {
               if (!interrupted) {
                 interrupted = true;
@@ -156,17 +144,12 @@ public class NativeProcessBootstrap implements Handler<TtyConnection> {
           Thread.currentThread().interrupt();
         }
       } catch (IOException e) {
-        conn.writeHandler().handle(Helper.toCodePoints(e.getMessage() + "\r\n"));
+        conn.writeHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
       }
 
       // Read line again
       conn.setSignalHandler(null);
-      conn.schedule(new Runnable() {
-        @Override
-        public void run() {
-          read(conn, readline);
-        }
-      });
+      conn.schedule(() -> read(conn, readline));
     }
   }
 
@@ -176,16 +159,13 @@ public class NativeProcessBootstrap implements Handler<TtyConnection> {
         8080,
         new NativeProcessBootstrap());
     final CountDownLatch latch = new CountDownLatch(1);
-    bootstrap.bootstrap(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> event) {
-        if (event.succeeded()) {
-          System.out.println("Server started on " + 8080);
-        } else {
-          System.out.println("Could not start");
-          event.cause().printStackTrace();
-          latch.countDown();
-        }
+    bootstrap.bootstrap(event -> {
+      if (event.succeeded()) {
+        System.out.println("Server started on " + 8080);
+      } else {
+        System.out.println("Could not start");
+        event.cause().printStackTrace();
+        latch.countDown();
       }
     });
     latch.await();

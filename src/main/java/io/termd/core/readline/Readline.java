@@ -1,12 +1,12 @@
 package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -31,25 +31,25 @@ public class Readline {
    * @param term the term to read from
    * @param requestHandler the requestHandler
    */
-  public void readline(TtyConnection term, String prompt, Handler<String> requestHandler) {
-    Handler<int[]> previousEventHandler = term.getReadHandler();
+  public void readline(TtyConnection term, String prompt, Consumer<String> requestHandler) {
+    Consumer<int[]> previousEventHandler = term.getReadHandler();
     Interaction interaction = new Interaction(term, previousEventHandler, requestHandler);
     term.setReadHandler(interaction);
-    term.writeHandler().handle(Helper.toCodePoints(prompt));
+    term.writeHandler().accept(Helper.toCodePoints(prompt));
   }
 
   private enum LineStatus {
     LITERAL, ESCAPED, QUOTED
   }
 
-  private class Interaction implements Handler<int[]> {
+  private class Interaction implements Consumer<int[]> {
 
-    private final Handler<String> requestHandler;
+    private final Consumer<String> requestHandler;
     private final TtyConnection term;
-    private final Handler<int[]> previousEventHandler;
+    private final Consumer<int[]> previousEventHandler;
     private final KeyDecoder decoder;
 
-    public Interaction(TtyConnection term, Handler<int[]> previousEventHandler, Handler<String> requestHandler) {
+    public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler) {
       this.term = term;
       this.previousEventHandler = previousEventHandler;
       this.decoder = new KeyDecoder(keymap);
@@ -57,7 +57,7 @@ public class Readline {
     }
 
     @Override
-    public void handle(int[] data) {
+    public void accept(int[] data) {
       decoder.append(data);
       while (decoder.hasNext()) {
         if (handle(decoder.next())) {
@@ -72,11 +72,11 @@ public class Readline {
         KeyEvent key = (KeyEvent) event;
         if (key.length() == 1 && key.getAt(0) == '\r') {
           for (int j : lineBuffer) {
-            filter.handle(j);
+            filter.accept(j);
           }
           if (lineStatus == LineStatus.ESCAPED) {
-            filter.handle((int) '\r'); // Correct status
-            term.writeHandler().handle(new int[]{'\r', '\n', '>', ' '});
+            filter.accept((int) '\r'); // Correct status
+            term.writeHandler().accept(new int[]{'\r', '\n', '>', ' '});
             lineBuffer.setSize(0);
             copy.setSize(0);
           } else {
@@ -87,7 +87,7 @@ public class Readline {
             escaped.clear();
             lines.add(l);
             if (lineStatus == LineStatus.QUOTED) {
-              term.writeHandler().handle(new int[]{'\r', '\n', '>', ' '});
+              term.writeHandler().accept(new int[]{'\r', '\n', '>', ' '});
               lineBuffer.setSize(0);
               copy.setSize(0);
             } else {
@@ -103,10 +103,10 @@ public class Readline {
               }
               lines.clear();
               escaped.clear();
-              term.writeHandler().handle(new int[]{'\r', '\n'});
+              term.writeHandler().accept(new int[]{'\r', '\n'});
               lineBuffer.setSize(0);
               term.setReadHandler(previousEventHandler);
-              requestHandler.handle(raw.toString());
+              requestHandler.accept(raw.toString());
               return true;
             }
           }
@@ -130,7 +130,7 @@ public class Readline {
       for (int index = 0;index < a.size();index++) {
         t[index] = a.get(index);
       }
-      term.writeHandler().handle(t);
+      term.writeHandler().accept(t);
       return false;
     }
 
@@ -162,7 +162,7 @@ public class Readline {
         lineStatus = LineStatus.LITERAL;
       }
       @Override
-      public void handle(Integer event) {
+      public void accept(Integer event) {
         escaped.add(event);
       }
     });

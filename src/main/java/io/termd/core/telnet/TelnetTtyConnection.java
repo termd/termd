@@ -4,7 +4,6 @@ import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.SignalDecoder;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
@@ -12,6 +11,7 @@ import io.termd.core.tty.TtyConnection;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * A telnet handler that implements {@link io.termd.core.tty.TtyConnection}.
@@ -22,20 +22,15 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
 
   private Dimension size;
   private String terminalType;
-  private Handler<Dimension> resizeHandler;
-  private Handler<String> termHandler;
+  private Consumer<Dimension> resizeHandler;
+  private Consumer<String> termHandler;
   protected TelnetConnection conn;
-  private final ReadBuffer readBuffer = new ReadBuffer(new Executor() {
-    @Override
-    public void execute(Runnable command) {
-      schedule(command);
-    }
-  });
+  private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
   private final SignalDecoder signalDecoder = new SignalDecoder(3).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
-  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Handler<byte[]>() {
+  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
     @Override
-    public void handle(byte[] event) {
+    public void accept(byte[] event) {
       conn.write(event);
     }
   });
@@ -90,7 +85,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   protected void onTerminalType(String terminalType) {
     this.terminalType = terminalType;
     if (termHandler != null) {
-      termHandler.handle(terminalType);
+      termHandler.accept(terminalType);
     }
   }
 
@@ -98,58 +93,58 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   protected void onSize(int width, int height) {
     this.size = new Dimension(width, height);
     if (resizeHandler != null) {
-      resizeHandler.handle(size);
+      resizeHandler.accept(size);
     }
   }
 
   @Override
-  public Handler<Dimension> getResizeHandler() {
+  public Consumer<Dimension> getResizeHandler() {
     return resizeHandler;
   }
 
   @Override
-  public void setResizeHandler(Handler<Dimension> handler) {
+  public void setResizeHandler(Consumer<Dimension> handler) {
     this.resizeHandler = handler;
     if (handler != null && size != null) {
-      handler.handle(size);
+      handler.accept(size);
     }
   }
 
   @Override
-  public Handler<String> getTermHandler() {
+  public Consumer<String> getTermHandler() {
     return termHandler;
   }
 
   @Override
-  public void setTermHandler(Handler<String> handler) {
+  public void setTermHandler(Consumer<String> handler) {
     termHandler = handler;
     if (handler != null && terminalType != null) {
-      handler.handle(terminalType);
+      handler.accept(terminalType);
     }
   }
 
   @Override
-  public Handler<Signal> getSignalHandler() {
+  public Consumer<Signal> getSignalHandler() {
     return signalDecoder.getSignalHandler();
   }
 
   @Override
-  public void setSignalHandler(Handler<Signal> handler) {
+  public void setSignalHandler(Consumer<Signal> handler) {
     signalDecoder.setSignalHandler(handler);
   }
 
   @Override
-  public Handler<int[]> getReadHandler() {
+  public Consumer<int[]> getReadHandler() {
     return readBuffer.getReadHandler();
   }
 
   @Override
-  public void setReadHandler(Handler<int[]> handler) {
+  public void setReadHandler(Consumer<int[]> handler) {
     readBuffer.setReadHandler(handler);
   }
 
   @Override
-  public Handler<int[]> writeHandler() {
+  public Consumer<int[]> writeHandler() {
     return encoder;
   }
 }

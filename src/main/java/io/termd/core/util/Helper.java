@@ -24,20 +24,7 @@ public class Helper {
    * @return the code points
    */
   public static int[] toCodePoints(String s) {
-    int codePointLength = 0;
-    for (int offset = 0;offset < s.length();) {
-      int codePoint = s.codePointAt(offset);
-      codePointLength++;
-      offset += Character.charCount(codePoint);
-    }
-    int[] codePoints = new int[codePointLength];
-    int index = 0;
-    for (int offset = 0;offset < s.length();) {
-      int codePoint = s.codePointAt(offset);
-      offset += Character.charCount(codePoint);
-      codePoints[index++] = codePoint;
-    }
-    return codePoints;
+    return s.codePoints().toArray();
   }
 
   /**
@@ -47,9 +34,7 @@ public class Helper {
    * @return the corresponding string
    */
   public static String fromCodePoints(int[] codePoints) {
-    StringBuilder buffer = new StringBuilder();
-    appendTo(codePoints, buffer);
-    return buffer.toString();
+    return new String(codePoints, 0, codePoints.length);
   }
 
   public static void appendTo(int[] codePoints, StringBuilder sb) {

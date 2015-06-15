@@ -1,13 +1,13 @@
 package io.termd.core.tty;
 
 import io.termd.core.telnet.TestBase;
-import io.termd.core.util.Handler;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -33,13 +33,8 @@ public class ReadBufferTest extends TestBase {
   @Test
   public void testFoo() {
     final ArrayList<int[]> reads = new ArrayList<>();
-    buf.setReadHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        reads.add(event);
-      }
-    });
-    buf.handle(new int[]{'f','o','o'});
+    buf.setReadHandler(event -> reads.add(event));
+    buf.accept(new int[]{'f', 'o', 'o'});
     assertEquals(0, commands.size());
     assertEquals(1, reads.size());
     assertEquals(reads.get(0), new int[]{'f','o','o'});
@@ -47,15 +42,10 @@ public class ReadBufferTest extends TestBase {
 
   @Test
   public void testBar() throws Exception {
-    buf.handle(new int[]{'f','o','o'});
+    buf.accept(new int[]{'f', 'o', 'o'});
     assertEquals(0, reads.size());
     assertEquals(0, commands.size());
-    buf.setReadHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        reads.add(event);
-      }
-    });
+    buf.setReadHandler(event -> reads.add(event));
     assertEquals(0, reads.size());
     assertEquals(1, commands.size());
     commands.poll().run();
@@ -66,16 +56,13 @@ public class ReadBufferTest extends TestBase {
 
   @Test
   public void testJuu() throws Exception {
-    buf.handle(new int[]{'f','o','o'});
-    buf.handle(new int[]{'b','a','r'});
+    buf.accept(new int[]{'f', 'o', 'o'});
+    buf.accept(new int[]{'b', 'a', 'r'});
     assertEquals(0, reads.size());
     assertEquals(0, commands.size());
-    buf.setReadHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        reads.add(event);
-        buf.setReadHandler(null);
-      }
+    buf.setReadHandler(event -> {
+      reads.add(event);
+      buf.setReadHandler(null);
     });
     assertEquals(0, reads.size());
     assertEquals(1, commands.size());
@@ -88,23 +75,18 @@ public class ReadBufferTest extends TestBase {
 
   @Test
   public void testBilto() throws Exception {
-    buf.handle(new int[]{'f','o','o'});
-    buf.handle(new int[]{'b','a','r'});
+    buf.accept(new int[]{'f', 'o', 'o'});
+    buf.accept(new int[]{'b', 'a', 'r'});
     assertEquals(0, reads.size());
     assertEquals(0, commands.size());
-    buf.setReadHandler(new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        reads.add(event);
-      }
-    });
+    buf.setReadHandler(event -> reads.add(event));
     assertEquals(0, reads.size());
     assertEquals(1, commands.size());
     commands.poll().run();
     assertEquals(1, reads.size());
     assertEquals(1, commands.size());
     assertEquals(reads.get(0), new int[]{'f', 'o', 'o'});
-    buf.handle(new int[]{'j', 'u', 'u'});
+    buf.accept(new int[]{'j', 'u', 'u'});
     assertEquals(3, reads.size());
     assertEquals(1, commands.size());
     assertEquals(reads.get(1), new int[]{'b', 'a', 'r'});

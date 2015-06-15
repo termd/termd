@@ -32,13 +32,10 @@ public class NettyTelnetConnection extends TelnetConnection {
     if (pending == null) {
       pending = Unpooled.buffer();
       pending.writeBytes(data);
-      context.channel().eventLoop().execute(new Runnable() {
-        @Override
-        public void run() {
-          ByteBuf buf = pending;
-          pending = null;
-          context.writeAndFlush(buf);
-        }
+      context.channel().eventLoop().execute(() -> {
+        ByteBuf buf = pending;
+        pending = null;
+        context.writeAndFlush(buf);
       });
     } else {
       pending.writeBytes(data);

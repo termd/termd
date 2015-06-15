@@ -16,13 +16,13 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import io.termd.core.telnet.TelnetTtyConnection;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 /**
  * A test class.
@@ -48,14 +48,14 @@ public class ReadlineBootstrap {
   }
 
   public void start() {
-    telnet.start(new Provider<TelnetHandler>() {
+    telnet.start(new Supplier<TelnetHandler>() {
       @Override
-      public TelnetHandler provide() {
+      public TelnetHandler get() {
         return new TelnetTtyConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(this);
+            io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.accept(this);
           }
         };
       }

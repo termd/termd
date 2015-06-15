@@ -1,40 +1,40 @@
 package io.termd.core.tty;
 
-import io.termd.core.util.Handler;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SignalDecoder implements Handler<int[]> {
+public class SignalDecoder implements Consumer<int[]> {
 
-  private Handler<int[]> readHandler;
-  private Handler<Signal> signalHandler;
+  private Consumer<int[]> readHandler;
+  private Consumer<Signal> signalHandler;
   private final int vintr;
 
   public SignalDecoder(int vintr) {
     this.vintr = vintr;
   }
 
-  public Handler<int[]> getReadHandler() {
+  public Consumer<int[]> getReadHandler() {
     return readHandler;
   }
 
-  public SignalDecoder setReadHandler(Handler<int[]> readHandler) {
+  public SignalDecoder setReadHandler(Consumer<int[]> readHandler) {
     this.readHandler = readHandler;
     return this;
   }
 
-  public Handler<Signal> getSignalHandler() {
+  public Consumer<Signal> getSignalHandler() {
     return signalHandler;
   }
 
-  public SignalDecoder setSignalHandler(Handler<Signal> signalHandler) {
+  public SignalDecoder setSignalHandler(Consumer<Signal> signalHandler) {
     this.signalHandler = signalHandler;
     return this;
   }
 
   @Override
-  public void handle(int[] data) {
+  public void accept(int[] data) {
     if (signalHandler != null) {
       for (int i = 0;i < data.length;i++) {
         if (data[i] == vintr) {
@@ -43,10 +43,10 @@ public class SignalDecoder implements Handler<int[]> {
               int[] a = new int[i];
               if (i > 0) {
                 System.arraycopy(data, 0, a, 0, i);
-                readHandler.handle(a);
+                readHandler.accept(a);
               }
             }
-            signalHandler.handle(Signal.INT);
+            signalHandler.accept(Signal.INT);
             int[] a = new int[data.length - i - 1];
             System.arraycopy(data, i + 1, a, 0, a.length);
             data = a;
@@ -56,7 +56,7 @@ public class SignalDecoder implements Handler<int[]> {
       }
     }
     if (readHandler != null && data.length > 0) {
-      readHandler.handle(data);
+      readHandler.accept(data);
     }
   }
 }

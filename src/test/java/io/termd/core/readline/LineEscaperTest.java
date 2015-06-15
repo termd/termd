@@ -83,13 +83,13 @@ public class LineEscaperTest {
         this.delimiter = null;
       }
       @Override
-      public void handle(Integer value) {
+      public void accept(Integer value) {
         builder.appendCodePoint(value);
       }
     });
     for (int offset = 0;offset < line.length();) {
       int cp = line.codePointAt(offset);
-      escaper.handle(cp);
+      escaper.accept(cp);
       offset += Character.charCount(cp);
     }
     return builder.toString();

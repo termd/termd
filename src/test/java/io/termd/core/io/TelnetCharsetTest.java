@@ -1,6 +1,5 @@
 package io.termd.core.io;
 
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
@@ -8,6 +7,7 @@ import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 
@@ -68,12 +68,9 @@ public class TelnetCharsetTest {
     int[][] expectedOutput = {{'\r'},{'\r'},{'\r','A'}};
     for (int i = 0;i < input.length;i++) {
       final ArrayList<Integer> codePoints = new ArrayList<>();
-      BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, new Handler<int[]>() {
-        @Override
-        public void handle(int[] event) {
-          for (int i : event) {
-            codePoints.add(i);
-          }
+      BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, event -> {
+        for (int j : event) {
+          codePoints.add(j);
         }
       });
       decoder.write(new byte[]{'\r'});

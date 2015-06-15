@@ -1,7 +1,8 @@
 package io.termd.core.tty;
 
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
+
+import java.util.function.Consumer;
 
 /**
  * A connection to a tty.
@@ -10,31 +11,31 @@ import io.termd.core.util.Handler;
  */
 public interface TtyConnection {
 
-  Handler<String> getTermHandler();
+  Consumer<String> getTermHandler();
 
-  void setTermHandler(Handler<String> handler);
+  void setTermHandler(Consumer<String> handler);
 
-  Handler<Dimension> getResizeHandler();
+  Consumer<Dimension> getResizeHandler();
 
-  void setResizeHandler(Handler<Dimension> handler);
+  void setResizeHandler(Consumer<Dimension> handler);
 
-  Handler<Signal> getSignalHandler();
+  Consumer<Signal> getSignalHandler();
 
-  void setSignalHandler(Handler<Signal> handler);
+  void setSignalHandler(Consumer<Signal> handler);
 
-  Handler<int[]> getReadHandler();
+  Consumer<int[]> getReadHandler();
 
   /**
    * Set the read handler on this connection.
    *
    * @param handler the event handler
    */
-  void setReadHandler(Handler<int[]> handler);
+  void setReadHandler(Consumer<int[]> handler);
 
   /**
    * @return the write handler of this connection
    */
-  Handler<int[]> writeHandler();
+  Consumer<int[]> writeHandler();
 
   /**
    * Schedule a task for execution.

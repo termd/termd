@@ -7,14 +7,14 @@ import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
-import io.termd.core.util.Provider;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -51,9 +51,9 @@ public class ReadlineTest extends TestBase {
     private int[][] buffer = new int[10][];
     private int row;
     private int cursor;
-    Handler<int[]> writeHandler = new Handler<int[]>() {
+    Consumer<int[]> writeHandler = new Consumer<int[]>() {
       @Override
-      public void handle(int[] event) {
+      public void accept(int[] event) {
         for (int i : event) {
           if (buffer[row] == null) {
             buffer[row] = new int[100];
@@ -82,7 +82,7 @@ public class ReadlineTest extends TestBase {
     };
     final Readline handler;
 
-    private Handler<int[]> readHandler;
+    private Consumer<int[]> readHandler;
 
     public Term() {
       Keymap keymap = InputrcParser.create();
@@ -93,66 +93,51 @@ public class ReadlineTest extends TestBase {
     }
 
     public void readlineFail() {
-      readline(new Handler<String>() {
-        @Override
-        public void handle(String event) {
-          fail("Was not accepting a call");
-        }
-      });
+      readline(event -> fail("Was not accepting a call"));
     }
 
-    public Provider<String> readlineComplete() {
+    public Supplier<String> readlineComplete() {
       final AtomicReference<String> queue = new AtomicReference<>();
-      readline(new Handler<String>() {
-        @Override
-        public void handle(String event) {
-          queue.compareAndSet(null, event);
-        }
-      });
-      return new Provider<String>() {
-        @Override
-        public String provide() {
-          return queue.get();
-        }
-      };
+      readline(event -> queue.compareAndSet(null, event));
+      return () -> queue.get();
     }
 
-    public void readline(Handler<String> readlineHandler) {
+    public void readline(Consumer<String> readlineHandler) {
       handler.readline(new TtyConnection() {
         @Override
-        public Handler<String> getTermHandler() {
+        public Consumer<String> getTermHandler() {
           throw new UnsupportedOperationException();
         }
         @Override
-        public void setTermHandler(Handler<String> handler) {
+        public void setTermHandler(Consumer<String> handler) {
           throw new UnsupportedOperationException();
         }
         @Override
-        public Handler<Dimension> getResizeHandler() {
+        public Consumer<Dimension> getResizeHandler() {
           throw new UnsupportedOperationException();
         }
         @Override
-        public void setResizeHandler(Handler<Dimension> handler) {
+        public void setResizeHandler(Consumer<Dimension> handler) {
           throw new UnsupportedOperationException();
         }
         @Override
-        public Handler<Signal> getSignalHandler() {
+        public Consumer<Signal> getSignalHandler() {
           throw new UnsupportedOperationException();
         }
         @Override
-        public void setSignalHandler(Handler<Signal> handler) {
+        public void setSignalHandler(Consumer<Signal> handler) {
           throw new UnsupportedOperationException();
         }
         @Override
-        public Handler<int[]> getReadHandler() {
+        public Consumer<int[]> getReadHandler() {
           return readHandler;
         }
         @Override
-        public void setReadHandler(Handler<int[]> handler) {
+        public void setReadHandler(Consumer<int[]> handler) {
           readHandler = handler;
         }
         @Override
-        public Handler<int[]> writeHandler() {
+        public Consumer<int[]> writeHandler() {
           return writeHandler;
         }
         @Override
@@ -191,7 +176,7 @@ public class ReadlineTest extends TestBase {
     }
 
     void read(int... data) {
-      readHandler.handle(data);
+      readHandler.accept(data);
     }
 
   }
@@ -208,12 +193,7 @@ public class ReadlineTest extends TestBase {
   @Test
   public void testEnter() {
     Term term = new Term();
-    term.readline(new Handler<String>() {
-      @Override
-      public void handle(String event) {
-        testComplete();
-      }
-    });
+    term.readline(event -> testComplete());
     term.read('\r');
     term.assertScreen("% ");
     term.assertAt(1, 0);
@@ -232,12 +212,12 @@ public class ReadlineTest extends TestBase {
   @Test
   public void testInsertCharEnter() throws Exception {
     Term term = new Term();
-    Provider<String> line = term.readlineComplete();
+    Supplier<String> line = term.readlineComplete();
     term.read('A');
     term.read('\r');
     term.assertScreen("% A");
     term.assertAt(1, 0);
-    assertEquals("A", line.provide());
+    assertEquals("A", line.get());
   }
 
   @Test
@@ -357,11 +337,11 @@ public class ReadlineTest extends TestBase {
   @Test
   public void testQuotedMultiline() {
     Term term = new Term();
-    Provider<String> a = term.readlineComplete();
+    Supplier<String> a = term.readlineComplete();
     term.read('A');
     term.read('"');
     term.read('\r');
-    assertNull(a.provide());
+    assertNull(a.get());
     term.assertScreen(
         "% A\"",
         "> ");
@@ -371,7 +351,7 @@ public class ReadlineTest extends TestBase {
         "% A\"",
         "> B",
         "> ");
-    assertNull(a.provide());
+    assertNull(a.get());
     term.read('C');
     term.read('"');
     term.read('\r');
@@ -380,7 +360,7 @@ public class ReadlineTest extends TestBase {
         "> B",
         "> C\"");
     term.assertAt(3, 0);
-    assertEquals("A\"\nB\nC\"", a.provide());
+    assertEquals("A\"\nB\nC\"", a.get());
   }
 /*
 

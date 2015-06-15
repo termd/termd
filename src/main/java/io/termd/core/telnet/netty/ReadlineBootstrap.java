@@ -25,9 +25,7 @@ import io.termd.core.term.Feature;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
-import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetConnection;
@@ -35,6 +33,8 @@ import io.termd.core.telnet.TelnetHandler;
 
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A test class.
@@ -97,18 +97,18 @@ public class ReadlineBootstrap {
     this.telnet = telnet;
   }
 
-  public static final Handler<TtyConnection> READLINE = new Handler<TtyConnection>() {
+  public static final Consumer<TtyConnection> READLINE = new Consumer<TtyConnection>() {
     @Override
-    public void handle(final TtyConnection conn) {
+    public void accept(final TtyConnection conn) {
       InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
       Keymap keymap = new Keymap(inputrc);
       Readline readline = new Readline(keymap);
       for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
         readline.addFunction(function);
       }
-      conn.setTermHandler(new Handler<String>() {
+      conn.setTermHandler(new Consumer<String>() {
         @Override
-        public void handle(String event) {
+        public void accept(String event) {
           TermInfo info = TermInfo.getDefault();
           Device device = info.getDevice(event);
           Integer i = device.getFeature(Capability.max_colors);
@@ -118,14 +118,14 @@ public class ReadlineBootstrap {
             msg.append(capability.name).append(" (").append(capability.description).
                 append("): ").append(feature.getValue()).append("\r\n");
           }
-          conn.writeHandler().handle(Helper.toCodePoints(msg.toString()));
+          conn.writeHandler().accept(Helper.toCodePoints(msg.toString()));
         }
       });
-      conn.writeHandler().handle(Helper.toCodePoints("Welcome sir\r\n\r\n"));
+      conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n\r\n"));
       read(conn, readline);
     }
 
-    class Task extends Thread implements Handler<Signal> {
+    class Task extends Thread implements Consumer<Signal> {
 
       final TtyConnection conn;
       final Readline readline;
@@ -139,7 +139,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void handle(Signal event) {
+      public void accept(Signal event) {
         if (sleeping) {
           interrupt();
         }
@@ -147,13 +147,13 @@ public class ReadlineBootstrap {
 
       @Override
       public void run() {
-        conn.writeHandler().handle(Helper.toCodePoints("Running " + line + "\r\n"));
+        conn.writeHandler().accept(Helper.toCodePoints("Running " + line + "\r\n"));
         conn.setSignalHandler(this);
         sleeping = true;
         try {
           Thread.sleep(3000);
         } catch (InterruptedException e) {
-          conn.writeHandler().handle(Helper.toCodePoints("Interrupted\r\n"));
+          conn.writeHandler().accept(Helper.toCodePoints("Interrupted\r\n"));
         } finally {
           sleeping = false;
           conn.setSignalHandler(null);
@@ -163,9 +163,9 @@ public class ReadlineBootstrap {
     }
 
     public void read(final TtyConnection conn, final Readline readline) {
-      readline.readline(conn, "% ", new Handler<String>() {
+      readline.readline(conn, "% ", new Consumer<String>() {
         @Override
-        public void handle(String line) {
+        public void accept(String line) {
           Task task = new Task(conn, readline, line);
           task.start();
         }
@@ -174,14 +174,14 @@ public class ReadlineBootstrap {
   };
 
   public void start() {
-    telnet.start(new Provider<TelnetHandler>() {
+    telnet.start(new Supplier<TelnetHandler>() {
       @Override
-      public TelnetHandler provide() {
+      public TelnetHandler get() {
         return new TelnetTtyConnection() {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            READLINE.handle(this);
+            READLINE.accept(this);
           }
         };
       }

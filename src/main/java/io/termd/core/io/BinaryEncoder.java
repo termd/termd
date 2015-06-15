@@ -1,29 +1,28 @@
 package io.termd.core.io;
 
-import io.termd.core.util.Handler;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BinaryEncoder implements Handler<int[]> {
+public class BinaryEncoder implements Consumer<int[]> {
 
   private CharsetEncoder encoder;
   final ByteBuffer bBuf;
   final CharBuffer cBuf;
-  final Handler<byte[]> onByte;
+  final Consumer<byte[]> onByte;
   final char[] tmp;
 
-  public BinaryEncoder(Charset charset, Handler<byte[]> onByte) {
+  public BinaryEncoder(Charset charset, Consumer<byte[]> onByte) {
     this(0, charset, onByte);
   }
 
-  public BinaryEncoder(int bufferSize, Charset charset, Handler<byte[]> onByte) {
+  public BinaryEncoder(int bufferSize, Charset charset, Consumer<byte[]> onByte) {
     encoder = charset.newEncoder();
     int estimated;
     if (charset.name().equals("UTF-8")) {
@@ -54,7 +53,7 @@ public class BinaryEncoder implements Handler<int[]> {
   }
 
   @Override
-  public void handle(int[] event) {
+  public void accept(int[] event) {
 
     for (int codePoint : event) {
       try {
@@ -87,6 +86,6 @@ public class BinaryEncoder implements Handler<int[]> {
     byte[] bytes = new byte[bBuf.limit() - bBuf.position()];
     bBuf.get(bytes);
     bBuf.compact();
-    onByte.handle(bytes);
+    onByte.accept(bytes);
   }
 }

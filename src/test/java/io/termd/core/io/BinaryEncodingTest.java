@@ -1,6 +1,5 @@
 package io.termd.core.io;
 
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
@@ -9,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -29,27 +29,21 @@ public class BinaryEncodingTest {
 
   private void testChars(String s, int... expected) {
     final ArrayList<Byte> actualBytes = new ArrayList<>();
-    BinaryEncoder encoder = new BinaryEncoder(UTF8, new Handler<byte[]>() {
-      @Override
-      public void handle(byte[] event) {
-        for (byte b : event) {
-          actualBytes.add(b);
-        }
+    BinaryEncoder encoder = new BinaryEncoder(UTF8, event -> {
+      for (byte b : event) {
+        actualBytes.add(b);
       }
     });
-    encoder.handle(Helper.toCodePoints(s));
+    encoder.accept(Helper.toCodePoints(s));
     ArrayList<Byte> expectedBytes = new ArrayList<>();
     for (int b : expected) {
       expectedBytes.add((byte) b);
     }
     assertEquals(expectedBytes, actualBytes);
     final StringBuilder sb = new StringBuilder();
-    BinaryDecoder decoder = new BinaryDecoder(UTF8, new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        for (int cp : event) {
-          sb.appendCodePoint(cp);
-        }
+    BinaryDecoder decoder = new BinaryDecoder(UTF8, event -> {
+      for (int cp : event) {
+        sb.appendCodePoint(cp);
       }
     });
     byte[] data = new byte[expected.length];
@@ -62,15 +56,12 @@ public class BinaryEncodingTest {
 
   private void assertDecode(int initialSize, List<String> chars, int... bytes) {
     final List<String> abc = new ArrayList<>();
-    BinaryDecoder decoder = new BinaryDecoder(initialSize, UTF8, new Handler<int[]>() {
-      @Override
-      public void handle(int[] event) {
-        StringBuilder sb = new StringBuilder();
-        for (int cp : event) {
-          sb.appendCodePoint(cp);
-        }
-        abc.add(sb.toString());
+    BinaryDecoder decoder = new BinaryDecoder(initialSize, UTF8, event -> {
+      StringBuilder sb = new StringBuilder();
+      for (int cp : event) {
+        sb.appendCodePoint(cp);
       }
+      abc.add(sb.toString());
     });
     byte[] data = new byte[bytes.length];
     for (int i = 0;i < bytes.length;i++) {
@@ -92,9 +83,9 @@ public class BinaryEncodingTest {
   @Test
   public void testDecoderUnderflow() throws Exception {
     final ArrayList<Integer> codePoints = new ArrayList<>();
-    BinaryDecoder decoder = new BinaryDecoder(10, UTF8, new Handler<int[]>() {
+    BinaryDecoder decoder = new BinaryDecoder(10, UTF8, new Consumer<int[]>() {
       @Override
-      public void handle(int[] event) {
+      public void accept(int[] event) {
         codePoints.addAll(Helper.list(event));
       }
     });
@@ -125,17 +116,14 @@ public class BinaryEncodingTest {
 
   private void assertEncode(int bufferSize, String chars, int[]... bytes) {
     final List<int[]> abc = new ArrayList<>();
-    BinaryEncoder decoder = new BinaryEncoder(bufferSize, UTF8, new Handler<byte[]>() {
-      @Override
-      public void handle(byte[] event) {
-        int[] def = new int[event.length];
-        for (int i = 0;i < event.length;i++) {
-          def[i] = event[i];
-        }
-        abc.add(def);
+    BinaryEncoder decoder = new BinaryEncoder(bufferSize, UTF8, event -> {
+      int[] def = new int[event.length];
+      for (int i = 0;i < event.length;i++) {
+        def[i] = event[i];
       }
+      abc.add(def);
     });
-    decoder.handle(Helper.toCodePoints(chars));
+    decoder.accept(Helper.toCodePoints(chars));
     assertEquals(bytes.length, abc.size());
     for (int i = 0;i < bytes.length;i++) {
       assertArrayEquals(bytes[i], abc.get(i));

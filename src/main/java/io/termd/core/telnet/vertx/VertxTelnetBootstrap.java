@@ -1,6 +1,5 @@
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Vertx;
@@ -8,6 +7,7 @@ import org.vertx.java.core.VertxFactory;
 import org.vertx.java.core.net.NetServer;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -32,7 +32,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(Provider<TelnetHandler> factory) {
+  public void start(Supplier<TelnetHandler> factory) {
     NetServer server = vertx.createNetServer();
     server.connectHandler(new TelnetSocketHandler(vertx, factory));
     server.listen(port, host);

@@ -16,7 +16,7 @@
  */
 package io.termd.core.telnet;
 
-import io.termd.core.util.Provider;
+import java.util.function.Supplier;
 
 /**
  * A test class.
@@ -34,66 +34,61 @@ public abstract class TelnetBootstrap {
   }
 
   public void start() {
-    start(new Provider<TelnetHandler>() {
+    start(() -> new TelnetHandler() {
+
       @Override
-      public TelnetHandler provide() {
-        return new TelnetHandler() {
+      protected void onOpen(TelnetConnection conn) {
+        System.out.println("New client");
+      }
 
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            System.out.println("New client");
-          }
+      @Override
+      protected void onClose() {
+        System.out.println("Client closed");
+      }
 
-          @Override
-          protected void onClose() {
-            System.out.println("Client closed");
-          }
+      @Override
+      protected void onSize(int width, int height) {
+        System.out.println("Resize:(" + width + "," + height + ")");
+      }
 
-          @Override
-          protected void onSize(int width, int height) {
-            System.out.println("Resize:(" + width + "," + height + ")");
-          }
+      @Override
+      protected void onTerminalType(String terminalType) {
+        System.out.println("Terminal type: " + terminalType);
+      }
 
-          @Override
-          protected void onTerminalType(String terminalType) {
-            System.out.println("Terminal type: " + terminalType);
-          }
+      @Override
+      protected void onNAWS(boolean naws) {
+        System.out.println("Option NAWS:" + naws);
+      }
 
-          @Override
-          protected void onNAWS(boolean naws) {
-            System.out.println("Option NAWS:" + naws);
-          }
+      @Override
+      protected void onEcho(boolean echo) {
+        System.out.println("Option echo:" + echo);
+      }
 
-          @Override
-          protected void onEcho(boolean echo) {
-            System.out.println("Option echo:" + echo);
-          }
+      @Override
+      protected void onSGA(boolean sga) {
+        System.out.println("Option SGA:" + sga);
+      }
 
-          @Override
-          protected void onSGA(boolean sga) {
-            System.out.println("Option SGA:" + sga);
+      @Override
+      protected void onData(byte[] data) {
+        for (byte b : data) {
+          if (b >= 32) {
+            System.out.println("Char:" + (char)b);
+          } else {
+            System.out.println("Char:<" + b + ">");
           }
+        }
+      }
 
-          @Override
-          protected void onData(byte[] data) {
-            for (byte b : data) {
-              if (b >= 32) {
-                System.out.println("Char:" + (char)b);
-              } else {
-                System.out.println("Char:<" + b + ">");
-              }
-            }
-          }
-
-          @Override
-          protected void onCommand(byte command) {
-            System.out.println("Command:" + command);
-          }
-        };
+      @Override
+      protected void onCommand(byte command) {
+        System.out.println("Command:" + command);
       }
     });
   }
 
-  public abstract void start(Provider<TelnetHandler> factory);
+  public abstract void start(Supplier<TelnetHandler> factory);
 
 }

@@ -1,40 +1,39 @@
 package io.termd.core.tty;
 
-import io.termd.core.util.Handler;
-
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadBuffer implements Handler<int[]> {
+public class ReadBuffer implements Consumer<int[]> {
 
   private final Queue<int[]> queue = new ArrayDeque<>(10);
   private final Executor executor;
-  private volatile Handler<int[]> readHandler;
+  private volatile Consumer<int[]> readHandler;
 
   public ReadBuffer(Executor executor) {
     this.executor = executor;
   }
 
   @Override
-  public void handle(int[] data) {
+  public void accept(int[] data) {
     queue.add(data);
     while (readHandler != null && queue.size() > 0) {
       data = queue.poll();
       if (data != null) {
-        readHandler.handle(data);
+        readHandler.accept(data);
       }
     }
   }
 
-  public Handler<int[]> getReadHandler() {
+  public Consumer<int[]> getReadHandler() {
     return readHandler;
   }
 
-  public void setReadHandler(final Handler<int[]> readHandler) {
+  public void setReadHandler(final Consumer<int[]> readHandler) {
     if (readHandler != null) {
       if (this.readHandler != null) {
         this.readHandler = readHandler;
@@ -49,15 +48,12 @@ public class ReadBuffer implements Handler<int[]> {
 
   private void drainQueue() {
     if (queue.size() > 0 && readHandler != null) {
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          if (readHandler != null) {
-            final int[] data = queue.poll();
-            if (data != null) {
-              readHandler.handle(data);
-              drainQueue();
-            }
+      executor.execute(() -> {
+        if (readHandler != null) {
+          final int[] data = queue.poll();
+          if (data != null) {
+            readHandler.accept(data);
+            drainQueue();
           }
         }
       });

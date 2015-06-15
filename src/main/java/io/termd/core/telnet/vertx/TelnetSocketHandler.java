@@ -16,13 +16,14 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
+
+import java.util.function.Supplier;
 
 /**
  * Telnet server integration with Vert.x {@link org.vertx.java.core.net.NetServer}.
@@ -32,16 +33,16 @@ import org.vertx.java.core.net.NetSocket;
 public class TelnetSocketHandler implements Handler<NetSocket> {
 
   final Vertx vertx;
-  final Provider<TelnetHandler> factory;
+  final Supplier<TelnetHandler> factory;
 
-  public TelnetSocketHandler(Vertx vertx, Provider<TelnetHandler> factory) {
+  public TelnetSocketHandler(Vertx vertx, Supplier<TelnetHandler> factory) {
     this.vertx = vertx;
     this.factory = factory;
   }
 
   @Override
   public void handle(final NetSocket socket) {
-    TelnetHandler handler = factory.provide();
+    TelnetHandler handler = factory.get();
     final TelnetConnection connection = new VertxTelnetConnection(handler, vertx.currentContext(), socket);
     socket.dataHandler(new Handler<Buffer>() {
       @Override

@@ -4,7 +4,6 @@ import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.Signal;
 import io.termd.core.tty.SignalDecoder;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.tty.TtyConnection;
@@ -29,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,59 +53,59 @@ public class ReadlineBootstrap {
       private ReadBuffer readBuffer;
       private BinaryDecoder decoder;
       private BinaryEncoder encoder;
-      private Handler<byte[]> out;
+      private Consumer<byte[]> out;
       private Dimension size = null;
-      private Handler<Dimension> resizeHandler;
-      private Handler<String> termHandler;
+      private Consumer<Dimension> resizeHandler;
+      private Consumer<String> termHandler;
 
       @Override
-      public Handler<int[]> getReadHandler() {
+      public Consumer<int[]> getReadHandler() {
         return readBuffer.getReadHandler();
       }
 
       @Override
-      public void setReadHandler(Handler<int[]> handler) {
+      public void setReadHandler(Consumer<int[]> handler) {
         readBuffer.setReadHandler(handler);
       }
 
       @Override
-      public Handler<String> getTermHandler() {
+      public Consumer<String> getTermHandler() {
         return termHandler;
       }
 
       @Override
-      public void setTermHandler(Handler<String> handler) {
+      public void setTermHandler(Consumer<String> handler) {
         termHandler = handler;
         if (handler != null && term != null) {
-          handler.handle(term);
+          handler.accept(term);
         }
       }
 
       @Override
-      public Handler<Dimension> getResizeHandler() {
+      public Consumer<Dimension> getResizeHandler() {
         return resizeHandler;
       }
 
       @Override
-      public void setResizeHandler(Handler<Dimension> handler) {
+      public void setResizeHandler(Consumer<Dimension> handler) {
         resizeHandler = handler;
         if (handler != null && size != null) {
-          handler.handle(size);
+          handler.accept(size);
         }
       }
 
       @Override
-      public Handler<Signal> getSignalHandler() {
+      public Consumer<Signal> getSignalHandler() {
         return signalDecoder.getSignalHandler();
       }
 
       @Override
-      public void setSignalHandler(Handler<Signal> handler) {
+      public void setSignalHandler(Consumer<Signal> handler) {
         signalDecoder.setSignalHandler(handler);
       }
 
       @Override
-      public Handler<int[]> writeHandler() {
+      public Consumer<int[]> writeHandler() {
         return encoder;
       }
 
@@ -142,9 +142,9 @@ public class ReadlineBootstrap {
 
       @Override
       public void setOutputStream(final OutputStream out) {
-        this.out = new Handler<byte[]>() {
+        this.out = new Consumer<byte[]>() {
           @Override
-          public void handle(byte[] event) {
+          public void accept(byte[] event) {
             // beware : this might be blocking
             try {
               out.write(event);
@@ -202,7 +202,7 @@ public class ReadlineBootstrap {
         term = env.getEnv().get("TERM");
 
         //
-        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.handle(this);
+        io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.accept(this);
       }
 
       private int getControlChar(Environment env, PtyMode key, int def) {
@@ -226,7 +226,7 @@ public class ReadlineBootstrap {
           if (size != null) {
             this.size = size;
             if (resizeHandler != null) {
-              resizeHandler.handle(size);
+              resizeHandler.accept(size);
             }
           }
         }
@@ -237,21 +237,11 @@ public class ReadlineBootstrap {
       }
     }
 
-    sshd.setShellFactory(new Factory<Command>() {
-      @Override
-      public Command create() {
-        return new TtyCommand();
-      }
-    });
+    sshd.setShellFactory(TtyCommand::new);
 
     sshd.setPort(5000);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
-    sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-      @Override
-      public boolean authenticate(String username, String password, ServerSession session) {
-        return true;
-      }
-    });
+    sshd.setPasswordAuthenticator((username, password, session) -> true);
     sshd.start();
 
   }

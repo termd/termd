@@ -1,11 +1,11 @@
 package io.termd.core.readline;
 
-import io.termd.core.util.Handler;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface Escaper extends Handler<Integer> {
+interface Escaper extends Consumer<Integer> {
 
   void escaping();
 

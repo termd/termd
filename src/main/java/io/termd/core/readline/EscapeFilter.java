@@ -1,11 +1,11 @@
 package io.termd.core.readline;
 
-import io.termd.core.util.Handler;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EscapeFilter implements Handler<Integer> {
+class EscapeFilter implements Consumer<Integer> {
 
   private EscStatus status = EscStatus.NORMAL;
   private final Escaper escaper;
@@ -15,7 +15,7 @@ class EscapeFilter implements Handler<Integer> {
   }
 
   @Override
-  public void handle(Integer code) {
+  public void accept(Integer code) {
     switch (status) {
       case NORMAL:
         switch ((int)code) {
@@ -32,7 +32,7 @@ class EscapeFilter implements Handler<Integer> {
             status = EscStatus.IN_BACKSLASH;
             break;
           default:
-            escaper.handle(code);
+            escaper.accept(code);
             break;
         }
         break;
@@ -41,7 +41,7 @@ class EscapeFilter implements Handler<Integer> {
           escaper.endQuotes('\'');
           status = EscStatus.NORMAL;
         } else {
-          escaper.handle(code);
+          escaper.accept(code);
         }
         break;
       case IN_DOUBLE_QUOTE:
@@ -49,7 +49,7 @@ class EscapeFilter implements Handler<Integer> {
           escaper.endQuotes('\"');
           status = EscStatus.NORMAL;
         } else {
-          escaper.handle(code);
+          escaper.accept(code);
         }
         break;
       case IN_BACKSLASH:

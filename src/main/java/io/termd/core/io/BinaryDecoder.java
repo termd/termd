@@ -1,6 +1,5 @@
 package io.termd.core.io;
 
-import io.termd.core.util.Handler;
 import io.termd.core.util.Helper;
 
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -20,13 +20,13 @@ public class BinaryDecoder {
   private CharsetDecoder decoder;
   private ByteBuffer bBuf;
   private final CharBuffer cBuf;
-  private final Handler<int[]> onChar;
+  private final Consumer<int[]> onChar;
 
-  public BinaryDecoder(Charset charset, Handler<int[]> onChar) {
+  public BinaryDecoder(Charset charset, Consumer<int[]> onChar) {
     this(2, charset, onChar);
   }
 
-  public BinaryDecoder(int initialSize, Charset charset, Handler<int[]> onChar) {
+  public BinaryDecoder(int initialSize, Charset charset, Consumer<int[]> onChar) {
     if (initialSize < 2) {
       throw new IllegalArgumentException("Initial size must be at least 2");
     }
@@ -98,7 +98,7 @@ public class BinaryDecoder {
       iBuf.flip();
       int[] codePoints = new int[iBuf.limit()];
       iBuf.get(codePoints);
-      onChar.handle(codePoints);
+      onChar.accept(codePoints);
       cBuf.compact();
       if (result.isOverflow()) {
         // We still have work to do

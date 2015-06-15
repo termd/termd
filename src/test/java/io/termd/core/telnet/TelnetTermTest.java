@@ -1,8 +1,6 @@
 package io.termd.core.telnet;
 
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
-import io.termd.core.util.Provider;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
@@ -13,6 +11,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -22,40 +22,31 @@ public class TelnetTermTest extends TelnetTestBase {
   @Test
   public void testSizeHanlder() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Provider<TelnetHandler>() {
-      @Override
-      public TelnetHandler provide() {
-        final AtomicInteger count = new AtomicInteger();
-        final TelnetTtyConnection connection = new TelnetTtyConnection();
-        connection.setResizeHandler(new Handler<Dimension>() {
-          @Override
-          public void handle(Dimension size) {
-            switch (count.getAndIncrement()) {
-              case 0:
-                assertEquals(20, size.getWidth());
-                assertEquals(10, size.getHeight());
-                latch.countDown();
-                break;
-              case 1:
-                assertEquals(80, size.getWidth());
-                assertEquals(24, size.getHeight());
-                connection.setResizeHandler(null);
-                connection.setResizeHandler(new Handler<Dimension>() {
-                  @Override
-                  public void handle(Dimension size) {
-                    assertEquals(80, size.getWidth());
-                    assertEquals(24, size.getHeight());
-                    testComplete();
-                  }
-                });
-                break;
-              default:
-                fail("Was not expecting that");
-            }
-          }
-        });
-        return connection;
-      }
+    server(() -> {
+      final AtomicInteger count = new AtomicInteger();
+      final TelnetTtyConnection connection = new TelnetTtyConnection();
+      connection.setResizeHandler(size -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals(20, size.getWidth());
+            assertEquals(10, size.getHeight());
+            latch.countDown();
+            break;
+          case 1:
+            assertEquals(80, size.getWidth());
+            assertEquals(24, size.getHeight());
+            connection.setResizeHandler(null);
+            connection.setResizeHandler(size1 -> {
+              assertEquals(80, size1.getWidth());
+              assertEquals(24, size1.getHeight());
+              testComplete();
+            });
+            break;
+          default:
+            fail("Was not expecting that");
+        }
+      });
+      return connection;
     });
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
     final AtomicReference<OutputStream> out = new AtomicReference<>();

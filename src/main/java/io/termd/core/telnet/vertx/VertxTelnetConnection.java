@@ -24,12 +24,7 @@ public class VertxTelnetConnection extends TelnetConnection {
 
   @Override
   public void schedule(final Runnable task) {
-    context.runOnContext(new Handler<Void>() {
-      @Override
-      public void handle(Void event) {
-        task.run();
-      }
-    });
+    context.runOnContext(event -> task.run());
   }
 
   // Not properly synchronized, but ok for now
@@ -38,13 +33,10 @@ public class VertxTelnetConnection extends TelnetConnection {
     if (pending == null) {
       pending = new Buffer();
       pending.appendBytes(data);
-      context.runOnContext(new Handler<Void>() {
-        @Override
-        public void handle(Void event) {
-          Buffer buf = pending;
-          pending = null;
-          socket.write(buf);
-        }
+      context.runOnContext(event -> {
+        Buffer buf = pending;
+        pending = null;
+        socket.write(buf);
       });
     } else {
       pending.appendBytes(data);

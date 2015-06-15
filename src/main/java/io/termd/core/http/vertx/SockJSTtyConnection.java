@@ -8,7 +8,6 @@ import io.termd.core.tty.Signal;
 import io.termd.core.tty.SignalDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Handler;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
@@ -17,6 +16,7 @@ import org.vertx.java.core.sockjs.SockJSSocket;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -25,24 +25,19 @@ public class SockJSTtyConnection implements TtyConnection {
 
   private final SockJSSocket socket;
   private Dimension size = null;
-  private Handler<Dimension> resizeHandler;
+  private Consumer<Dimension> resizeHandler;
   private final Context context;
   private final ReadBuffer readBuffer = new ReadBuffer(new Executor() {
     @Override
     public void execute(final Runnable command) {
-      context.runOnContext(new org.vertx.java.core.Handler<Void>() {
-        @Override
-        public void handle(Void event) {
-          command.run();
-        }
-      });
+      context.runOnContext(event -> command.run());
     }
   });
   private final SignalDecoder signalDecoder = new SignalDecoder(3).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
-  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Handler<byte[]>() {
+  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
     @Override
-    public void handle(byte[] event) {
+    public void accept(byte[] event) {
       socket.write(new Buffer(event));
     }
   });
@@ -66,59 +61,54 @@ public class SockJSTtyConnection implements TtyConnection {
   }
 
   @Override
-  public Handler<String> getTermHandler() {
+  public Consumer<String> getTermHandler() {
     return null;
   }
 
   @Override
-  public void setTermHandler(Handler<String> handler) {
+  public void setTermHandler(Consumer<String> handler) {
   }
 
   @Override
-  public Handler<Dimension> getResizeHandler() {
+  public Consumer<Dimension> getResizeHandler() {
     return resizeHandler;
   }
 
   @Override
-  public void setResizeHandler(Handler<Dimension> handler) {
+  public void setResizeHandler(Consumer<Dimension> handler) {
     this.resizeHandler = handler;
     if (handler != null && size != null) {
-      handler.handle(size);
+      handler.accept(size);
     }
   }
 
   @Override
   public void schedule(final Runnable task) {
-    context.runOnContext(new org.vertx.java.core.Handler<Void>() {
-      @Override
-      public void handle(Void v) {
-        task.run();
-      }
-    });
+    context.runOnContext(v -> task.run());
   }
 
   @Override
-  public Handler<Signal> getSignalHandler() {
+  public Consumer<Signal> getSignalHandler() {
     return signalDecoder.getSignalHandler();
   }
 
   @Override
-  public void setSignalHandler(Handler<Signal> handler) {
+  public void setSignalHandler(Consumer<Signal> handler) {
     signalDecoder.setSignalHandler(handler);
   }
 
   @Override
-  public Handler<int[]> getReadHandler() {
+  public Consumer<int[]> getReadHandler() {
     return readBuffer.getReadHandler();
   }
 
   @Override
-  public void setReadHandler(Handler<int[]> handler) {
+  public void setReadHandler(Consumer<int[]> handler) {
     readBuffer.setReadHandler(handler);
   }
 
   @Override
-  public Handler<int[]> writeHandler() {
+  public Consumer<int[]> writeHandler() {
     return encoder;
   }
 }

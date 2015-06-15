@@ -3,8 +3,9 @@ package io.termd.core.telnet.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.termd.core.util.Provider;
 import io.termd.core.telnet.TelnetHandler;
+
+import java.util.function.Supplier;
 
 /**
  * Telnet server integration with Netty {@link io.netty.channel.socket.ServerSocketChannel}.
@@ -13,10 +14,10 @@ import io.termd.core.telnet.TelnetHandler;
  */
 public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
 
-  private final Provider<TelnetHandler> factory;
+  private final Supplier<TelnetHandler> factory;
   private NettyTelnetConnection conn;
 
-  public TelnetChannelHandler(Provider<TelnetHandler> factory) {
+  public TelnetChannelHandler(Supplier<TelnetHandler> factory) {
     this.factory = factory;
   }
 
@@ -31,7 +32,7 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    this.conn = new NettyTelnetConnection(factory.provide(), ctx);
+    this.conn = new NettyTelnetConnection(factory.get(), ctx);
     conn.init();
   }
 
