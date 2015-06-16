@@ -1,6 +1,7 @@
 package io.termd.core.tty;
 
 import io.termd.core.util.Dimension;
+import io.termd.core.util.Helper;
 
 import java.util.function.Consumer;
 
@@ -36,6 +37,16 @@ public interface TtyConnection {
    * @return the write handler of this connection
    */
   Consumer<int[]> writeHandler();
+
+  /**
+   * Write a string to the client.
+   *
+   * @param s the string to write
+   */
+  default void write(String s) {
+    int[] codePoints = Helper.toCodePoints(s);
+    writeHandler().accept(codePoints);
+  }
 
   /**
    * Schedule a task for execution.

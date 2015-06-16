@@ -35,7 +35,7 @@ public class Readline {
     Consumer<int[]> previousEventHandler = term.getReadHandler();
     Interaction interaction = new Interaction(term, previousEventHandler, requestHandler);
     term.setReadHandler(interaction);
-    term.writeHandler().accept(Helper.toCodePoints(prompt));
+    term.write(prompt);
   }
 
   private enum LineStatus {

@@ -116,9 +116,9 @@ public class ReadlineBootstrap {
           msg.append(capability.name).append(" (").append(capability.description).
               append(")").append("\r\n");
         }
-        conn.writeHandler().accept(Helper.toCodePoints(msg.toString()));
+        conn.write(msg.toString());
       });
-      conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n\r\n"));
+      conn.write("Welcome sir\r\n\r\n");
       read(conn, readline);
     }
 
@@ -144,13 +144,13 @@ public class ReadlineBootstrap {
 
       @Override
       public void run() {
-        conn.writeHandler().accept(Helper.toCodePoints("Running " + line + "\r\n"));
+        conn.write("Running " + line + "\r\n");
         conn.setSignalHandler(this);
         sleeping = true;
         try {
           Thread.sleep(3000);
         } catch (InterruptedException e) {
-          conn.writeHandler().accept(Helper.toCodePoints("Interrupted\r\n"));
+          conn.write("Interrupted\r\n");
         } finally {
           sleeping = false;
           conn.setSignalHandler(null);

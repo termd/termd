@@ -33,7 +33,7 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
       // Not used yet but we should propagage this to the process builder
       System.out.println("CLIENT $TERM=" + term);
     });
-    conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n\r\n"));
+    conn.write("Welcome sir\r\n\r\n");
     read(conn, readline);
   }
 
@@ -141,7 +141,7 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
           Thread.currentThread().interrupt();
         }
       } catch (IOException e) {
-        conn.writeHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
+        conn.write(e.getMessage() + "\r\n");
       }
 
       // Read line again
