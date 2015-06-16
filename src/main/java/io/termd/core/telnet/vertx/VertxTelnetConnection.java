@@ -3,7 +3,6 @@ package io.termd.core.telnet.vertx;
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Context;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 

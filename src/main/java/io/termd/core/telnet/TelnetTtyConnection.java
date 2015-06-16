@@ -10,7 +10,6 @@ import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -28,12 +27,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
   private final SignalDecoder signalDecoder = new SignalDecoder(3).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
-  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
-    @Override
-    public void accept(byte[] event) {
-      conn.write(event);
-    }
-  });
+  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, event -> conn.write(event));
 
   public TelnetTtyConnection() {
   }

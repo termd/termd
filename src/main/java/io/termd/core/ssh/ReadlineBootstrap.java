@@ -142,16 +142,13 @@ public class ReadlineBootstrap {
 
       @Override
       public void setOutputStream(final OutputStream out) {
-        this.out = new Consumer<byte[]>() {
-          @Override
-          public void accept(byte[] event) {
-            // beware : this might be blocking
-            try {
-              out.write(event);
-              out.flush();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
+        this.out = event -> {
+          // beware : this might be blocking
+          try {
+            out.write(event);
+            out.flush();
+          } catch (IOException e) {
+            e.printStackTrace();
           }
         };
       }
@@ -178,24 +175,14 @@ public class ReadlineBootstrap {
         if (charset == null) {
           charset = Charset.forName("UTF-8");
         }
-        env.addSignalListener(new SignalListener() {
-          @Override
-          public void signal(org.apache.sshd.server.Signal signal) {
-            updateSize(env);
-          }
-        }, EnumSet.of(org.apache.sshd.server.Signal.WINCH));
+        env.addSignalListener(signal -> updateSize(env), EnumSet.of(org.apache.sshd.server.Signal.WINCH));
         updateSize(env);
 
         // Signal handling
         int vintr = getControlChar(env, PtyMode.VINTR, 3);
 
         //
-        readBuffer = new ReadBuffer(new Executor() {
-          @Override
-          public void execute(Runnable command) {
-            schedule(command);
-          }
-        });
+        readBuffer = new ReadBuffer(this::schedule);
         signalDecoder = new SignalDecoder(vintr).setReadHandler(readBuffer);
         decoder = new BinaryDecoder(512, charset, signalDecoder);
         encoder = new BinaryEncoder(512, charset, out);

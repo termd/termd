@@ -20,7 +20,6 @@ import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.NetSocket;
 
 import java.util.function.Supplier;
@@ -44,18 +43,8 @@ public class TelnetSocketHandler implements Handler<NetSocket> {
   public void handle(final NetSocket socket) {
     TelnetHandler handler = factory.get();
     final TelnetConnection connection = new VertxTelnetConnection(handler, vertx.currentContext(), socket);
-    socket.dataHandler(new Handler<Buffer>() {
-      @Override
-      public void handle(Buffer event) {
-        connection.receive(event.getBytes());
-      }
-    });
-    socket.closeHandler(new Handler<Void>() {
-      @Override
-      public void handle(Void event) {
-        connection.close();
-      }
-    });
+    socket.dataHandler(event -> connection.receive(event.getBytes()));
+    socket.closeHandler(event -> connection.close());
     connection.init();
   }
 }

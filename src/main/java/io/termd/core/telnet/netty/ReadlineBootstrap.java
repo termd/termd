@@ -106,20 +106,17 @@ public class ReadlineBootstrap {
       for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
         readline.addFunction(function);
       }
-      conn.setTermHandler(new Consumer<String>() {
-        @Override
-        public void accept(String event) {
-          TermInfo info = TermInfo.getDefault();
-          Device device = info.getDevice(event);
-          Integer i = device.getFeature(Capability.max_colors);
-          StringBuilder msg = new StringBuilder("Your term is " + event + " and we found a description for it:\r\n");
-          for (Feature<?> feature : device.getFeatures()) {
-            Capability<?> capability = feature.getCapability();
-            msg.append(capability.name).append(" (").append(capability.description).
-                append("): ").append(feature.getValue()).append("\r\n");
-          }
-          conn.writeHandler().accept(Helper.toCodePoints(msg.toString()));
+      conn.setTermHandler(term -> {
+        TermInfo info = TermInfo.getDefault();
+        Device device = info.getDevice(term);
+        Integer i = device.getFeature(Capability.max_colors);
+        StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\r\n");
+        for (Feature<?> feature : device.getFeatures()) {
+          Capability<?> capability = feature.getCapability();
+          msg.append(capability.name).append(" (").append(capability.description).
+              append("): ").append(feature.getValue()).append("\r\n");
         }
+        conn.writeHandler().accept(Helper.toCodePoints(msg.toString()));
       });
       conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n\r\n"));
       read(conn, readline);
@@ -163,12 +160,9 @@ public class ReadlineBootstrap {
     }
 
     public void read(final TtyConnection conn, final Readline readline) {
-      readline.readline(conn, "% ", new Consumer<String>() {
-        @Override
-        public void accept(String line) {
-          Task task = new Task(conn, readline, line);
-          task.start();
-        }
+      readline.readline(conn, "% ", line -> {
+        Task task = new Task(conn, readline, line);
+        task.start();
       });
     }
   };

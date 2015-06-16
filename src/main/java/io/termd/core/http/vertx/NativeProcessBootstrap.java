@@ -38,12 +38,9 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
   }
 
   public void read(final TtyConnection conn, final Readline readline) {
-    readline.readline(conn, "% ", new Consumer<String>() {
-      @Override
-      public void accept(String line) {
-        Task task = new Task(conn, readline, line);
-        task.start();
-      }
+    readline.readline(conn, "% ", line -> {
+      Task task = new Task(conn, readline, line);
+      task.start();
     });
   }
 
