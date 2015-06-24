@@ -1,13 +1,12 @@
 package io.termd.core.telnet;
 
 import io.termd.core.telnet.vertx.TelnetSocketHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.NetServer;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.junit.After;
 import org.junit.Before;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
-import org.vertx.java.core.net.NetServer;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -43,7 +42,7 @@ public class TelnetTestBase extends TestBase {
 
   @Before
   public void before() throws InterruptedException {
-    vertx = VertxFactory.newVertx();
+    vertx = Vertx.vertx();
   }
 
   protected final void server(Supplier<TelnetHandler> factory) {
@@ -66,7 +65,7 @@ public class TelnetTestBase extends TestBase {
     if (server != null) {
       server.close();
     }
-    vertx.stop();
+    vertx.close();
     if (client != null && client.isConnected()) {
       try {
         client.disconnect();

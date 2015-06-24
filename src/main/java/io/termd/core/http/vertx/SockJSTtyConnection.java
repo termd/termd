@@ -8,11 +8,11 @@ import io.termd.core.tty.Signal;
 import io.termd.core.tty.SignalDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.sockjs.SockJSSocket;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.handler.sockjs.SockJSSocket;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
@@ -38,15 +38,15 @@ public class SockJSTtyConnection implements TtyConnection {
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
     @Override
     public void accept(byte[] event) {
-      socket.write(new Buffer(event));
+      socket.write(Buffer.buffer(event));
     }
   });
 
-  public SockJSTtyConnection(Vertx vertx, SockJSSocket socket) {
+  public SockJSTtyConnection(SockJSSocket socket) {
     this.socket = socket;
-    this.context = vertx.currentContext();
+    this.context = Vertx.currentContext();
 
-    socket.dataHandler(new org.vertx.java.core.Handler<Buffer>() {
+    socket.handler(new io.vertx.core.Handler<Buffer>() {
       @Override
       public void handle(Buffer msg) {
         JsonObject obj = new JsonObject(msg.toString());

@@ -2,9 +2,8 @@ package io.termd.core.telnet.vertx;
 
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
-import org.vertx.java.core.net.NetServer;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.NetServer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -23,7 +22,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   private final Vertx vertx;
 
   public VertxTelnetBootstrap(String host, int port) {
-    this(VertxFactory.newVertx(), host, port);
+    this(Vertx.vertx(), host, port);
   }
 
   public VertxTelnetBootstrap(Vertx vertx, String host, int port) {

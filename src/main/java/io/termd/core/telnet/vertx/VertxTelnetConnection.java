@@ -2,9 +2,9 @@ package io.termd.core.telnet.vertx;
 
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
-import org.vertx.java.core.Context;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.net.NetSocket;
+import io.vertx.core.Context;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -30,7 +30,7 @@ public class VertxTelnetConnection extends TelnetConnection {
   @Override
   protected void send(byte[] data) {
     if (pending == null) {
-      pending = new Buffer();
+      pending = Buffer.buffer();
       pending.appendBytes(data);
       context.runOnContext(event -> {
         Buffer buf = pending;

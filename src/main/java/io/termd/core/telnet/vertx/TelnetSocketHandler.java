@@ -18,9 +18,9 @@ package io.termd.core.telnet.vertx;
 
 import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.net.NetSocket;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.NetSocket;
 
 import java.util.function.Supplier;
 
@@ -42,8 +42,8 @@ public class TelnetSocketHandler implements Handler<NetSocket> {
   @Override
   public void handle(final NetSocket socket) {
     TelnetHandler handler = factory.get();
-    final TelnetConnection connection = new VertxTelnetConnection(handler, vertx.currentContext(), socket);
-    socket.dataHandler(event -> connection.receive(event.getBytes()));
+    final TelnetConnection connection = new VertxTelnetConnection(handler, Vertx.currentContext(), socket);
+    socket.handler(event -> connection.receive(event.getBytes()));
     socket.closeHandler(event -> connection.close());
     connection.init();
   }

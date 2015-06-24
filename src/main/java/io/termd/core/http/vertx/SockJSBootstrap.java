@@ -1,16 +1,18 @@
 package io.termd.core.http.vertx;
 
 import io.termd.core.tty.TtyConnection;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerResponse;
-import org.vertx.java.core.http.impl.MimeMapping;
-import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.sockjs.SockJSServer;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.impl.MimeMapping;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -33,9 +35,16 @@ public class SockJSBootstrap {
   }
 
   public void bootstrap(final Consumer<AsyncResult<Void>> completionHandler) {
-    final Vertx vertx = VertxFactory.newVertx();
-    HttpServer httpServer = vertx.createHttpServer();
-    httpServer.requestHandler(req -> {
+    Vertx vertx = Vertx.vertx();
+    Router router = Router.router(vertx);
+    SockJSHandler sockJSHandler = SockJSHandler.create(vertx, new SockJSHandlerOptions());
+    sockJSHandler.socketHandler(socket -> {
+      SockJSTtyConnection conn = new SockJSTtyConnection(socket);
+      handler.accept(conn);
+    });
+    router.route("/term/*").handler(sockJSHandler);
+    router.route().handler(ctx -> {
+      HttpServerRequest req = ctx.request();
 
       // Not the best but does the job
       String path = req.path();
@@ -47,7 +56,7 @@ public class SockJSBootstrap {
       try {
         if (res != null) {
           InputStream in = res.openStream();
-          Buffer buf = new Buffer();
+          Buffer buf = Buffer.buffer();
           byte[] tmp = new byte[256];
           resp = req.response();
           for (int l = 0; l != -1; l = in.read(tmp)) {
@@ -58,10 +67,10 @@ public class SockJSBootstrap {
             String ext = path.substring(li + 1, path.length());
             String contentType = MimeMapping.getMimeTypeForExtension(ext);
             if (contentType != null) {
-              resp.putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_TYPE, contentType);
+              resp.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
             }
           }
-          resp.putHeader(org.vertx.java.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(buf.length()));
+          resp.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(buf.length()));
           resp.write(buf);
         } else {
           resp.setStatusCode(404);
@@ -72,17 +81,13 @@ public class SockJSBootstrap {
         resp.end();
       }
     });
-    SockJSServer sockJSServer = vertx.createSockJSServer(httpServer);
-    JsonObject config = new JsonObject().putString("prefix", "/term");
-    sockJSServer.installApp(config, socket -> {
-      SockJSTtyConnection conn = new SockJSTtyConnection(vertx, socket);
-      handler.accept(conn);
-    });
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.requestHandler(router::accept);
     httpServer.listen(port, host, event -> {
       if (event.succeeded()) {
-        completionHandler.accept(new DefaultFutureResult<>((Void) null));
+        completionHandler.accept(Future.succeededFuture());
       } else {
-        completionHandler.accept(new DefaultFutureResult<Void>(event.cause()));
+        completionHandler.accept(Future.failedFuture(event.cause()));
       }
     });
   }
