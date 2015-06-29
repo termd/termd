@@ -41,7 +41,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private Consumer<String> termHandler;
   protected TelnetConnection conn;
   private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
-  private final SignalDecoder signalDecoder = new SignalDecoder(3).setReadHandler(readBuffer);
+  private final SignalDecoder signalDecoder = new SignalDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, event -> conn.write(event));
 

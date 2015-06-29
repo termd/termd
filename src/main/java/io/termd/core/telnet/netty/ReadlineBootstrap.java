@@ -136,8 +136,12 @@ public class ReadlineBootstrap {
 
       @Override
       public void accept(Signal event) {
-        if (sleeping) {
-          interrupt();
+        System.out.println("event = " + event);
+        switch (event) {
+          case INTR:
+            if (sleeping) {
+              interrupt();
+            }
         }
       }
 

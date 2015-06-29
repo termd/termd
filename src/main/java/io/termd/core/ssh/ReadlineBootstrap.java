@@ -196,10 +196,12 @@ public class ReadlineBootstrap {
 
         // Signal handling
         int vintr = getControlChar(env, PtyMode.VINTR, 3);
+        int vsusp = getControlChar(env, PtyMode.VSUSP, 26);
+        int veof = getControlChar(env, PtyMode.VEOF, 4);
 
         //
         readBuffer = new ReadBuffer(this::schedule);
-        signalDecoder = new SignalDecoder(vintr).setReadHandler(readBuffer);
+        signalDecoder = new SignalDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
         decoder = new BinaryDecoder(512, charset, signalDecoder);
         encoder = new BinaryEncoder(512, charset, out);
         term = env.getEnv().get("TERM");

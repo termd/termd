@@ -23,8 +23,8 @@ public enum Signal {
 
   EOF,
 
-  INT,
+  INTR,
 
-  STOP
+  SUSP
 
 }

@@ -129,7 +129,7 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
           boolean interrupted; // Signal state
           @Override
           public void accept(Signal signal) {
-            if (signal == Signal.INT) {
+            if (signal == Signal.INTR) {
               if (!interrupted) {
                 interrupted = true;
                 process.destroy();

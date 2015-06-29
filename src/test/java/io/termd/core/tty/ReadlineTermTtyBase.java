@@ -120,7 +120,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
             super.onOpen(conn);
             setReadHandler(event -> Helper.appendTo(event, buffer));
             setSignalHandler(event -> {
-              if (event == Signal.INT) {
+              if (event == Signal.INTR) {
                 switch (count) {
                   case 0:
                     assertEquals("hello", buffer.toString());
@@ -143,6 +143,46 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     });
     assertConnect();
     assertWrite('h','e','l','l','o',3,'b','y','e',3);
+    await();
+  }
+
+  @Test
+  public void testSignals() throws Exception {
+    server(new Supplier<TelnetHandler>() {
+      @Override
+      public TelnetHandler get() {
+        return new TelnetTtyConnection() {
+          StringBuilder buffer = new StringBuilder();
+          int count = 0;
+          @Override
+          protected void onOpen(TelnetConnection conn) {
+            super.onOpen(conn);
+            setReadHandler(event -> Helper.appendTo(event, buffer));
+            setSignalHandler(event -> {
+              switch (count) {
+                case 0:
+                  assertEquals(Signal.INTR, event);
+                  count = 1;
+                  break;
+                case 1:
+                  assertEquals(Signal.EOF, event);
+                  count = 2;
+                  break;
+                case 2:
+                  assertEquals(Signal.SUSP, event);
+                  count = 3;
+                  testComplete();
+                  break;
+                default:
+                  fail("Not expected");
+              }
+            });
+          }
+        };
+      }
+    });
+    assertConnect();
+    assertWrite(3, 4, 26);
     await();
   }
 

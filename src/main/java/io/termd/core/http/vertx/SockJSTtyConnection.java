@@ -49,7 +49,7 @@ public class SockJSTtyConnection implements TtyConnection {
       context.runOnContext(event -> command.run());
     }
   });
-  private final SignalDecoder signalDecoder = new SignalDecoder(3).setReadHandler(readBuffer);
+  private final SignalDecoder signalDecoder = new SignalDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
     @Override

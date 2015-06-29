@@ -26,9 +26,13 @@ public class SignalDecoder implements Consumer<int[]> {
   private Consumer<int[]> readHandler;
   private Consumer<Signal> signalHandler;
   private final int vintr;
+  private final int veof;
+  private final int vsusp;
 
-  public SignalDecoder(int vintr) {
+  public SignalDecoder(int vintr, int vsusp, int veof) {
     this.vintr = vintr;
+    this.vsusp = vsusp;
+    this.veof = veof;
   }
 
   public Consumer<int[]> getReadHandler() {
@@ -52,23 +56,35 @@ public class SignalDecoder implements Consumer<int[]> {
   @Override
   public void accept(int[] data) {
     if (signalHandler != null) {
-      for (int i = 0;i < data.length;i++) {
-        if (data[i] == vintr) {
+      int index = 0;
+      while (index < data.length) {
+        int val = data[index];
+        Signal signal = null;
+        if (val == vintr) {
+          signal = Signal.INTR;
+        } else if (val == vsusp) {
+          signal = Signal.SUSP;
+        } else if (val == veof) {
+          signal = Signal.EOF;
+        }
+        if (signal != null) {
           if (signalHandler != null) {
             if (readHandler != null) {
-              int[] a = new int[i];
-              if (i > 0) {
-                System.arraycopy(data, 0, a, 0, i);
+              int[] a = new int[index];
+              if (index > 0) {
+                System.arraycopy(data, 0, a, 0, index);
                 readHandler.accept(a);
               }
             }
-            signalHandler.accept(Signal.INT);
-            int[] a = new int[data.length - i - 1];
-            System.arraycopy(data, i + 1, a, 0, a.length);
+            signalHandler.accept(signal);
+            int[] a = new int[data.length - index - 1];
+            System.arraycopy(data, index + 1, a, 0, a.length);
             data = a;
-            i = 0;
+            index = 0;
+            continue;
           }
         }
+        index++;
       }
     }
     if (readHandler != null && data.length > 0) {
