@@ -21,15 +21,15 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SignalDecoder implements Consumer<int[]> {
+public class TtyEventDecoder implements Consumer<int[]> {
 
   private Consumer<int[]> readHandler;
-  private Consumer<Signal> signalHandler;
+  private Consumer<TtyEvent> eventHandler;
   private final int vintr;
   private final int veof;
   private final int vsusp;
 
-  public SignalDecoder(int vintr, int vsusp, int veof) {
+  public TtyEventDecoder(int vintr, int vsusp, int veof) {
     this.vintr = vintr;
     this.vsusp = vsusp;
     this.veof = veof;
@@ -39,36 +39,36 @@ public class SignalDecoder implements Consumer<int[]> {
     return readHandler;
   }
 
-  public SignalDecoder setReadHandler(Consumer<int[]> readHandler) {
+  public TtyEventDecoder setReadHandler(Consumer<int[]> readHandler) {
     this.readHandler = readHandler;
     return this;
   }
 
-  public Consumer<Signal> getSignalHandler() {
-    return signalHandler;
+  public Consumer<TtyEvent> getEventHandler() {
+    return eventHandler;
   }
 
-  public SignalDecoder setSignalHandler(Consumer<Signal> signalHandler) {
-    this.signalHandler = signalHandler;
+  public TtyEventDecoder setEventHandler(Consumer<TtyEvent> eventHandler) {
+    this.eventHandler = eventHandler;
     return this;
   }
 
   @Override
   public void accept(int[] data) {
-    if (signalHandler != null) {
+    if (eventHandler != null) {
       int index = 0;
       while (index < data.length) {
         int val = data[index];
-        Signal signal = null;
+        TtyEvent event = null;
         if (val == vintr) {
-          signal = Signal.INTR;
+          event = TtyEvent.INTR;
         } else if (val == vsusp) {
-          signal = Signal.SUSP;
+          event = TtyEvent.SUSP;
         } else if (val == veof) {
-          signal = Signal.EOF;
+          event = TtyEvent.EOF;
         }
-        if (signal != null) {
-          if (signalHandler != null) {
+        if (event != null) {
+          if (eventHandler != null) {
             if (readHandler != null) {
               int[] a = new int[index];
               if (index > 0) {
@@ -76,7 +76,7 @@ public class SignalDecoder implements Consumer<int[]> {
                 readHandler.accept(a);
               }
             }
-            signalHandler.accept(signal);
+            eventHandler.accept(event);
             int[] a = new int[data.length - index - 1];
             System.arraycopy(data, index + 1, a, 0, a.length);
             data = a;

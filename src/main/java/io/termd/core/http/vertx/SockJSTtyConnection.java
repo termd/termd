@@ -20,8 +20,8 @@ import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.ReadBuffer;
-import io.termd.core.tty.Signal;
-import io.termd.core.tty.SignalDecoder;
+import io.termd.core.tty.TtyEvent;
+import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
 import io.vertx.core.Context;
@@ -50,8 +50,8 @@ public class SockJSTtyConnection implements TtyConnection {
       context.runOnContext(event -> command.run());
     }
   });
-  private final SignalDecoder signalDecoder = new SignalDecoder(3, 26, 4).setReadHandler(readBuffer);
-  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
+  private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
+  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, new Consumer<byte[]>() {
     @Override
     public void accept(byte[] event) {
@@ -108,13 +108,13 @@ public class SockJSTtyConnection implements TtyConnection {
   }
 
   @Override
-  public Consumer<Signal> getSignalHandler() {
-    return signalDecoder.getSignalHandler();
+  public Consumer<TtyEvent> getEventHandler() {
+    return eventDecoder.getEventHandler();
   }
 
   @Override
-  public void setSignalHandler(Consumer<Signal> handler) {
-    signalDecoder.setSignalHandler(handler);
+  public void setEventHandler(Consumer<TtyEvent> handler) {
+    eventDecoder.setEventHandler(handler);
   }
 
   @Override

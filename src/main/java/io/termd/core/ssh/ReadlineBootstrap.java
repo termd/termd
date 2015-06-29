@@ -17,22 +17,19 @@
 package io.termd.core.ssh;
 
 import io.termd.core.tty.ReadBuffer;
-import io.termd.core.tty.Signal;
-import io.termd.core.tty.SignalDecoder;
+import io.termd.core.tty.TtyEvent;
+import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.util.Dimension;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.tty.TtyConnection;
 import org.apache.sshd.SshServer;
-import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.PtyMode;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.SessionAware;
-import org.apache.sshd.server.SignalListener;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
@@ -43,7 +40,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,7 +61,7 @@ public class ReadlineBootstrap {
 
       private Charset charset;
       private String term;
-      private SignalDecoder signalDecoder;
+      private TtyEventDecoder eventDecoder;
       private ReadBuffer readBuffer;
       private BinaryDecoder decoder;
       private BinaryEncoder encoder;
@@ -113,13 +109,13 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Consumer<Signal> getSignalHandler() {
-        return signalDecoder.getSignalHandler();
+      public Consumer<TtyEvent> getEventHandler() {
+        return eventDecoder.getEventHandler();
       }
 
       @Override
-      public void setSignalHandler(Consumer<Signal> handler) {
-        signalDecoder.setSignalHandler(handler);
+      public void setEventHandler(Consumer<TtyEvent> handler) {
+        eventDecoder.setEventHandler(handler);
       }
 
       @Override
@@ -200,15 +196,15 @@ public class ReadlineBootstrap {
         env.addSignalListener(signal -> updateSize(env), EnumSet.of(org.apache.sshd.server.Signal.WINCH));
         updateSize(env);
 
-        // Signal handling
+        // Event handling
         int vintr = getControlChar(env, PtyMode.VINTR, 3);
         int vsusp = getControlChar(env, PtyMode.VSUSP, 26);
         int veof = getControlChar(env, PtyMode.VEOF, 4);
 
         //
         readBuffer = new ReadBuffer(this::schedule);
-        signalDecoder = new SignalDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
-        decoder = new BinaryDecoder(512, charset, signalDecoder);
+        eventDecoder = new TtyEventDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
+        decoder = new BinaryDecoder(512, charset, eventDecoder);
         encoder = new BinaryEncoder(512, charset, out);
         term = env.getEnv().get("TERM");
 

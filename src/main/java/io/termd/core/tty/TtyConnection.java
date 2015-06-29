@@ -36,9 +36,9 @@ public interface TtyConnection {
 
   void setResizeHandler(Consumer<Dimension> handler);
 
-  Consumer<Signal> getSignalHandler();
+  Consumer<TtyEvent> getEventHandler();
 
-  void setSignalHandler(Consumer<Signal> handler);
+  void setEventHandler(Consumer<TtyEvent> handler);
 
   Consumer<int[]> getReadHandler();
 

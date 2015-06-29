@@ -4,7 +4,7 @@ import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.telnet.TestBase;
-import io.termd.core.tty.Signal;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
 import org.junit.Test;
@@ -121,11 +121,11 @@ public class ReadlineTest extends TestBase {
           throw new UnsupportedOperationException();
         }
         @Override
-        public Consumer<Signal> getSignalHandler() {
+        public Consumer<TtyEvent> getEventHandler() {
           throw new UnsupportedOperationException();
         }
         @Override
-        public void setSignalHandler(Consumer<Signal> handler) {
+        public void setEventHandler(Consumer<TtyEvent> handler) {
           throw new UnsupportedOperationException();
         }
         @Override

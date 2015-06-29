@@ -20,7 +20,7 @@ import io.termd.core.io.BinaryDecoder;
 import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
-import io.termd.core.tty.Signal;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 
@@ -125,11 +125,12 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
       ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
       try {
         final Process process = builder.start();
-        conn.setSignalHandler(new Consumer<Signal>() {
+        conn.setEventHandler(new Consumer<TtyEvent>() {
           boolean interrupted; // Signal state
+
           @Override
-          public void accept(Signal signal) {
-            if (signal == Signal.INTR) {
+          public void accept(TtyEvent event) {
+            if (event == TtyEvent.INTR) {
               if (!interrupted) {
                 interrupted = true;
                 process.destroy();
@@ -161,7 +162,7 @@ public class NativeProcessBootstrap implements Consumer<TtyConnection> {
       }
 
       // Read line again
-      conn.setSignalHandler(null);
+      conn.setEventHandler(null);
       conn.schedule(() -> read(conn, readline));
     }
   }

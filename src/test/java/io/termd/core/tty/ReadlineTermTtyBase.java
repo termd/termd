@@ -119,8 +119,8 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
             setReadHandler(event -> Helper.appendTo(event, buffer));
-            setSignalHandler(event -> {
-              if (event == Signal.INTR) {
+            setEventHandler(event -> {
+              if (event == TtyEvent.INTR) {
                 switch (count) {
                   case 0:
                     assertEquals("hello", buffer.toString());
@@ -158,18 +158,18 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
             setReadHandler(event -> Helper.appendTo(event, buffer));
-            setSignalHandler(event -> {
+            setEventHandler(event -> {
               switch (count) {
                 case 0:
-                  assertEquals(Signal.INTR, event);
+                  assertEquals(TtyEvent.INTR, event);
                   count = 1;
                   break;
                 case 1:
-                  assertEquals(Signal.EOF, event);
+                  assertEquals(TtyEvent.EOF, event);
                   count = 2;
                   break;
                 case 2:
-                  assertEquals(Signal.SUSP, event);
+                  assertEquals(TtyEvent.SUSP, event);
                   count = 3;
                   testComplete();
                   break;
@@ -232,11 +232,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            setSignalHandler(new Consumer<Signal>() {
+            setEventHandler(new Consumer<TtyEvent>() {
               StringBuilder buffer = new StringBuilder();
               AtomicInteger count = new AtomicInteger();
+
               @Override
-              public void accept(Signal event) {
+              public void accept(TtyEvent event) {
                 setReadHandler(new Consumer<int[]>() {
                   @Override
                   public void accept(int[] event) {

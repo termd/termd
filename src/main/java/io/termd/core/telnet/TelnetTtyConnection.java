@@ -17,8 +17,8 @@
 package io.termd.core.telnet;
 
 import io.termd.core.tty.ReadBuffer;
-import io.termd.core.tty.Signal;
-import io.termd.core.tty.SignalDecoder;
+import io.termd.core.tty.TtyEvent;
+import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.util.Dimension;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
@@ -42,8 +42,8 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
   private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
-  private final SignalDecoder signalDecoder = new SignalDecoder(3, 26, 4).setReadHandler(readBuffer);
-  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, signalDecoder);
+  private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
+  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, event -> conn.write(event));
 
   public TelnetTtyConnection() {
@@ -135,13 +135,13 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<Signal> getSignalHandler() {
-    return signalDecoder.getSignalHandler();
+  public Consumer<TtyEvent> getEventHandler() {
+    return eventDecoder.getEventHandler();
   }
 
   @Override
-  public void setSignalHandler(Consumer<Signal> handler) {
-    signalDecoder.setSignalHandler(handler);
+  public void setEventHandler(Consumer<TtyEvent> handler) {
+    eventDecoder.setEventHandler(handler);
   }
 
   @Override

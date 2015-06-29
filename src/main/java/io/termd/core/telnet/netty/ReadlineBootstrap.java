@@ -22,7 +22,7 @@ import io.termd.core.term.Capability;
 import io.termd.core.term.Device;
 import io.termd.core.term.Feature;
 import io.termd.core.term.TermInfo;
-import io.termd.core.tty.Signal;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 import io.termd.core.telnet.TelnetTtyConnection;
@@ -121,7 +121,7 @@ public class ReadlineBootstrap {
       read(conn, readline);
     }
 
-    class Task extends Thread implements Consumer<Signal> {
+    class Task extends Thread implements Consumer<TtyEvent> {
 
       final TtyConnection conn;
       final Readline readline;
@@ -135,7 +135,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void accept(Signal event) {
+      public void accept(TtyEvent event) {
         System.out.println("event = " + event);
         switch (event) {
           case INTR:
@@ -148,7 +148,7 @@ public class ReadlineBootstrap {
       @Override
       public void run() {
         conn.write("Running " + line + "\r\n");
-        conn.setSignalHandler(this);
+        conn.setEventHandler(this);
         sleeping = true;
         try {
           Thread.sleep(3000);
@@ -156,7 +156,7 @@ public class ReadlineBootstrap {
           conn.write("Interrupted\r\n");
         } finally {
           sleeping = false;
-          conn.setSignalHandler(null);
+          conn.setEventHandler(null);
         }
         read(conn, readline);
       }
