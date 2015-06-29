@@ -109,8 +109,8 @@ public enum Option {
     @Override
     void handleParameters(TelnetConnection session, byte[] parameters) {
       if (parameters.length == 4) {
-        int width = (parameters[0] << 8) + parameters[1];
-        int height = (parameters[2] << 8) + parameters[3];
+        int width = ((parameters[0] & 0xff) << 8) + (parameters[1] & 0xff);
+        int height = ((parameters[2] & 0xff) << 8) + (parameters[3] & 0xff);
         session.handler.onSize(width, height);
       }
     }

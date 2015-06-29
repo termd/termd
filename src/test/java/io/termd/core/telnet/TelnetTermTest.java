@@ -19,16 +19,12 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetTermTest extends TelnetTestBase {
-
-  @Override
-  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return VERTX_SERVER;
-  }
+public abstract class TelnetTermTest extends TelnetTestBase {
 
   @Test
-  public void testSizeHanlder() throws Exception {
-    final CountDownLatch latch = new CountDownLatch(1);
+  public void testSizeHandler() throws Exception {
+    final CountDownLatch latch1 = new CountDownLatch(1);
+    final CountDownLatch latch2 = new CountDownLatch(1);
     server(() -> {
       final AtomicInteger count = new AtomicInteger();
       final TelnetTtyConnection connection = new TelnetTtyConnection();
@@ -37,15 +33,20 @@ public class TelnetTermTest extends TelnetTestBase {
           case 0:
             assertEquals(20, size.getWidth());
             assertEquals(10, size.getHeight());
-            latch.countDown();
+            latch1.countDown();
             break;
           case 1:
             assertEquals(80, size.getWidth());
             assertEquals(24, size.getHeight());
+            latch2.countDown();
+            break;
+          case 2:
+            assertEquals(180, size.getWidth());
+            assertEquals(160, size.getHeight());
             connection.setResizeHandler(null);
             connection.setResizeHandler(size1 -> {
-              assertEquals(80, size1.getWidth());
-              assertEquals(24, size1.getHeight());
+              assertEquals(180, size1.getWidth());
+              assertEquals(160, size1.getHeight());
               testComplete();
             });
             break;
@@ -66,8 +67,11 @@ public class TelnetTermTest extends TelnetTestBase {
     };
     client.addOptionHandler(optionHandler);
     client.connect("localhost", 4000);
-    latch.await(30, TimeUnit.SECONDS);
+    latch1.await(30, TimeUnit.SECONDS);
     out.get().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, 80, 0, 24, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
+    out.get().flush();
+    latch2.await(30, TimeUnit.SECONDS);
+    out.get().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, (byte) 180, 0, (byte) 160, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
     out.get().flush();
     await();
   }
