@@ -40,8 +40,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetHandlerTest extends TelnetTestBase {
-
+public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   private void testOptionValue(Supplier<TelnetHandler> factory, TelnetOptionHandler optionHandler) throws Exception {
     server(factory);

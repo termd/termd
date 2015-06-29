@@ -42,17 +42,17 @@ public class TestBase {
     latch.countDown();
   }
 
-  protected AssertionError failure(String msg) {
+  protected static AssertionError failure(String msg) {
     return new AssertionError(msg);
   }
 
-  protected AssertionError failure(String msg, Throwable cause) {
+  protected static AssertionError failure(String msg, Throwable cause) {
     AssertionError afe = new AssertionError(msg);
     afe.initCause(cause);
     return afe;
   }
 
-  protected AssertionError failure(Throwable cause) {
+  protected static AssertionError failure(Throwable cause) {
     if (cause instanceof AssertionError) {
       return (AssertionError) cause;
     } else {

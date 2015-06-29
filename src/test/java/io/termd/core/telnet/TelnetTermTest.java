@@ -5,6 +5,7 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -12,12 +13,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TelnetTermTest extends TelnetTestBase {
+
+  @Override
+  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
+    return VERTX_SERVER;
+  }
 
   @Test
   public void testSizeHanlder() throws Exception {
