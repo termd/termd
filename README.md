@@ -17,6 +17,10 @@ An open source terminal daemon library providing terminal handling in Java.
 - Unicode support
 - Terminfo capabilities
 
+### Licensing
+
+ASL 2.0
+
 ### Todo
 
 - handle % stuff in parser
