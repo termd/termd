@@ -15,7 +15,6 @@
  */
 package io.termd.core.telnet.vertx;
 
-import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -44,6 +43,6 @@ public class TelnetSocketHandler implements Handler<NetSocket> {
     final VertxTelnetConnection connection = new VertxTelnetConnection(handler, Vertx.currentContext(), socket);
     socket.handler(event -> connection.receive(event.getBytes()));
     socket.closeHandler(event -> connection.onClose());
-    connection.init();
+    connection.onInit();
   }
 }

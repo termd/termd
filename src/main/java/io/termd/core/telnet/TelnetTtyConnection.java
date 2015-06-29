@@ -39,6 +39,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private String terminalType;
   private Consumer<Dimension> resizeHandler;
   private Consumer<String> termHandler;
+  private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
   private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
   private final SignalDecoder signalDecoder = new SignalDecoder(3, 26, 4).setReadHandler(readBuffer);
@@ -156,5 +157,27 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   @Override
   public Consumer<int[]> writeHandler() {
     return encoder;
+  }
+
+  @Override
+  public void setCloseHandler(Consumer<Void> closeHandler) {
+    this.closeHandler = closeHandler;
+  }
+
+  @Override
+  public Consumer<Void> closeHandler() {
+    return closeHandler;
+  }
+
+  @Override
+  protected void onClose() {
+    if (closeHandler != null) {
+      closeHandler.accept(null);
+    }
+  }
+
+  @Override
+  public void close() {
+    conn.close();
   }
 }

@@ -42,6 +42,7 @@ public class SockJSTtyConnection implements TtyConnection {
   private final SockJSSocket socket;
   private Dimension size = null;
   private Consumer<Dimension> resizeHandler;
+  private Consumer<Void> closeHandler;
   private final Context context;
   private final ReadBuffer readBuffer = new ReadBuffer(new Executor() {
     @Override
@@ -59,6 +60,9 @@ public class SockJSTtyConnection implements TtyConnection {
   });
 
   public SockJSTtyConnection(SockJSSocket socket) {
+
+    // Todo handle socket close handler ?
+
     this.socket = socket;
     this.context = Vertx.currentContext();
 
@@ -126,5 +130,21 @@ public class SockJSTtyConnection implements TtyConnection {
   @Override
   public Consumer<int[]> writeHandler() {
     return encoder;
+  }
+
+  @Override
+  public void setCloseHandler(Consumer<Void> closeHandler) {
+    this.closeHandler = closeHandler;
+  }
+
+  @Override
+  public Consumer<Void> closeHandler() {
+    return closeHandler;
+  }
+
+  @Override
+  public void close() {
+    // Should we call the close handler ? there is no close handler on sockjs socket
+    socket.close();
   }
 }

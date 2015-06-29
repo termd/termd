@@ -290,4 +290,28 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     assertWrite("bye");
     await();
   }
+
+  @Test
+  public void testConnectionClose() throws Exception {
+    server(new Supplier<TelnetHandler>() {
+      @Override
+      public TelnetHandler get() {
+        return new TelnetTtyConnection() {
+          @Override
+          protected void onOpen(TelnetConnection conn) {
+            setCloseHandler(v -> {
+              testComplete();
+            });
+            setReadHandler(text -> {
+              close();
+            });
+            super.onOpen(conn);
+          }
+        };
+      }
+    });
+    assertConnect();
+    assertWrite("bye");
+    await();
+  }
 }

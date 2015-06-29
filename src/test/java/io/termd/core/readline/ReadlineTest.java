@@ -144,6 +144,18 @@ public class ReadlineTest extends TestBase {
         public void schedule(Runnable task) {
           throw new UnsupportedOperationException();
         }
+        @Override
+        public void setCloseHandler(Consumer<Void> closeHandler) {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public Consumer<Void> closeHandler() {
+          throw new UnsupportedOperationException();
+        }
+        @Override
+        public void close() {
+          throw new UnsupportedOperationException();
+        }
       }, "% ", readlineHandler);
     }
 

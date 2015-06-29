@@ -58,9 +58,11 @@ public abstract class TelnetConnection {
     paramsBuffer[paramsLength++] = b;
   }
 
-  public void init() {
+  public void onInit() {
     handler.onOpen(this);
   }
+
+  public abstract void close();
 
   /**
    * Write a <i>do</i> option request to the client.

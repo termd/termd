@@ -49,7 +49,7 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     this.conn = new NettyTelnetConnection(factory.get(), ctx);
-    conn.init();
+    conn.onInit();
   }
 
   @Override

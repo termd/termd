@@ -62,4 +62,9 @@ public class NettyTelnetConnection extends TelnetConnection {
   protected void onClose() {
     super.onClose();
   }
+
+  @Override
+  public void close() {
+    context.close();
+  }
 }

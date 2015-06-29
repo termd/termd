@@ -54,6 +54,12 @@ public interface TtyConnection {
    */
   Consumer<int[]> writeHandler();
 
+  void setCloseHandler(Consumer<Void> closeHandler);
+
+  Consumer<Void> closeHandler();
+
+  void close();
+
   /**
    * Write a string to the client.
    *

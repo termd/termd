@@ -73,6 +73,8 @@ public class ReadlineBootstrap {
       private Dimension size = null;
       private Consumer<Dimension> resizeHandler;
       private Consumer<String> termHandler;
+      private Consumer<Void> closeHandler;
+      private ChannelSession session;
 
       @Override
       public Consumer<int[]> getReadHandler() {
@@ -126,7 +128,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void setChannelSession(final ChannelSession session) {
+      public void setChannelSession(ChannelSession session) {
 
 
         // Set data receiver at this moment to prevent setting a blocking input stream
@@ -143,9 +145,13 @@ public class ReadlineBootstrap {
 
           @Override
           public void close() throws IOException {
-
+            if (closeHandler != null) {
+              closeHandler.accept(null);
+            }
           }
         });
+
+        this.session = session;
       }
 
       @Override
@@ -239,6 +245,21 @@ public class ReadlineBootstrap {
 
       @Override
       public void destroy() {
+      }
+
+      @Override
+      public void setCloseHandler(Consumer<Void> closeHandler) {
+        this.closeHandler = closeHandler;
+      }
+
+      @Override
+      public Consumer<Void> closeHandler() {
+        return closeHandler;
+      }
+
+      @Override
+      public void close() {
+        session.close(false);
       }
     }
 

@@ -62,4 +62,9 @@ public class VertxTelnetConnection extends TelnetConnection {
   public void onClose() {
     super.onClose();
   }
+
+  @Override
+  public void close() {
+    socket.close();
+  }
 }
