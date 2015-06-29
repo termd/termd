@@ -129,7 +129,7 @@ public abstract class TelnetConnection {
     }
   }
 
-  public void close() {
+  protected void onClose() {
     handler.onClose();
   }
 

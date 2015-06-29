@@ -57,4 +57,9 @@ public class VertxTelnetConnection extends TelnetConnection {
       pending.appendBytes(data);
     }
   }
+
+  @Override
+  public void onClose() {
+    super.onClose();
+  }
 }

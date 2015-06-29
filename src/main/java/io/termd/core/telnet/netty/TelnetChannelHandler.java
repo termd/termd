@@ -54,7 +54,7 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    conn.close();
+    conn.onClose();
     this.conn = null;
   }
 

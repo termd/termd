@@ -41,9 +41,9 @@ public class TelnetSocketHandler implements Handler<NetSocket> {
   @Override
   public void handle(final NetSocket socket) {
     TelnetHandler handler = factory.get();
-    final TelnetConnection connection = new VertxTelnetConnection(handler, Vertx.currentContext(), socket);
+    final VertxTelnetConnection connection = new VertxTelnetConnection(handler, Vertx.currentContext(), socket);
     socket.handler(event -> connection.receive(event.getBytes()));
-    socket.closeHandler(event -> connection.close());
+    socket.closeHandler(event -> connection.onClose());
     connection.init();
   }
 }

@@ -57,4 +57,9 @@ public class NettyTelnetConnection extends TelnetConnection {
       pending.writeBytes(data);
     }
   }
+
+  @Override
+  protected void onClose() {
+    super.onClose();
+  }
 }
