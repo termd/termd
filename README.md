@@ -2,6 +2,8 @@
 
 An open source terminal daemon library providing terminal handling in Java under ASL 2.0
 
+[![Build Status](https://termd.ci.cloudbees.com/buildStatus/icon?job=termd-core)](https://termd.ci.cloudbees.com/job/termd-core/)
+
 ### Features
 
 - Telnet protocol using _Vert.x 3_ or _Netty 4_
