@@ -4,7 +4,7 @@ An open source terminal daemon library providing terminal handling in Java under
 
 ### Features
 
-- Telnet protocol using _Vert.x_ or _Netty_
+- Telnet protocol using _Vert.x 3_ or _Netty 4_
 - SSH protocol using _Apache SSHD_
 - Web interface using _term.js_ and _SockJS_
 - Event based design
