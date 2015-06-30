@@ -1,6 +1,6 @@
 ## Termd
 
-An open source terminal daemon library providing terminal handling in Java.
+An open source terminal daemon library providing terminal handling in Java under ASL 2.0
 
 ### Features
 
@@ -16,10 +16,6 @@ An open source terminal daemon library providing terminal handling in Java.
    - multiline support
 - Unicode support
 - Terminfo capabilities
-
-### Licensing
-
-ASL 2.0
 
 ### Todo
 
