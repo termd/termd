@@ -4,6 +4,18 @@ An open source terminal daemon library providing terminal handling in Java under
 
 [![Build Status](https://termd.ci.cloudbees.com/buildStatus/icon?job=termd-core)](https://termd.ci.cloudbees.com/job/termd-core/)
 
+### Consuming the lib
+
+Build it yourself or consume the snapshot from [Sonatype OSS repository](https://oss.sonatype.org/content/repositories/snapshots/io/termd/termd-core/)
+
+```
+<dependency>
+  <groupId>io.termd</groupId>
+  <artifactId>termd-core</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
 ### Features
 
 - Telnet protocol using _Vert.x 3_ or _Netty 4_
