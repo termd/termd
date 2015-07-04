@@ -92,7 +92,7 @@ public class Readline {
           }
           if (lineStatus == LineStatus.ESCAPED) {
             filter.accept((int) '\r'); // Correct status
-            term.writeHandler().accept(new int[]{'\r', '\n', '>', ' '});
+            term.write("\r\n> ");
             lineBuffer.setSize(0);
             copy.setSize(0);
           } else {
@@ -103,7 +103,7 @@ public class Readline {
             escaped.clear();
             lines.add(l);
             if (lineStatus == LineStatus.QUOTED) {
-              term.writeHandler().accept(new int[]{'\r', '\n', '>', ' '});
+              term.write("\r\n> ");
               lineBuffer.setSize(0);
               copy.setSize(0);
             } else {
@@ -119,7 +119,7 @@ public class Readline {
               }
               lines.clear();
               escaped.clear();
-              term.writeHandler().accept(new int[]{'\r', '\n'});
+              term.write("\r\n");
               lineBuffer.setSize(0);
               term.setReadHandler(previousEventHandler);
               requestHandler.accept(raw.toString());
