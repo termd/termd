@@ -173,7 +173,7 @@ public class ReadlineBootstrap {
 
       @Override
       public void schedule(Runnable task) {
-        new Thread(task).start(); // Not awesome but ok for now and testing
+        session.getSession().getFactoryManager().getScheduledExecutorService().execute(task);
       }
 
       @Override
@@ -265,6 +265,8 @@ public class ReadlineBootstrap {
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
     sshd.setPasswordAuthenticator((username, password, session) -> true);
     sshd.start();
+
+
 
   }
 

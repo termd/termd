@@ -39,6 +39,13 @@ public class LineBuffer implements Iterable<Integer> {
     size = that.size;
   }
 
+  public int getAt(int index) {
+    if (index < 0 | index >= size) {
+      throw new IndexOutOfBoundsException();
+    }
+    return data[index];
+  }
+
   @Override
   public Iterator<Integer> iterator() {
     return new Iterator<Integer>() {
@@ -126,7 +133,7 @@ public class LineBuffer implements Iterable<Integer> {
     return sb.toString();
   }
 
-  public LinkedList<Integer> compute(LineBuffer target) {
+  public int[] compute(LineBuffer target) {
 
     LinkedList<Integer> ret = new LinkedList<>();
 
@@ -180,6 +187,6 @@ public class LineBuffer implements Iterable<Integer> {
     }
 
     //
-    return ret;
+    return ret.stream().mapToInt(i->i).toArray();
   }
 }

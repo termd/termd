@@ -1,19 +1,8 @@
 package io.termd.core.readline;
 
-import io.termd.core.readline.functions.BackwardChar;
-import io.termd.core.readline.functions.BackwardDeleteChar;
-import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.telnet.TestBase;
-import io.termd.core.tty.TtyEvent;
-import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Dimension;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -46,154 +35,7 @@ public class ReadlineTest extends TestBase {
     }
   }
 
-  class Term {
-
-    private int[][] buffer = new int[10][];
-    private int row;
-    private int cursor;
-    Consumer<int[]> writeHandler = new Consumer<int[]>() {
-      @Override
-      public void accept(int[] event) {
-        for (int i : event) {
-          if (buffer[row] == null) {
-            buffer[row] = new int[100];
-          }
-          if (i >= 32) {
-            buffer[row][cursor++] = i;
-          } else {
-            switch (i) {
-              case '\r':
-                cursor = 0;
-                break;
-              case '\n':
-                row++;
-                break;
-              case '\b':
-                if (cursor > 0) {
-                  cursor--;
-                } else {
-                  throw new UnsupportedOperationException();
-                }
-                break;
-            }
-          }
-        }
-      }
-    };
-    final Readline handler;
-
-    private Consumer<int[]> readHandler;
-
-    public Term() {
-      Keymap keymap = InputrcParser.create();
-      handler = new Readline(keymap);
-      handler.addFunction(new BackwardDeleteChar());
-      handler.addFunction(new BackwardChar());
-      handler.addFunction(new ForwardChar());
-    }
-
-    public void readlineFail() {
-      readline(event -> fail("Was not accepting a call"));
-    }
-
-    public Supplier<String> readlineComplete() {
-      final AtomicReference<String> queue = new AtomicReference<>();
-      readline(event -> queue.compareAndSet(null, event));
-      return () -> queue.get();
-    }
-
-    public void readline(Consumer<String> readlineHandler) {
-      handler.readline(new TtyConnection() {
-        @Override
-        public Consumer<String> getTermHandler() {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public void setTermHandler(Consumer<String> handler) {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public Consumer<Dimension> getResizeHandler() {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public void setResizeHandler(Consumer<Dimension> handler) {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public Consumer<TtyEvent> getEventHandler() {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public void setEventHandler(Consumer<TtyEvent> handler) {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public Consumer<int[]> getReadHandler() {
-          return readHandler;
-        }
-        @Override
-        public void setReadHandler(Consumer<int[]> handler) {
-          readHandler = handler;
-        }
-        @Override
-        public Consumer<int[]> writeHandler() {
-          return writeHandler;
-        }
-        @Override
-        public void schedule(Runnable task) {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public void setCloseHandler(Consumer<Void> closeHandler) {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public Consumer<Void> closeHandler() {
-          throw new UnsupportedOperationException();
-        }
-        @Override
-        public void close() {
-          throw new UnsupportedOperationException();
-        }
-      }, "% ", readlineHandler);
-    }
-
-    private List<String> render() {
-      List<String> lines = new ArrayList<>();
-      for (int[] row : buffer) {
-        if (row == null) {
-          break;
-        }
-        StringBuilder line = new StringBuilder();
-        for (int codePoint : row) {
-          if (codePoint < 32) {
-            break;
-          }
-          line.appendCodePoint(codePoint);
-        }
-        lines.add(line.toString());
-      }
-      return lines;
-    }
-
-    void assertScreen(String... expected) {
-      List<String> lines = render();
-      assertEquals(Arrays.asList(expected), lines);
-    }
-
-    void assertAt(int row, int cursor) {
-      assertEquals(row, this.row);
-      assertEquals(cursor, this.cursor);
-    }
-
-    void read(int... data) {
-      readHandler.accept(data);
-    }
-
-  }
-
-/*
+  /*
   @Test
   public void testPrompt() {
     Term term = new Term();
@@ -204,7 +46,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testEnter() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readline(event -> testComplete());
     term.read('\r');
     term.assertScreen("% ");
@@ -214,7 +56,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testInsertChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.assertScreen("% A");
@@ -223,7 +65,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testInsertCharEnter() throws Exception {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     Supplier<String> line = term.readlineComplete();
     term.read('A');
     term.read('\r');
@@ -234,7 +76,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testEscapeCR() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('\\');
     term.assertScreen("% \\");
@@ -248,7 +90,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardDeleteChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.read(BACKWARD_DELETE_CHAR);
@@ -258,7 +100,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardDelete() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
@@ -269,7 +111,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardDeleteLastChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.read('B');
@@ -282,7 +124,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardCharBackwardDeleteChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.read('B');
@@ -296,7 +138,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardDeleteEscape() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('\\');
     term.assertScreen("% \\");
@@ -309,7 +151,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testBackwardChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read(BACKWARD_CHAR);
     term.assertScreen("% ");
@@ -318,7 +160,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testInsertCharBackwardChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.read(BACKWARD_CHAR);
@@ -328,7 +170,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testForwardChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read(FORWARD_CHAR);
     term.assertScreen("% ");
@@ -337,7 +179,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testInsertCharForwardChar() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
     term.read(BACKWARD_CHAR);
@@ -348,7 +190,7 @@ public class ReadlineTest extends TestBase {
 
   @Test
   public void testQuotedMultiline() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
     Supplier<String> a = term.readlineComplete();
     term.read('A');
     term.read('"');

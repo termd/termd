@@ -17,14 +17,17 @@
 package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Helper;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
+ * Make this class thread safe as SSH will access this class with different threds [sic].
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Readline {
@@ -44,14 +47,24 @@ public class Readline {
   /**
    * Read a line until a request can be processed.
    *
-   * @param term the term to read from
+   * @param conn the tty connection
    * @param requestHandler the requestHandler
    */
-  public void readline(TtyConnection term, String prompt, Consumer<String> requestHandler) {
-    Consumer<int[]> previousEventHandler = term.getReadHandler();
-    Interaction interaction = new Interaction(term, previousEventHandler, requestHandler);
-    term.setReadHandler(interaction);
-    term.write(prompt);
+  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler) {
+    readline(conn, prompt, requestHandler, null);
+  }
+
+  /**
+   * Read a line until a request can be processed.
+   *
+   * @param conn the tty connection
+   * @param requestHandler the requestHandler
+   */
+  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
+    Consumer<int[]> previousEventHandler = conn.getReadHandler();
+    Interaction interaction = new Interaction(conn, previousEventHandler, requestHandler, completionHandler);
+    conn.setReadHandler(interaction);
+    conn.write(prompt);
   }
 
   private enum LineStatus {
@@ -64,12 +77,14 @@ public class Readline {
     private final TtyConnection term;
     private final Consumer<int[]> previousEventHandler;
     private final KeyDecoder decoder;
+    private final Consumer<Completion> completionHandler;
 
-    public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler) {
+    public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
       this.term = term;
       this.previousEventHandler = previousEventHandler;
       this.decoder = new KeyDecoder(keymap);
       this.requestHandler = requestHandler;
+      this.completionHandler = completionHandler;
     }
 
     @Override
@@ -83,6 +98,11 @@ public class Readline {
     }
 
     public boolean handle(final Event event) {
+
+      if (completing) {
+        throw new UnsupportedOperationException("Handle me gracefully");
+      }
+
       LineBuffer copy = new LineBuffer(lineBuffer);
       if (event instanceof KeyEvent) {
         KeyEvent key = (KeyEvent) event;
@@ -126,6 +146,41 @@ public class Readline {
               return true;
             }
           }
+        } else if (key.length() == 1 && key.getAt(0) == '\t') {
+          if (completionHandler != null) {
+            int index = lineBuffer.getCursor();
+            while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
+              index--;
+            }
+            int[] text = new int[lineBuffer.getCursor() - index];
+            for (int i = 0; i < text.length;i++) {
+              text[i] = lineBuffer.getAt(index + i);
+            }
+            completing = true;
+            AtomicBoolean completed = new AtomicBoolean();
+            completionHandler.accept(new Completion() {
+              @Override
+              public int[] text() {
+                return text;
+              }
+              @Override
+              public void complete(List<int[]> completions) {
+                if (completed.compareAndSet(false, true)) {
+                  if (completions.size() == 0) {
+                    // Do nothing
+                  } else if (completions.size() == 1) {
+                    lineBuffer.insert(completions.get(0));
+                  } else {
+                    // To do
+                  }
+                  completing = false;
+
+                  // That's a copy paste to sync with buffer -> improve that
+                  term.writeHandler().accept(copy.compute(lineBuffer));
+                }
+              }
+            });
+          }
         } else {
           for (int i = 0;i < key.length();i++) {
             int codePoint = key.getAt(i);
@@ -141,12 +196,7 @@ public class Readline {
           System.out.println("Unimplemented function " + fname.name());
         }
       }
-      LinkedList<Integer> a = copy.compute(lineBuffer);
-      int[] t = new int[a.size()];
-      for (int index = 0;index < a.size();index++) {
-        t[index] = a.get(index);
-      }
-      term.writeHandler().accept(t);
+      term.writeHandler().accept(copy.compute(lineBuffer));
       return false;
     }
 
@@ -154,6 +204,7 @@ public class Readline {
     private final LineBuffer lineBuffer = new LineBuffer();
     private LinkedList<Integer> escaped = new LinkedList<>();
     private LineStatus lineStatus = LineStatus.LITERAL;
+    private boolean completing = false;
     private EscapeFilter filter = new EscapeFilter(new Escaper() {
       @Override
       public void escaping() {
