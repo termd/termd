@@ -16,10 +16,22 @@
 
 package io.termd.core.readline;
 
+import java.nio.IntBuffer;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 interface KeyEvent extends Event {
+
+  default IntBuffer buffer() {
+    int length = length();
+    IntBuffer buf = IntBuffer.allocate(length);
+    for (int i = 0;i < length;i++) {
+      buf.put(getAt(i));
+    }
+    buf.flip();
+    return buf;
+  }
 
   int getAt(int index) throws IndexOutOfBoundsException;
 

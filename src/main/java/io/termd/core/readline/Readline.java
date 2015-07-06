@@ -18,12 +18,14 @@ package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
 
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Make this class thread safe as SSH will access this class with different threds [sic].
@@ -78,6 +80,7 @@ public class Readline {
     private final Consumer<int[]> previousEventHandler;
     private final KeyDecoder decoder;
     private final Consumer<Completion> completionHandler;
+    private final Map<IntBuffer, Supplier<Boolean>> handlers;
 
     public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
       this.term = term;
@@ -85,6 +88,90 @@ public class Readline {
       this.decoder = new KeyDecoder(keymap);
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
+      this.handlers = new HashMap<>();
+
+      handlers.put(Keys.CTRL_M.buffer(), () -> {
+        LineBuffer copy = new LineBuffer(lineBuffer);
+        for (int j : lineBuffer) {
+          filter.accept(j);
+        }
+        if (lineStatus == LineStatus.ESCAPED) {
+          filter.accept((int) '\r'); // Correct status
+          term.write("\r\n> ");
+          lineBuffer.setSize(0);
+          copy.setSize(0);
+        } else {
+          int[] l = new int[this.escaped.size()];
+          for (int index = 0;index < l.length;index++) {
+            l[index] = this.escaped.get(index);
+          }
+          escaped.clear();
+          lines.add(l);
+          if (lineStatus == LineStatus.QUOTED) {
+            term.write("\r\n> ");
+            lineBuffer.setSize(0);
+            copy.setSize(0);
+          } else {
+            final StringBuilder raw = new StringBuilder();
+            for (int index = 0;index < lines.size();index++) {
+              int[] a = lines.get(index);
+              if (index > 0) {
+                raw.append('\n'); // Use \n for processing
+              }
+              for (int b : a) {
+                raw.appendCodePoint(b);
+              }
+            }
+            lines.clear();
+            escaped.clear();
+            term.write("\r\n");
+            lineBuffer.setSize(0);
+            term.setReadHandler(previousEventHandler);
+            requestHandler.accept(raw.toString());
+            return true;
+          }
+        }
+        return false;
+      });
+
+      handlers.put(Keys.CTRL_I.buffer(), () -> {
+        if (completionHandler != null) {
+          int index = lineBuffer.getCursor();
+          while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
+            index--;
+          }
+          int[] text = new int[lineBuffer.getCursor() - index];
+          for (int i = 0; i < text.length;i++) {
+            text[i] = lineBuffer.getAt(index + i);
+          }
+          completing = true;
+          LineBuffer copy = new LineBuffer(lineBuffer);
+          AtomicBoolean completed = new AtomicBoolean();
+          completionHandler.accept(new Completion() {
+            @Override
+            public int[] text() {
+              return text;
+            }
+            @Override
+            public void complete(List<int[]> completions) {
+              if (completed.compareAndSet(false, true)) {
+                if (completions.size() == 0) {
+                  // Do nothing
+                } else if (completions.size() == 1) {
+                  lineBuffer.insert(completions.get(0));
+                } else {
+                  // To do
+                }
+                completing = false;
+
+                // That's a copy paste to sync with buffer -> improve that
+                term.writeHandler().accept(copy.compute(lineBuffer));
+              }
+            }
+          });
+        }
+        return false;
+      });
     }
 
     @Override
@@ -98,89 +185,15 @@ public class Readline {
     }
 
     public boolean handle(final Event event) {
-
       if (completing) {
         throw new UnsupportedOperationException("Handle me gracefully");
       }
-
       LineBuffer copy = new LineBuffer(lineBuffer);
       if (event instanceof KeyEvent) {
         KeyEvent key = (KeyEvent) event;
-        if (key.length() == 1 && key.getAt(0) == '\r') {
-          for (int j : lineBuffer) {
-            filter.accept(j);
-          }
-          if (lineStatus == LineStatus.ESCAPED) {
-            filter.accept((int) '\r'); // Correct status
-            term.write("\r\n> ");
-            lineBuffer.setSize(0);
-            copy.setSize(0);
-          } else {
-            int[] l = new int[this.escaped.size()];
-            for (int index = 0;index < l.length;index++) {
-              l[index] = this.escaped.get(index);
-            }
-            escaped.clear();
-            lines.add(l);
-            if (lineStatus == LineStatus.QUOTED) {
-              term.write("\r\n> ");
-              lineBuffer.setSize(0);
-              copy.setSize(0);
-            } else {
-              final StringBuilder raw = new StringBuilder();
-              for (int index = 0;index < lines.size();index++) {
-                int[] a = lines.get(index);
-                if (index > 0) {
-                  raw.append('\n'); // Use \n for processing
-                }
-                for (int b : a) {
-                  raw.appendCodePoint(b);
-                }
-              }
-              lines.clear();
-              escaped.clear();
-              term.write("\r\n");
-              lineBuffer.setSize(0);
-              term.setReadHandler(previousEventHandler);
-              requestHandler.accept(raw.toString());
-              return true;
-            }
-          }
-        } else if (key.length() == 1 && key.getAt(0) == '\t') {
-          if (completionHandler != null) {
-            int index = lineBuffer.getCursor();
-            while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
-              index--;
-            }
-            int[] text = new int[lineBuffer.getCursor() - index];
-            for (int i = 0; i < text.length;i++) {
-              text[i] = lineBuffer.getAt(index + i);
-            }
-            completing = true;
-            AtomicBoolean completed = new AtomicBoolean();
-            completionHandler.accept(new Completion() {
-              @Override
-              public int[] text() {
-                return text;
-              }
-              @Override
-              public void complete(List<int[]> completions) {
-                if (completed.compareAndSet(false, true)) {
-                  if (completions.size() == 0) {
-                    // Do nothing
-                  } else if (completions.size() == 1) {
-                    lineBuffer.insert(completions.get(0));
-                  } else {
-                    // To do
-                  }
-                  completing = false;
-
-                  // That's a copy paste to sync with buffer -> improve that
-                  term.writeHandler().accept(copy.compute(lineBuffer));
-                }
-              }
-            });
-          }
+        Supplier<Boolean> handler = handlers.get(key.buffer());
+        if (handler != null) {
+          return handler.get();
         } else {
           for (int i = 0;i < key.length();i++) {
             int codePoint = key.getAt(i);

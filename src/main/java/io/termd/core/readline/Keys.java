@@ -86,7 +86,6 @@ enum Keys implements KeyEvent {
     return sequence.length;
   }
 
-
   @Override
   public String toString() {
     return "key:" + name;
