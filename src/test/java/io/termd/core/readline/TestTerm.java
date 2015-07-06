@@ -26,6 +26,7 @@ import io.termd.core.util.Dimension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -72,6 +73,7 @@ class TestTerm {
   final Readline handler;
 
   private Consumer<int[]> readHandler;
+  private LinkedList<Runnable> tasks = new LinkedList<>();
 
   public TestTerm(TestBase test) {
     this.readlineTest = test;
@@ -136,7 +138,7 @@ class TestTerm {
       }
       @Override
       public void schedule(Runnable task) {
-        throw new UnsupportedOperationException();
+        tasks.add(task);
       }
       @Override
       public void setCloseHandler(Consumer<Void> closeHandler) {
@@ -151,6 +153,13 @@ class TestTerm {
         throw new UnsupportedOperationException();
       }
     }, "% ", readlineHandler, completionHandler);
+  }
+
+  public void executeTasks() {
+    while (!tasks.isEmpty()) {
+      Runnable task = tasks.removeFirst();
+      task.run();
+    }
   }
 
   private List<String> render() {

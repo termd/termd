@@ -56,6 +56,9 @@ public class CompletionTest extends TestBase {
     assertTrue(completed.get());
     term.assertScreen("% ");
     term.assertAt(0, 2);
+    term.read('a');
+    term.assertScreen("% a");
+    term.assertAt(0, 3);
   }
 
   @Test
@@ -65,10 +68,16 @@ public class CompletionTest extends TestBase {
     term.readline(line -> {
     }, completed::complete);
     term.read('\t');
-    Completion completion = completed.get();
-    completion.complete(Collections.emptyList());
     term.assertScreen("% ");
     term.assertAt(0, 2);
+    term.read('a');
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
+    Completion completion = completed.get();
+    completion.complete(Collections.emptyList());
+    term.executeTasks();
+    term.assertScreen("% a");
+    term.assertAt(0, 3);
   }
 
   @Test
@@ -84,6 +93,9 @@ public class CompletionTest extends TestBase {
     assertTrue(completed.get());
     term.assertScreen("% abcdef");
     term.assertAt(0, 8);
+    term.read('g');
+    term.assertScreen("% abcdefg");
+    term.assertAt(0, 9);
   }
 
   @Test
@@ -96,12 +108,17 @@ public class CompletionTest extends TestBase {
     Completion completion = completed.get();
     term.assertScreen("% ");
     term.assertAt(0, 2);
+    term.read('g');
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
     completion.complete(Collections.singletonList(Helper.toCodePoints("abcdef")));
-    term.assertScreen("% abcdef");
-    term.assertAt(0, 8);
+    term.executeTasks();
+    term.assertScreen("% abcdefg");
+    term.assertAt(0, 9);
+    term.read('h');
+    term.assertScreen("% abcdefgh");
+    term.assertAt(0, 10);
   }
 
-  // Test send key event while blocked for completion !!!!!
-  // Test multiple
-  // Refactor to use Function !!!!
+  // Test multiple with common and without common
 }

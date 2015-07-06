@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Make this class thread safe as SSH will access this class with different threds [sic].
@@ -34,11 +33,18 @@ import java.util.function.Supplier;
  */
 public class Readline {
 
+  static enum Status {
+    PAUSED, ACTIVE, COMPLETING
+  }
+
   private final Keymap keymap;
   private final Map<String, Function> functions = new HashMap<>();
+  private final KeyDecoder decoder;
+  private Status status = Status.PAUSED;
 
   public Readline(Keymap keymap) {
     this.keymap = keymap;
+    this.decoder = new KeyDecoder(keymap);
   }
 
   public Readline addFunction(Function function) {
@@ -63,6 +69,10 @@ public class Readline {
    * @param requestHandler the requestHandler
    */
   public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
+    if (status != Status.PAUSED) {
+      throw new IllegalStateException("Wrong status " + status);
+    }
+    status = Status.ACTIVE;
     Consumer<int[]> previousEventHandler = conn.getReadHandler();
     Interaction interaction = new Interaction(conn, previousEventHandler, requestHandler, completionHandler);
     conn.setReadHandler(interaction);
@@ -78,14 +88,12 @@ public class Readline {
     private final Consumer<String> requestHandler;
     private final TtyConnection term;
     private final Consumer<int[]> previousEventHandler;
-    private final KeyDecoder decoder;
     private final Consumer<Completion> completionHandler;
-    private final Map<IntBuffer, Supplier<Boolean>> handlers;
+    private final Map<IntBuffer, Runnable> handlers;
 
     public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
       this.term = term;
       this.previousEventHandler = previousEventHandler;
-      this.decoder = new KeyDecoder(keymap);
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
       this.handlers = new HashMap<>();
@@ -127,11 +135,10 @@ public class Readline {
             term.write("\r\n");
             lineBuffer.setSize(0);
             term.setReadHandler(previousEventHandler);
+            status = Status.PAUSED;
             requestHandler.accept(raw.toString());
-            return true;
           }
         }
-        return false;
       });
 
       handlers.put(Keys.CTRL_I.buffer(), () -> {
@@ -144,7 +151,7 @@ public class Readline {
           for (int i = 0; i < text.length;i++) {
             text[i] = lineBuffer.getAt(index + i);
           }
-          completing = true;
+          status = Status.COMPLETING;
           LineBuffer copy = new LineBuffer(lineBuffer);
           AtomicBoolean completed = new AtomicBoolean();
           completionHandler.accept(new Completion() {
@@ -162,62 +169,59 @@ public class Readline {
                 } else {
                   // To do
                 }
-                completing = false;
-
-                // That's a copy paste to sync with buffer -> improve that
+                // Update buffer
                 term.writeHandler().accept(copy.compute(lineBuffer));
+                // Set back to active
+                status = Status.ACTIVE;
+                // Schedule a resume
+                term.schedule(Interaction.this::handle);
               }
             }
           });
         }
-        return false;
       });
     }
 
     @Override
     public void accept(int[] data) {
       decoder.append(data);
-      while (decoder.hasNext()) {
-        if (handle(decoder.next())) {
-          break;
-        }
-      }
+      handle();
     }
 
-    public boolean handle(final Event event) {
-      if (completing) {
-        throw new UnsupportedOperationException("Handle me gracefully");
-      }
-      LineBuffer copy = new LineBuffer(lineBuffer);
-      if (event instanceof KeyEvent) {
-        KeyEvent key = (KeyEvent) event;
-        Supplier<Boolean> handler = handlers.get(key.buffer());
-        if (handler != null) {
-          return handler.get();
-        } else {
-          for (int i = 0;i < key.length();i++) {
-            int codePoint = key.getAt(i);
-            lineBuffer.insert(codePoint);
+    private void handle() {
+
+      while (status == Status.ACTIVE && decoder.hasNext()) {
+        Event event = decoder.next();
+        LineBuffer copy = new LineBuffer(lineBuffer);
+        if (event instanceof KeyEvent) {
+          KeyEvent key = (KeyEvent) event;
+          Runnable handler = handlers.get(key.buffer());
+          if (handler != null) {
+            handler.run();
+          } else {
+            for (int i = 0;i < key.length();i++) {
+              int codePoint = key.getAt(i);
+              lineBuffer.insert(codePoint);
+            }
+            term.writeHandler().accept(copy.compute(lineBuffer));
           }
-        }
-      } else {
-        FunctionEvent fname = (FunctionEvent) event;
-        Function function = functions.get(fname.name());
-        if (function != null) {
-          function.apply(lineBuffer);
         } else {
-          System.out.println("Unimplemented function " + fname.name());
+          FunctionEvent fname = (FunctionEvent) event;
+          Function function = functions.get(fname.name());
+          if (function != null) {
+            function.apply(lineBuffer);
+          } else {
+            System.out.println("Unimplemented function " + fname.name());
+          }
+          term.writeHandler().accept(copy.compute(lineBuffer));
         }
       }
-      term.writeHandler().accept(copy.compute(lineBuffer));
-      return false;
     }
 
     private final LinkedList<int[]> lines = new LinkedList<>();
     private final LineBuffer lineBuffer = new LineBuffer();
     private LinkedList<Integer> escaped = new LinkedList<>();
     private LineStatus lineStatus = LineStatus.LITERAL;
-    private boolean completing = false;
     private EscapeFilter filter = new EscapeFilter(new Escaper() {
       @Override
       public void escaping() {
