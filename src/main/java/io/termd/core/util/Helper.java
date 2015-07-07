@@ -17,9 +17,12 @@
 package io.termd.core.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.stream.Stream;
 
 /**
  * Various utils.
@@ -123,5 +126,23 @@ public class Helper {
       }
     }
     return sb.toString();
+  }
+
+  public static int[] findLongestCommonPrefix(List<int[]> entries) {
+    if (entries.isEmpty()) {
+      return new int[0];
+    }
+    int minLen = entries.stream().mapToInt(entry -> entry.length).min().getAsInt();
+    int len = 0;
+    out:
+    while (len < minLen) {
+      for (int j = 1;j < entries.size();j++) {
+        if (entries.get(j)[len] != entries.get(j - 1)[len]) {
+          break out;
+        }
+      }
+      len++;
+    }
+    return Arrays.copyOf(entries.get(0), len);
   }
 }

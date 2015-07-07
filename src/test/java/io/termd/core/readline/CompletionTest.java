@@ -20,6 +20,7 @@ import io.termd.core.telnet.TestBase;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -120,5 +121,53 @@ public class CompletionTest extends TestBase {
     term.assertAt(0, 10);
   }
 
-  // Test multiple with common and without common
+  @Test
+  public void testCommonPrefixCompletion() {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    term.readline(line -> {
+    }, completion -> {
+      completion.complete(Arrays.asList(
+          Helper.toCodePoints("fooabcdef"),
+          Helper.toCodePoints("foo123456"),
+          Helper.toCodePoints("fooab3456")
+      ));
+      completed.set(true);
+    });
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% foo");
+    term.assertAt(0, 5);
+    term.read('g');
+    term.assertScreen("% foog");
+    term.assertAt(0, 6);
+  }
+
+  @Test
+  public void testCommonPrefixCompletionAsync() throws Exception {
+    TestTerm term = new TestTerm(this);
+    CompletableFuture<Completion> completed = new CompletableFuture<>();
+    term.readline(line -> {
+    }, completed::complete);
+    term.read('\t');
+    Completion completion = completed.get();
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
+    term.read('g');
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
+    completion.complete(Arrays.asList(
+        Helper.toCodePoints("fooabcdef"),
+        Helper.toCodePoints("foo123456"),
+        Helper.toCodePoints("fooab3456")
+    ));
+    term.executeTasks();
+    term.assertScreen("% foog");
+    term.assertAt(0, 6);
+    term.read('h');
+    term.assertScreen("% foogh");
+    term.assertAt(0, 7);
+  }
+
+  // Handle multiple with no common prefix sync and async
 }

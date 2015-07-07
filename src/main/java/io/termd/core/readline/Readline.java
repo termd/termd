@@ -17,6 +17,7 @@
 package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -167,7 +168,13 @@ public class Readline {
                 } else if (completions.size() == 1) {
                   lineBuffer.insert(completions.get(0));
                 } else {
-                  // To do
+                  // Find common prefix
+                  int[] prefix = Helper.findLongestCommonPrefix(completions);
+                  if (prefix.length > 0) {
+                    lineBuffer.insert(prefix);
+                  } else {
+                    // Todo
+                  }
                 }
                 // Update buffer
                 term.writeHandler().accept(copy.compute(lineBuffer));
