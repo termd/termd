@@ -16,7 +16,7 @@
 
 package io.termd.core.pty;
 
-import io.termd.core.http.vertx.SockJSBootstrap;
+import io.termd.core.http.vertx.VertxSockJSBootstrap;
 import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
@@ -49,7 +49,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
 
   public static void main(String[] args) throws Exception {
     PtyBootstrap bootstrap = new PtyBootstrap();
-    SockJSBootstrap sockJSBootstrap = new SockJSBootstrap(
+    VertxSockJSBootstrap sockJSBootstrap = new VertxSockJSBootstrap(
         "localhost",
         8080,
         bootstrap);

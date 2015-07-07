@@ -16,41 +16,33 @@
 
 package io.termd.core.http.vertx;
 
-import io.termd.core.http.TtyConnectionBridge;
+import io.termd.core.http.SockJSTtyConnection;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.handler.sockjs.SockJSSocket;
 
-import java.util.function.Consumer;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SockJSTtyConnection {
+public class VertxSockJSTtyConnection extends SockJSTtyConnection {
 
   private final SockJSSocket socket;
   private final Context context;
-  private final TtyConnectionBridge ttyConnection;
 
-  public SockJSTtyConnection(SockJSSocket socket) {
-    ttyConnection = new TtyConnectionBridge(onByteHandler(), (task) -> schedule(task));
+  public VertxSockJSTtyConnection(SockJSSocket socket) {
+    socket.handler(msg -> writeToDecoder(msg.toString()));
 
     this.socket = socket;
     this.context = Vertx.currentContext();
-
-    socket.handler(msg -> ttyConnection.writeToDecoder(msg.toString()));
   }
 
-  private void schedule(final Runnable task) {
+  public void schedule(final Runnable task) {
     context.runOnContext(v -> task.run());
   }
 
-  private Consumer<byte[]> onByteHandler() {
-    return (event) -> socket.write(Buffer.buffer(event));
-  }
-
-  public TtyConnectionBridge getTtyConnection() {
-    return ttyConnection;
+  @Override
+  protected void write(byte[] buffer) {
+    socket.write(Buffer.buffer(buffer));
   }
 }

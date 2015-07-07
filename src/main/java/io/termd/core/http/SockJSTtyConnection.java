@@ -30,40 +30,35 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public class TtyConnectionBridge implements TtyConnection {
+public abstract class SockJSTtyConnection implements TtyConnection {
 
-  private static Logger log = LoggerFactory.getLogger(TtyConnectionBridge.class);
-  private final Executor executor;
+  private static Logger log = LoggerFactory.getLogger(SockJSTtyConnection.class);
 
   private Dimension size = null;
-
   private Consumer<Dimension> resizeHandler;
-
   private final ReadBuffer readBuffer;
-
   private final TtyEventDecoder onCharSignalDecoder;
   private final BinaryDecoder decoder;
   private final BinaryEncoder encoder;
   private Consumer<Void> closeHandler;
 
-  public TtyConnectionBridge(Consumer<byte[]> onByteHandler, Executor executor) {
-    this.executor = executor;
+  public SockJSTtyConnection() {
     readBuffer = new ReadBuffer(command -> {
       log.debug("Server read buffer executing command: {}" + command);
       schedule(command);
     });
-
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
-    encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, onByteHandler);
+    encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write);
   }
+
+  protected abstract void write(byte[] buffer);
 
   public void writeToDecoder(String msg) throws DecodeException {
     JsonObject obj = new JsonObject(msg.toString());
@@ -130,10 +125,5 @@ public class TtyConnectionBridge implements TtyConnection {
   public void close() {
     // Should we call the close handler ? there is no close handler on sockjs socket
     //socket.close(); //TODO
-  }
-
-  @Override
-  public void schedule(Runnable task) {
-    executor.execute(task);
   }
 }

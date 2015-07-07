@@ -38,13 +38,13 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SockJSBootstrap {
+public class VertxSockJSBootstrap {
 
   final String host;
   final int port;
   final Consumer<TtyConnection> handler;
 
-  public SockJSBootstrap(String host, int port, Consumer<TtyConnection> handler) {
+  public VertxSockJSBootstrap(String host, int port, Consumer<TtyConnection> handler) {
     this.host = host;
     this.port = port;
     this.handler = handler;
@@ -55,8 +55,8 @@ public class SockJSBootstrap {
     Router router = Router.router(vertx);
     SockJSHandler sockJSHandler = SockJSHandler.create(vertx, new SockJSHandlerOptions());
     sockJSHandler.socketHandler(socket -> {
-      SockJSTtyConnection conn = new SockJSTtyConnection(socket);
-      handler.accept(conn.getTtyConnection());
+      VertxSockJSTtyConnection conn = new VertxSockJSTtyConnection(socket);
+      handler.accept(conn);
     });
     router.route("/term/*").handler(sockJSHandler);
     router.route().handler(ctx -> {
@@ -67,7 +67,7 @@ public class SockJSBootstrap {
       if ("/".equals(path)) {
         path = "/index.html";
       }
-      URL res = SockJSBootstrap.class.getResource("/io/termd/core/http" + path);
+      URL res = VertxSockJSBootstrap.class.getResource("/io/termd/core/http" + path);
       HttpServerResponse resp = req.response();
       try {
         if (res != null) {
@@ -109,7 +109,7 @@ public class SockJSBootstrap {
   }
 
   public static void main(String[] args) throws Exception {
-    SockJSBootstrap bootstrap = new SockJSBootstrap(
+    VertxSockJSBootstrap bootstrap = new VertxSockJSBootstrap(
         "localhost",
         8080,
         io.termd.core.telnet.netty.ReadlineBootstrap.READLINE);

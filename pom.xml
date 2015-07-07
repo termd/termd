@@ -216,7 +216,7 @@
     </profile>
 
     <profile>
-      <id>http-native</id>
+      <id>http-pty</id>
       <properties>
         <skipTests>true</skipTests>
       </properties>
@@ -259,7 +259,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.termd.core.http.vertx.SockJSBootstrap</mainClass>
+                  <mainClass>io.termd.core.http.vertx.VertxSockJSBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>
