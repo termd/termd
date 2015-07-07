@@ -33,12 +33,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
+ * A connection to an http client, independant of the protocol, it could be straight Bebsockets or
+ * SockJS, etc...
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public abstract class SockJSTtyConnection implements TtyConnection {
+public abstract class HttpTtyConnection implements TtyConnection {
 
-  private static Logger log = LoggerFactory.getLogger(SockJSTtyConnection.class);
+  private static Logger log = LoggerFactory.getLogger(HttpTtyConnection.class);
 
   private Dimension size = null;
   private Consumer<Dimension> resizeHandler;
@@ -48,7 +51,7 @@ public abstract class SockJSTtyConnection implements TtyConnection {
   private final BinaryEncoder encoder;
   private Consumer<Void> closeHandler;
 
-  public SockJSTtyConnection() {
+  public HttpTtyConnection() {
     readBuffer = new ReadBuffer(command -> {
       log.debug("Server read buffer executing command: {}" + command);
       schedule(command);

@@ -16,7 +16,7 @@
 
 package io.termd.core.http.vertx;
 
-import io.termd.core.http.SockJSTtyConnection;
+import io.termd.core.http.HttpTtyConnection;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -25,7 +25,7 @@ import io.vertx.ext.web.handler.sockjs.SockJSSocket;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxSockJSTtyConnection extends SockJSTtyConnection {
+public class VertxSockJSTtyConnection extends HttpTtyConnection {
 
   private final SockJSSocket socket;
   private final Context context;
