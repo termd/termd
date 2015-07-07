@@ -16,27 +16,17 @@
 
 package io.termd.core.readline;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface Completion {
+enum CompletionStatus {
 
-  /**
-   * @return the text to complete
-   */
-  int[] text();
+  PENDING,
 
-  /**
-   * Complete the completion, this should be called once with the result.
-   *
-   * @param completions the resulting completions
-   */
-  void complete(List<int[]> completions);
+  INLINING,
 
-  Completion write(int[] data);
+  COMPLETING,
 
-  void end();
+  COMPLETED
 
 }

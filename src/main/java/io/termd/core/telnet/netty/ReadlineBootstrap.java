@@ -31,6 +31,7 @@ import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -166,6 +167,8 @@ public class ReadlineBootstrap {
       readline.readline(conn, "% ", line -> {
         Task task = new Task(conn, readline, line);
         task.start();
+      }, completion -> {
+        completion.complete(Arrays.asList(Helper.toCodePoints("foobar"), Helper.toCodePoints("juudaa")));
       });
     }
   };

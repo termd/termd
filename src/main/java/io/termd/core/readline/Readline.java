@@ -17,6 +17,7 @@
 package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.util.Dimension;
 import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
@@ -24,7 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -74,9 +75,9 @@ public class Readline {
       throw new IllegalStateException("Wrong status " + status);
     }
     status = Status.ACTIVE;
-    Consumer<int[]> previousEventHandler = conn.getReadHandler();
-    Interaction interaction = new Interaction(conn, previousEventHandler, requestHandler, completionHandler);
-    conn.setReadHandler(interaction);
+    Consumer<int[]> prevEventHandler = conn.getReadHandler();
+    Consumer<Dimension> prevResizeHandler = conn.getResizeHandler();
+    Interaction interaction = new Interaction(conn, prompt, prevEventHandler, prevResizeHandler, requestHandler, completionHandler);
     conn.write(prompt);
   }
 
@@ -87,17 +88,31 @@ public class Readline {
   private class Interaction implements Consumer<int[]> {
 
     private final Consumer<String> requestHandler;
-    private final TtyConnection term;
-    private final Consumer<int[]> previousEventHandler;
+    private final TtyConnection conn;
+    private final String prompt;
+    private final Consumer<int[]> prevEventHandler;
+    private final Consumer<Dimension> prevSizeHandler;
     private final Consumer<Completion> completionHandler;
     private final Map<IntBuffer, Runnable> handlers;
+    private Dimension size;
 
-    public Interaction(TtyConnection term, Consumer<int[]> previousEventHandler, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
-      this.term = term;
-      this.previousEventHandler = previousEventHandler;
+    public Interaction(
+        TtyConnection conn,
+        String prompt,
+        Consumer<int[]> previousEventHandler,
+        Consumer<Dimension> previousSizeHandler,
+        Consumer<String> requestHandler,
+        Consumer<Completion> completionHandler) {
+      this.conn = conn;
+      this.prompt = prompt;
+      this.prevEventHandler = previousEventHandler;
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
+      this.prevSizeHandler = previousSizeHandler;
       this.handlers = new HashMap<>();
+
+      this.conn.setReadHandler(this);
+      conn.setResizeHandler(dim -> this.size = dim);
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         LineBuffer copy = new LineBuffer(lineBuffer);
@@ -106,7 +121,7 @@ public class Readline {
         }
         if (lineStatus == LineStatus.ESCAPED) {
           filter.accept((int) '\r'); // Correct status
-          term.write("\r\n> ");
+          conn.write("\r\n> ");
           lineBuffer.setSize(0);
           copy.setSize(0);
         } else {
@@ -117,10 +132,10 @@ public class Readline {
           escaped.clear();
           lines.add(l);
           if (lineStatus == LineStatus.QUOTED) {
-            term.write("\r\n> ");
+            conn.write("\r\n> ");
             lineBuffer.setSize(0);
             copy.setSize(0);
-          } else {
+          }  else {
             final StringBuilder raw = new StringBuilder();
             for (int index = 0;index < lines.size();index++) {
               int[] a = lines.get(index);
@@ -133,9 +148,9 @@ public class Readline {
             }
             lines.clear();
             escaped.clear();
-            term.write("\r\n");
+            conn.write("\r\n");
             lineBuffer.setSize(0);
-            term.setReadHandler(previousEventHandler);
+            conn.setReadHandler(previousEventHandler);
             status = Status.PAUSED;
             requestHandler.accept(raw.toString());
           }
@@ -154,39 +169,124 @@ public class Readline {
           }
           status = Status.COMPLETING;
           LineBuffer copy = new LineBuffer(lineBuffer);
-          AtomicBoolean completed = new AtomicBoolean();
+          final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
             @Override
             public int[] text() {
               return text;
             }
             @Override
-            public void complete(List<int[]> completions) {
-              if (completed.compareAndSet(false, true)) {
-                if (completions.size() == 0) {
-                  // Do nothing
-                } else if (completions.size() == 1) {
-                  lineBuffer.insert(completions.get(0));
-                } else {
-                  // Find common prefix
-                  int[] prefix = Helper.findLongestCommonPrefix(completions);
-                  if (prefix.length > 0) {
-                    lineBuffer.insert(prefix);
-                  } else {
-                    // Todo
+            public void end() {
+              while (true) {
+                CompletionStatus current = status.get();
+                if (current != CompletionStatus.COMPLETED) {
+                  if (status.compareAndSet(current, CompletionStatus.COMPLETED)) {
+                    switch (current) {
+                      case COMPLETING:
+                        // Redraw last line with correct prompt
+                        if (lines.size() == 0 && escaped.size() == 0) {
+                          conn.write(prompt);
+                        } else {
+                          conn.write("> ");
+                        }
+                        conn.writeHandler().accept(new LineBuffer().compute(lineBuffer));
+                        break;
+                    }
+                    // Update status
+                    Readline.this.status = Status.ACTIVE;
+                    // Schedule a resume
+                    conn.schedule(Interaction.this::handle);
+                    break;
                   }
+                  // Try again
+                } else {
+                  throw new IllegalStateException();
                 }
-                // Update buffer
-                term.writeHandler().accept(copy.compute(lineBuffer));
-                // Set back to active
-                status = Status.ACTIVE;
-                // Schedule a resume
-                term.schedule(Interaction.this::handle);
+              }
+            }
+            @Override
+            public void complete(List<int[]> completions) {
+              int[] inline;
+              if (completions.size() == 0) {
+                // Do nothing
+                inline = new int[0];
+              } else if (completions.size() == 1) {
+                inline = completions.get(0);
+              } else {
+                // Find common prefix
+                int[] prefix = Helper.findLongestCommonPrefix(completions);
+                if (prefix.length > 0) {
+                  inline = prefix;
+                } else {
+                  // Todo : paginate vertically
+                  int[] block = computeBlock(completions);
+                  write(block);
+                  end();
+                  return;
+                }
+              }
+              if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
+                if (inline.length > 0) {
+                  lineBuffer.insert(inline);
+                  conn.writeHandler().accept(copy.compute(lineBuffer));
+                }
+                end();
+              } else {
+                throw new IllegalStateException();
+              }
+            }
+
+            @Override
+            public Completion write(int[] data) {
+              while (true) {
+                CompletionStatus current = status.get();
+                if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
+                  if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
+                    if (current == CompletionStatus.PENDING) {
+                      conn.write("\r\n");
+                    }
+                    conn.writeHandler().accept(data);
+                    return this;
+                  }
+                  // Try again
+                } else {
+                  throw new IllegalStateException();
+                }
               }
             }
           });
         }
       });
+    }
+
+    private int[] computeBlock(List<int[]> completions) {
+
+      StringBuilder sb = new StringBuilder();
+
+      // Determine the longest value
+      int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
+
+      //
+      int row = size.getWidth() / (max + 1);
+
+      int count = 0;
+      for (int[] completion : completions) {
+        Helper.appendCodePoints(sb, completion);
+        for (int i = completion.length;i < max;i++) {
+          sb.append(' ');
+        }
+        if (count++ < row) {
+          sb.append(' ');
+        } else {
+          sb.append("\r\n");
+        }
+      }
+
+      //
+      sb.append("\r\n");
+
+      //
+      return Helper.toCodePoints(sb.toString());
     }
 
     @Override
@@ -210,7 +310,7 @@ public class Readline {
               int codePoint = key.getAt(i);
               lineBuffer.insert(codePoint);
             }
-            term.writeHandler().accept(copy.compute(lineBuffer));
+            conn.writeHandler().accept(copy.compute(lineBuffer));
           }
         } else {
           FunctionEvent fname = (FunctionEvent) event;
@@ -220,7 +320,7 @@ public class Readline {
           } else {
             System.out.println("Unimplemented function " + fname.name());
           }
-          term.writeHandler().accept(copy.compute(lineBuffer));
+          conn.writeHandler().accept(copy.compute(lineBuffer));
         }
       }
     }

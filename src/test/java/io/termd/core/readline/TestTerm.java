@@ -98,8 +98,15 @@ class TestTerm {
     readline(readlineHandler, null);
   }
 
+  public Supplier<String> readlineComplete(Consumer<Completion> completionHandler) {
+    final AtomicReference<String> queue = new AtomicReference<>();
+    readline(event -> queue.compareAndSet(null, event), completionHandler);
+    return () -> queue.get();
+  }
+
   public void readline(Consumer<String> readlineHandler, Consumer<Completion> completionHandler) {
     handler.readline(new TtyConnection() {
+      Consumer<Dimension> resizeHandler;
       @Override
       public Consumer<String> getTermHandler() {
         throw new UnsupportedOperationException();
@@ -110,11 +117,11 @@ class TestTerm {
       }
       @Override
       public Consumer<Dimension> getResizeHandler() {
-        throw new UnsupportedOperationException();
+        return resizeHandler;
       }
       @Override
       public void setResizeHandler(Consumer<Dimension> handler) {
-        throw new UnsupportedOperationException();
+        this.resizeHandler = handler;
       }
       @Override
       public Consumer<TtyEvent> getEventHandler() {

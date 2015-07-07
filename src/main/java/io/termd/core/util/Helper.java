@@ -56,6 +56,12 @@ public class Helper {
     return new String(codePoints, 0, codePoints.length);
   }
 
+  public static void appendCodePoints(StringBuilder sb, int[] codePoints) {
+    for (int codePoint : codePoints) {
+      sb.appendCodePoint(codePoint);
+    }
+  }
+
   public static void appendTo(int[] codePoints, StringBuilder sb) {
     for (int codePoint : codePoints) {
       sb.appendCodePoint(codePoint);

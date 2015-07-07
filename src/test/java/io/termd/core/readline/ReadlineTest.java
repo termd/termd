@@ -10,11 +10,6 @@ import java.util.function.Supplier;
  */
 public class ReadlineTest extends TestBase {
 
-
-  private static final int[] FORWARD_CHAR = { 27, '[', 'C' };
-  private static final int[] BACKWARD_CHAR = { 27, '[', 'D' };
-  private static final int[] BACKWARD_DELETE_CHAR = { 8 };
-
   static class EventContextImpl implements EventContext {
 
     int endCount = 0;

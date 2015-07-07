@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -48,8 +50,7 @@ public class CompletionTest extends TestBase {
   public void testEmptyCompletion() {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
-    term.readline(line -> {
-    }, completion -> {
+    Supplier<String> line = term.readlineComplete(completion -> {
       completion.complete(Collections.emptyList());
       completed.set(true);
     });
@@ -60,14 +61,17 @@ public class CompletionTest extends TestBase {
     term.read('a');
     term.assertScreen("% a");
     term.assertAt(0, 3);
+    term.read('\r');
+    term.assertScreen("% a");
+    term.assertAt(1, 0);
+    assertEquals("a", line.get());
   }
 
   @Test
   public void testEmptyCompletionAsync() throws Exception {
     TestTerm term = new TestTerm(this);
     CompletableFuture<Completion> completed = new CompletableFuture<>();
-    term.readline(line -> {
-    }, completed::complete);
+    Supplier<String> line = term.readlineComplete(completed::complete);
     term.read('\t');
     term.assertScreen("% ");
     term.assertAt(0, 2);
@@ -79,14 +83,17 @@ public class CompletionTest extends TestBase {
     term.executeTasks();
     term.assertScreen("% a");
     term.assertAt(0, 3);
+    term.read('\r');
+    term.assertScreen("% a");
+    term.assertAt(1, 0);
+    assertEquals("a", line.get());
   }
 
   @Test
   public void testSingleCompletion() {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
-    term.readline(line -> {
-    }, completion -> {
+    Supplier<String> line = term.readlineComplete(completion -> {
       completion.complete(Collections.singletonList(Helper.toCodePoints("abcdef")));
       completed.set(true);
     });
@@ -97,14 +104,17 @@ public class CompletionTest extends TestBase {
     term.read('g');
     term.assertScreen("% abcdefg");
     term.assertAt(0, 9);
+    term.read('\r');
+    term.assertScreen("% abcdefg");
+    term.assertAt(1, 0);
+    assertEquals("abcdefg", line.get());
   }
 
   @Test
   public void testSingleCompletionAsync() throws Exception {
     TestTerm term = new TestTerm(this);
     CompletableFuture<Completion> completed = new CompletableFuture<>();
-    term.readline(line -> {
-    }, completed::complete);
+    Supplier<String> line = term.readlineComplete(completed::complete);
     term.read('\t');
     Completion completion = completed.get();
     term.assertScreen("% ");
@@ -119,14 +129,17 @@ public class CompletionTest extends TestBase {
     term.read('h');
     term.assertScreen("% abcdefgh");
     term.assertAt(0, 10);
+    term.read('\r');
+    term.assertScreen("% abcdefgh");
+    term.assertAt(1, 0);
+    assertEquals("abcdefgh", line.get());
   }
 
   @Test
   public void testCommonPrefixCompletion() {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
-    term.readline(line -> {
-    }, completion -> {
+    Supplier<String> line = term.readlineComplete(completion -> {
       completion.complete(Arrays.asList(
           Helper.toCodePoints("fooabcdef"),
           Helper.toCodePoints("foo123456"),
@@ -141,14 +154,17 @@ public class CompletionTest extends TestBase {
     term.read('g');
     term.assertScreen("% foog");
     term.assertAt(0, 6);
+    term.read('\r');
+    term.assertScreen("% foog");
+    term.assertAt(1, 0);
+    assertEquals("foog", line.get());
   }
 
   @Test
   public void testCommonPrefixCompletionAsync() throws Exception {
     TestTerm term = new TestTerm(this);
     CompletableFuture<Completion> completed = new CompletableFuture<>();
-    term.readline(line -> {
-    }, completed::complete);
+    Supplier<String> line = term.readlineComplete(completed::complete);
     term.read('\t');
     Completion completion = completed.get();
     term.assertScreen("% ");
@@ -167,7 +183,115 @@ public class CompletionTest extends TestBase {
     term.read('h');
     term.assertScreen("% foogh");
     term.assertAt(0, 7);
+    term.read('\r');
+    term.assertScreen("% foogh");
+    term.assertAt(1, 0);
+    assertEquals("foogh", line.get());
   }
 
-  // Handle multiple with no common prefix sync and async
+  @Test
+  public void testCompletionBlock1() throws Exception {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    Supplier<String> line = term.readlineComplete(completion -> {
+      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completed.set(true);
+    });
+    term.read('a', 'b');
+    term.read(BACKWARD_CHAR);
+    term.assertScreen("% ab");
+    term.assertAt(0, 3);
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% ab", "a", "b", "c", "% ab");
+    term.assertAt(4, 3);
+    term.read('c');
+    term.assertScreen("% ab", "a", "b", "c", "% acb");
+    term.assertAt(4, 4);
+    term.read('\r');
+    term.assertScreen("% ab", "a", "b", "c", "% acb");
+    term.assertAt(5, 0);
+    assertEquals("acb", line.get());
+  }
+
+  @Test
+  public void testCompletionBlock2() throws Exception {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    Supplier<String> line = term.readlineComplete(completion -> {
+      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completed.set(true);
+    });
+    term.read('a', '\\', '\r', 'b', 'c');
+    term.read(BACKWARD_CHAR);
+    term.assertScreen("% a\\", "> bc");
+    term.assertAt(1, 3);
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% a\\", "> bc", "a", "b", "c", "> bc");
+    term.assertAt(5, 3);
+    term.read('d');
+    term.assertScreen("% a\\", "> bc", "a", "b", "c", "> bdc");
+    term.assertAt(5, 4);
+    term.read('\r');
+    term.assertScreen("% a\\", "> bc", "a", "b", "c", "> bdc");
+    term.assertAt(6, 0);
+    assertEquals("abdc", line.get());
+  }
+
+  @Test
+  public void testCompletionBlock3() throws Exception {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    Supplier<String> line = term.readlineComplete(completion -> {
+      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completed.set(true);
+    });
+    term.read('a', '"', '\r', 'b', 'c');
+    term.read(BACKWARD_CHAR);
+    term.assertScreen("% a\"", "> bc");
+    term.assertAt(1, 3);
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% a\"", "> bc", "a", "b", "c", "> bc");
+    term.assertAt(5, 3);
+    term.read('d');
+    term.assertScreen("% a\"", "> bc", "a", "b", "c", "> bdc");
+    term.assertAt(5, 4);
+    term.read('"', '\r');
+    term.assertScreen("% a\"", "> bc", "a", "b", "c", "> bd\"c");
+    term.assertAt(6, 0);
+    assertEquals("a\"\nbd\"c", line.get());
+  }
+
+  @Test
+  public void testPaginate() throws Exception {
+    TestTerm term = new TestTerm(this);
+    AtomicReference<Completion> completed = new AtomicReference<>();
+    Supplier<String> line = term.readlineComplete(completed::set);
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
+    term.read('\t');
+    term.assertScreen("% ");
+    term.assertAt(0, 2);
+    Completion completion = completed.get();
+    assertNull(line.get());
+    completion.write(new int[]{'a'});
+    assertNull(line.get());
+    term.assertScreen("% ", "a");
+    term.assertAt(1, 1);
+    try {
+      completion.complete(Collections.singletonList(new int[]{}));
+      fail("Was expecting an IllegalStateException");
+    } catch (IllegalStateException ignore) {
+    }
+    completion.write(new int[]{'b'});
+    assertNull(line.get());
+    term.assertScreen("% ", "ab");
+    term.assertAt(1, 2);
+    completion.end();
+    assertNull(line.get());
+    term.assertScreen("% ", "ab% ");
+    term.assertAt(1, 4);
+  }
 }
