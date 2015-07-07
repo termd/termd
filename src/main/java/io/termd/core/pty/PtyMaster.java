@@ -21,8 +21,6 @@ import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,21 +31,19 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
-*/
-public class Process extends Thread {
+ */
+public class PtyMaster extends Thread {
 
-  private final Logger log = LoggerFactory.getLogger(Process.class);
-
-  private final Bootstrap bootstrap;
+  private final PtyBootstrap bootstrap;
   private final TtyConnection conn;
   private final Readline readline;
   private final String line;
-  private TaskStatusUpdateListener taskStatusUpdateListener;
+  private Consumer<PtyStatusEvent> taskStatusUpdateListener;
   private Consumer<int[]> processOutputConsumer;
   private Consumer<String> processInputConsumer;
   private Status status;
 
-  public Process(Bootstrap bootstrap, TtyConnection conn, Readline readline, String line) {
+  public PtyMaster(PtyBootstrap bootstrap, TtyConnection conn, Readline readline, String line) {
     this.bootstrap = bootstrap;
     this.conn = conn;
     this.readline = readline;
@@ -63,7 +59,7 @@ public class Process extends Thread {
     this.processInputConsumer = processInputConsumer;
   }
 
-  public void setTaskStatusUpdateListener(TaskStatusUpdateListener taskStatusUpdateListener) {
+  public void setTaskStatusUpdateListener(Consumer<PtyStatusEvent> taskStatusUpdateListener) {
     this.taskStatusUpdateListener = taskStatusUpdateListener;
   }
 
@@ -146,7 +142,7 @@ public class Process extends Thread {
         process.waitFor();
         int exitValue = process.exitValue();
         if (exitValue == 0) {
-          setStatus(Status.SUCCESSFULLY_COMPLETED);
+          setStatus(Status.COMPLETED);
         } else {
           setStatus(Status.FAILED);
         }
@@ -176,7 +172,7 @@ public class Process extends Thread {
   private void setStatus(Status status) {
     Status old = this.status;
     this.status = status;
-    TaskStatusUpdateEvent statusUpdateEvent = new TaskStatusUpdateEvent(this, old, status);
+    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status);
     if (taskStatusUpdateListener != null) {
       taskStatusUpdateListener.accept(statusUpdateEvent);
     }

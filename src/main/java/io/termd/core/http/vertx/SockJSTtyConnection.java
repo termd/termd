@@ -39,21 +39,11 @@ public class SockJSTtyConnection {
     this.socket = socket;
     this.context = Vertx.currentContext();
 
-    socket.handler(new io.vertx.core.Handler<Buffer>() {
-      @Override
-      public void handle(Buffer msg) {
-        ttyConnection.writeToDecoder(msg.toString());
-      }
-    });
+    socket.handler(msg -> ttyConnection.writeToDecoder(msg.toString()));
   }
 
   private void schedule(final Runnable task) {
-    context.runOnContext(new io.vertx.core.Handler<Void>() {
-      @Override
-      public void handle(Void v) {
-        task.run();
-      }
-    });
+    context.runOnContext(v -> task.run());
   }
 
   private Consumer<byte[]> onByteHandler() {

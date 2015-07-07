@@ -22,7 +22,7 @@ package io.termd.core.pty;
 public enum Status {
     NEW,
     RUNNING,
-    SUCCESSFULLY_COMPLETED,
+    COMPLETED,
     FAILED,
     INTERRUPTED;
 }

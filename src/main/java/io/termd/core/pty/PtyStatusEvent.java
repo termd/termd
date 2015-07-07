@@ -19,19 +19,19 @@ package io.termd.core.pty;
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public class TaskStatusUpdateEvent {
-  private Process task;
+public class PtyStatusEvent {
+  private PtyMaster process;
   private Status oldStatus;
   private Status newStatus;
 
-  public TaskStatusUpdateEvent(Process task, Status oldStatus, Status newStatus) {
-    this.task = task;
+  public PtyStatusEvent(PtyMaster task, Status oldStatus, Status newStatus) {
+    this.process = task;
     this.oldStatus = oldStatus;
     this.newStatus = newStatus;
   }
 
-  public Process getTask() {
-    return task;
+  public PtyMaster getProcess() {
+    return process;
   }
 
   public Status getOldStatus() {

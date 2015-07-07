@@ -19,11 +19,11 @@ package io.termd.core.pty;
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public class ProcessStatus {
+public class PtyStatus {
 
   private Status status;
 
-  public ProcessStatus(Status status) {
+  public PtyStatus(Status status) {
     this.status = status;
   }
 

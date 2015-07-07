@@ -55,12 +55,9 @@ public class TtyConnectionBridge implements TtyConnection {
 
   public TtyConnectionBridge(Consumer<byte[]> onByteHandler, Executor executor) {
     this.executor = executor;
-    readBuffer = new ReadBuffer(new Executor() {
-      @Override
-      public void execute(final Runnable command) {
-        log.debug("Server read buffer executing command: {}" + command);
-        schedule(command);
-      }
+    readBuffer = new ReadBuffer(command -> {
+      log.debug("Server read buffer executing command: {}" + command);
+      schedule(command);
     });
 
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
