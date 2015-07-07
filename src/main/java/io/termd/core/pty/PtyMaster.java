@@ -29,6 +29,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
+ * todo : integrate with
+ * - https://github.com/traff/pty4j
+ * - https://github.com/jawi/JPty
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
