@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.termd.core.http;
+package io.termd.core.pty;
 
 import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
@@ -35,13 +35,13 @@ public class Bootstrap implements Consumer<TtyConnection> {
 
   Logger log = LoggerFactory.getLogger(Bootstrap.class);
 
-  private TaskCreationListener taskCreationListener;
+  private ProcessCreationListener taskCreationListener;
 
   public Bootstrap() {
     this((taskStatusUpdateEvent) -> {});
   }
 
-  public Bootstrap(TaskCreationListener taskCreationListener) {
+  public Bootstrap(ProcessCreationListener taskCreationListener) {
     this.taskCreationListener = taskCreationListener;
   }
 
@@ -67,7 +67,7 @@ public class Bootstrap implements Consumer<TtyConnection> {
     Consumer<String> requestHandler = new Consumer<String>() {
       @Override
       public void accept(String line) {
-        Task task = new Task(Bootstrap.this, conn, readline, line);
+        Process task = new Process(Bootstrap.this, conn, readline, line);
         taskCreationListener.accept(task);
         task.start();
       }

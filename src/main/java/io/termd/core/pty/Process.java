@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package io.termd.core.http;
+package io.termd.core.pty;
 
-import io.termd.core.Status;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyEvent;
@@ -35,9 +34,9 @@ import java.util.function.Consumer;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
 */
-public class Task extends Thread {
+public class Process extends Thread {
 
-  private final Logger log = LoggerFactory.getLogger(Task.class);
+  private final Logger log = LoggerFactory.getLogger(Process.class);
 
   private final Bootstrap bootstrap;
   private final TtyConnection conn;
@@ -48,7 +47,7 @@ public class Task extends Thread {
   private Consumer<String> processInputConsumer;
   private Status status;
 
-  public Task(Bootstrap bootstrap, TtyConnection conn, Readline readline, String line) {
+  public Process(Bootstrap bootstrap, TtyConnection conn, Readline readline, String line) {
     this.bootstrap = bootstrap;
     this.conn = conn;
     this.readline = readline;
@@ -124,7 +123,7 @@ public class Task extends Thread {
     }
     ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
     try {
-      final Process process = builder.start();
+      final java.lang.Process process = builder.start();
       setStatus(Status.RUNNING);
       conn.setEventHandler(new Consumer<TtyEvent>() {
         boolean interrupted; // Signal state

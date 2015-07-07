@@ -14,34 +14,16 @@
  * limitations under the License.
  */
 
-package io.termd.core.http;
+package io.termd.core.pty;
 
-import io.termd.core.Status;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public class TaskStatusUpdateEvent {
-  private Task task;
-  private Status oldStatus;
-  private Status newStatus;
+@FunctionalInterface
+public interface TaskStatusUpdateListener extends Consumer<TaskStatusUpdateEvent> {
 
-  public TaskStatusUpdateEvent(Task task, Status oldStatus, Status newStatus) {
-    this.task = task;
-    this.oldStatus = oldStatus;
-    this.newStatus = newStatus;
-  }
-
-  public Task getTask() {
-    return task;
-  }
-
-  public Status getOldStatus() {
-    return oldStatus;
-  }
-
-  public Status getNewStatus() {
-    return newStatus;
-  }
-
+  @Override
+  void accept(TaskStatusUpdateEvent statusUpdateEvent);
 }

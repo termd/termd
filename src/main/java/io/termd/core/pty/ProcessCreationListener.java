@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package io.termd.core;
+package io.termd.core.pty;
+
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public enum Status {
-    NEW,
-    RUNNING,
-    SUCCESSFULLY_COMPLETED,
-    FAILED,
-    INTERRUPTED;
+@FunctionalInterface
+public interface ProcessCreationListener extends Consumer<Process> {
+
+  @Override
+  void accept(Process task);
 }

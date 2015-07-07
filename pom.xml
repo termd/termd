@@ -233,7 +233,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.termd.core.http.vertx.NativeProcessBootstrap</mainClass>
+                  <mainClass>io.termd.core.pty.PtyBootstrap</mainClass>
                 </configuration>
               </execution>
             </executions>

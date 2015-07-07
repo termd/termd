@@ -14,16 +14,32 @@
  * limitations under the License.
  */
 
-package io.termd.core.http;
-
-import java.util.function.Consumer;
+package io.termd.core.pty;
 
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-@FunctionalInterface
-public interface TaskCreationListener extends Consumer<Task> {
+public class TaskStatusUpdateEvent {
+  private Process task;
+  private Status oldStatus;
+  private Status newStatus;
 
-  @Override
-  void accept(Task task);
+  public TaskStatusUpdateEvent(Process task, Status oldStatus, Status newStatus) {
+    this.task = task;
+    this.oldStatus = oldStatus;
+    this.newStatus = newStatus;
+  }
+
+  public Process getTask() {
+    return task;
+  }
+
+  public Status getOldStatus() {
+    return oldStatus;
+  }
+
+  public Status getNewStatus() {
+    return newStatus;
+  }
+
 }

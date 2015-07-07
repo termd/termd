@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package io.termd.core.http.vertx;
+package io.termd.core.pty;
 
-import io.termd.core.http.Bootstrap;
+import io.termd.core.http.vertx.SockJSBootstrap;
+import io.termd.core.pty.Bootstrap;
 
 import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NativeProcessBootstrap {
+public class PtyBootstrap {
 
   public static void main(String[] args) throws Exception {
     Bootstrap bootstrap = new Bootstrap();
