@@ -99,7 +99,7 @@ public class Readline {
       this.completionHandler = completionHandler;
       this.handlers = new HashMap<>();
 
-      handlers.put(Keys.CTRL_M.buffer(), () -> {
+      handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         LineBuffer copy = new LineBuffer(lineBuffer);
         for (int j : lineBuffer) {
           filter.accept(j);
@@ -142,7 +142,7 @@ public class Readline {
         }
       });
 
-      handlers.put(Keys.CTRL_I.buffer(), () -> {
+      handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), () -> {
         if (completionHandler != null) {
           int index = lineBuffer.getCursor();
           while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
