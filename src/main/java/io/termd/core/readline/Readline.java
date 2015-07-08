@@ -173,7 +173,7 @@ public class Readline {
           completionHandler.accept(new Completion() {
 
             @Override
-            public int[] text() {
+            public int[] prefix() {
               return text;
             }
 
@@ -213,10 +213,10 @@ public class Readline {
             }
 
             @Override
-            public Completion inline(int[] line) {
+            public Completion inline(int[] text) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-                if (line.length > 0) {
-                  lineBuffer.insert(line);
+                if (text.length > 0) {
+                  lineBuffer.insert(text);
                   conn.writeHandler().accept(copy.compute(lineBuffer));
                 }
               } else {
@@ -226,7 +226,7 @@ public class Readline {
             }
 
             @Override
-            public Completion write(int[] data) {
+            public Completion write(int[] text) {
               while (true) {
                 CompletionStatus current = status.get();
                 if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
@@ -234,7 +234,7 @@ public class Readline {
                     if (current == CompletionStatus.PENDING) {
                       conn.write("\r\n");
                     }
-                    conn.writeHandler().accept(data);
+                    conn.writeHandler().accept(text);
                     return this;
                   }
                   // Try again

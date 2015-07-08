@@ -37,7 +37,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readline(line -> {
     }, completion -> {
-      assertEquals(0, completion.text().length);
+      assertEquals(0, completion.prefix().length);
       term.assertScreen("% ");
       term.assertAt(0, 2);
       testComplete();

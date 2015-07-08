@@ -23,14 +23,16 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * An object for asynchronous completion.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface Completion {
 
   /**
-   * @return the text to complete
+   * @return the prefix to complete
    */
-  int[] text();
+  int[] prefix();
 
   /**
    * @return the current screen dimension at the moment the completion was initiated
@@ -39,29 +41,29 @@ public interface Completion {
 
   /**
    * Complete this completion, this should be called once with the result, each result should be prefixed
-   * by {@link #text()} otherwise this method will throw an {@link java.lang.IllegalArgumentException}.
+   * by {@link #prefix()} otherwise this method will throw an {@link java.lang.IllegalArgumentException}.
    * This method will end the completion whatsoever and {@link #end()} should not be called.
    *
-   * @param completions the resulting completions
+   * @param candidates the candidates for completion
    */
-  default void complete(List<int[]> completions) {
+  default void complete(List<int[]> candidates) {
     int[] line;
-    int[] text = text();
-    if (completions.size() == 0) {
+    int[] text = prefix();
+    if (candidates.size() == 0) {
       // Do nothing
       end();
       return;
-    } else if (completions.size() == 1) {
-      line = Arrays.copyOf(completions.get(0), completions.get(0).length + 1);
+    } else if (candidates.size() == 1) {
+      line = Arrays.copyOf(candidates.get(0), candidates.get(0).length + 1);
       line[line.length - 1] = ' ';
     } else {
       // Find common prefix
-      int[] prefix = Helper.findLongestCommonPrefix(completions);
+      int[] prefix = Helper.findLongestCommonPrefix(candidates);
       if (prefix.length > text.length) {
         line = prefix;
       } else {
         // Todo : paginate vertically somehow
-        int[] block = Helper.computeBlock(size(), completions);
+        int[] block = Helper.computeBlock(size(), candidates);
         write(block);
         end();
         return;
@@ -80,10 +82,33 @@ public interface Completion {
     }
   }
 
-  Completion inline(int[] line);
+  /**
+   * Insert an inline completion, the {@code text} argument will be inserted at the current position and
+   * the new position will be changed, the underlying edition buffer is also modified.<p/>
+   *
+   * Once this method is called, only the same method and the {@link #end()} method can be called.
+   *
+   * @param text the text to insert inline
+   * @return this completion object
+   */
+  Completion inline(int[] text);
 
-  Completion write(int[] data);
+  /**
+   * Write a block of text below the current edition line, the first time this method is called, a {@code CRLF}
+   * sequence is inserted before write the block of text.<p/>
+   *
+   * Once this method is called, only the same method and the {@link #end()} method can be called. When {@link #end()}
+   * is called, the last edition line will be rewritten so the user can pursue the line edition.
+   *
+   * @param text the text to insert inline
+   * @return this completion object
+   */
+  Completion write(int[] text);
 
+  /**
+   * End the completion, doing the necessary udpates if necessary. This method should be called once, and after
+   * all updates are done, no further updates are possible after this call.
+   */
   void end();
 
 }
