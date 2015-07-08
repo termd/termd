@@ -149,6 +149,7 @@ public class Readline {
             conn.write("\r\n");
             lineBuffer.setSize(0);
             conn.setReadHandler(previousEventHandler);
+            conn.setSizeHandler(previousSizeHandler);
             status = Status.PAUSED;
             requestHandler.accept(raw.toString());
           }
