@@ -72,8 +72,80 @@ class TestTerm {
   };
   final Readline handler;
 
-  private Consumer<int[]> readHandler;
+  Consumer<int[]> readHandler;
+  Consumer<Dimension> sizeHandler;
   private LinkedList<Runnable> tasks = new LinkedList<>();
+
+  TtyConnection conn = new TtyConnection() {
+
+    @Override
+    public Consumer<String> termHandler() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setTermHandler(Consumer<String> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Consumer<Dimension> sizeHandler() {
+      return sizeHandler;
+    }
+
+    @Override
+    public void setSizeHandler(Consumer<Dimension> handler) {
+      sizeHandler = handler;
+      if (handler != null) {
+        handler.accept(new Dimension(40, 20));
+      }
+    }
+
+    @Override
+    public Consumer<TtyEvent> eventHandler() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setEventHandler(Consumer<TtyEvent> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Consumer<int[]> readHandler() {
+      return readHandler;
+    }
+
+    @Override
+    public void setReadHandler(Consumer<int[]> handler) {
+      readHandler = handler;
+    }
+
+    @Override
+    public Consumer<int[]> writeHandler() {
+      return writeHandler;
+    }
+
+    @Override
+    public void schedule(Runnable task) {
+      tasks.add(task);
+    }
+
+    @Override
+    public void setCloseHandler(Consumer<Void> closeHandler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Consumer<Void> closeHandler() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void close() {
+      throw new UnsupportedOperationException();
+    }
+  };
 
   public TestTerm(TestBase test) {
     this.readlineTest = test;
@@ -105,64 +177,7 @@ class TestTerm {
   }
 
   public void readline(Consumer<String> readlineHandler, Consumer<Completion> completionHandler) {
-    handler.readline(new TtyConnection() {
-      Consumer<Dimension> resizeHandler;
-      @Override
-      public Consumer<String> termHandler() {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public void setTermHandler(Consumer<String> handler) {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public Consumer<Dimension> sizeHandler() {
-        return resizeHandler;
-      }
-      @Override
-      public void setSizeHandler(Consumer<Dimension> handler) {
-        this.resizeHandler = handler;
-        if (handler != null) {
-          handler.accept(new Dimension(40, 20));
-        }
-      }
-      @Override
-      public Consumer<TtyEvent> eventHandler() {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public void setEventHandler(Consumer<TtyEvent> handler) {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public Consumer<int[]> readHandler() {
-        return readHandler;
-      }
-      @Override
-      public void setReadHandler(Consumer<int[]> handler) {
-        readHandler = handler;
-      }
-      @Override
-      public Consumer<int[]> writeHandler() {
-        return writeHandler;
-      }
-      @Override
-      public void schedule(Runnable task) {
-        tasks.add(task);
-      }
-      @Override
-      public void setCloseHandler(Consumer<Void> closeHandler) {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public Consumer<Void> closeHandler() {
-        throw new UnsupportedOperationException();
-      }
-      @Override
-      public void close() {
-        throw new UnsupportedOperationException();
-      }
-    }, "% ", readlineHandler, completionHandler);
+    handler.readline(conn, "% ", readlineHandler, completionHandler);
   }
 
   public void executeTasks() {

@@ -1,8 +1,10 @@
 package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
+import io.termd.core.util.Dimension;
 import org.junit.Test;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -210,6 +212,21 @@ public class ReadlineTest extends TestBase {
         "> C\"");
     term.assertAt(3, 0);
     assertEquals("A\"\nB\nC\"", a.get());
+  }
+
+  @Test
+  public void testPreserveOriginalHandlers() {
+    TestTerm term = new TestTerm(this);
+    Consumer<int[]> readHandler = buf -> {};
+    Consumer<Dimension> sizeHandler = size -> {};
+    term.readHandler = readHandler;
+    term.sizeHandler = sizeHandler;
+    term.readlineComplete();
+    assertFalse(term.readHandler == readHandler);
+    assertFalse(term.sizeHandler == sizeHandler);
+    term.read('\r');
+    assertEquals(term.readHandler, readHandler);
+    assertEquals(term.sizeHandler, sizeHandler);
   }
 /*
 
