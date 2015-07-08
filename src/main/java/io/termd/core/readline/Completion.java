@@ -30,7 +30,27 @@ import java.util.List;
 public interface Completion {
 
   /**
-   * @return the prefix to complete
+   * @return the full buffer when completion started
+   */
+  int[] buffer();
+
+  /**
+   * @return the cursor position in the buffer when completion started
+   */
+  int bufferPos();
+
+  /**
+   * @return the line being edited when completion started
+   */
+  int[] line();
+
+  /**
+   * @return the cursor position in the buffer when completion started
+   */
+  int linePos();
+
+  /**
+   * @return the detected prefix to complete
    */
   int[] prefix();
 

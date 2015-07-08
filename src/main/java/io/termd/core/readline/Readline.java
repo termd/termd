@@ -18,6 +18,7 @@ package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
+import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -160,21 +161,62 @@ public class Readline {
         if (completionHandler != null) {
           Dimension dim = size; // Copy ref
           int index = lineBuffer.getCursor();
+
+          //
           while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
             index--;
           }
-          int[] text = new int[lineBuffer.getCursor() - index];
-          for (int i = 0; i < text.length;i++) {
-            text[i] = lineBuffer.getAt(index + i);
+
+          // Compute prefix
+          int[] prefix = new int[lineBuffer.getCursor() - index];
+          for (int i = 0; i < prefix.length;i++) {
+            prefix[i] = lineBuffer.getAt(index + i);
           }
+
+          // Whole buffer
+          StringBuilder sb = new StringBuilder();
+          for (int[] l : lines) {
+            Helper.appendCodePoints(sb, l);
+          }
+
+          // Compute line
+          int linePos = lineBuffer.getCursor();
+          int[] line = new int[lineBuffer.getSize()];
+          for (int i = 0; i < line.length;i++) {
+            line[i] = lineBuffer.getAt(i);
+            sb.appendCodePoint(i);
+          }
+
+          int[] buffer = Helper.toCodePoints(sb.toString());
+
           status = Status.COMPLETING;
           LineBuffer copy = new LineBuffer(lineBuffer);
           final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
 
             @Override
+            public int[] buffer() {
+              return buffer;
+            }
+
+            @Override
+            public int bufferPos() {
+              return 0;
+            }
+
+            @Override
+            public int[] line() {
+              return line;
+            }
+
+            @Override
+            public int linePos() {
+              return linePos;
+            }
+
+            @Override
             public int[] prefix() {
-              return text;
+              return prefix;
             }
 
             @Override
