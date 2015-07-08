@@ -258,6 +258,13 @@ public class Readline {
             public Completion inline(int[] text) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
                 if (text.length > 0) {
+                  switch (lineStatus) {
+                    case LITERAL:
+                      // Ok
+                      break;
+                    default:
+                      throw new UnsupportedOperationException("Todo");
+                  }
                   lineBuffer.insert(text);
                   conn.writeHandler().accept(copy.compute(lineBuffer));
                 }
