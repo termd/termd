@@ -116,11 +116,11 @@ class TestTerm {
         throw new UnsupportedOperationException();
       }
       @Override
-      public Consumer<Dimension> resizeHandler() {
+      public Consumer<Dimension> sizeHandler() {
         return resizeHandler;
       }
       @Override
-      public void setResizeHandler(Consumer<Dimension> handler) {
+      public void setSizeHandler(Consumer<Dimension> handler) {
         this.resizeHandler = handler;
         if (handler != null) {
           handler.accept(new Dimension(40, 20));

@@ -44,7 +44,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private static Logger log = LoggerFactory.getLogger(HttpTtyConnection.class);
 
   private Dimension size = null;
-  private Consumer<Dimension> resizeHandler;
+  private Consumer<Dimension> sizeHandler;
   private final ReadBuffer readBuffer;
   private final TtyEventDecoder onCharSignalDecoder;
   private final BinaryDecoder decoder;
@@ -81,12 +81,12 @@ public abstract class HttpTtyConnection implements TtyConnection {
       //TODO
   }
 
-  public Consumer<Dimension> resizeHandler() {
-    return resizeHandler;
+  public Consumer<Dimension> sizeHandler() {
+    return sizeHandler;
   }
 
-  public void setResizeHandler(Consumer<Dimension> handler) {
-    this.resizeHandler = handler;
+  public void setSizeHandler(Consumer<Dimension> handler) {
+    this.sizeHandler = handler;
     if (handler != null && size != null) {
       handler.accept(size);
     }

@@ -74,7 +74,7 @@ public class Readline {
     }
     status = Status.ACTIVE;
     Consumer<int[]> prevEventHandler = conn.readHandler();
-    Consumer<Dimension> prevResizeHandler = conn.resizeHandler();
+    Consumer<Dimension> prevResizeHandler = conn.sizeHandler();
     Interaction interaction = new Interaction(conn, prompt, prevEventHandler, prevResizeHandler, requestHandler, completionHandler);
     conn.write(prompt);
   }
@@ -110,7 +110,7 @@ public class Readline {
       this.handlers = new HashMap<>();
 
       this.conn.setReadHandler(this);
-      conn.setResizeHandler(dim -> this.size = dim);
+      conn.setSizeHandler(dim -> this.size = dim);
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         LineBuffer copy = new LineBuffer(lineBuffer);

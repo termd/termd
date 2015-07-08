@@ -32,9 +32,9 @@ public interface TtyConnection {
 
   void setTermHandler(Consumer<String> handler);
 
-  Consumer<Dimension> resizeHandler();
+  Consumer<Dimension> sizeHandler();
 
-  void setResizeHandler(Consumer<Dimension> handler);
+  void setSizeHandler(Consumer<Dimension> handler);
 
   Consumer<TtyEvent> eventHandler();
 

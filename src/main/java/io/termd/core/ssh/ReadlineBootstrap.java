@@ -67,7 +67,7 @@ public class ReadlineBootstrap {
       private BinaryEncoder encoder;
       private Consumer<byte[]> out;
       private Dimension size = null;
-      private Consumer<Dimension> resizeHandler;
+      private Consumer<Dimension> sizeHandler;
       private Consumer<String> termHandler;
       private Consumer<Void> closeHandler;
       private ChannelSession session;
@@ -96,13 +96,13 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Consumer<Dimension> resizeHandler() {
-        return resizeHandler;
+      public Consumer<Dimension> sizeHandler() {
+        return sizeHandler;
       }
 
       @Override
-      public void setResizeHandler(Consumer<Dimension> handler) {
-        resizeHandler = handler;
+      public void setSizeHandler(Consumer<Dimension> handler) {
+        sizeHandler = handler;
         if (handler != null && size != null) {
           handler.accept(size);
         }
@@ -232,8 +232,8 @@ public class ReadlineBootstrap {
           }
           if (size != null) {
             this.size = size;
-            if (resizeHandler != null) {
-              resizeHandler.accept(size);
+            if (sizeHandler != null) {
+              sizeHandler.accept(size);
             }
           }
         }

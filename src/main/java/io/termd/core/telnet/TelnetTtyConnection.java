@@ -37,7 +37,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
 
   private Dimension size;
   private String terminalType;
-  private Consumer<Dimension> resizeHandler;
+  private Consumer<Dimension> sizeHandler;
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
@@ -103,19 +103,19 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   @Override
   protected void onSize(int width, int height) {
     this.size = new Dimension(width, height);
-    if (resizeHandler != null) {
-      resizeHandler.accept(size);
+    if (sizeHandler != null) {
+      sizeHandler.accept(size);
     }
   }
 
   @Override
-  public Consumer<Dimension> resizeHandler() {
-    return resizeHandler;
+  public Consumer<Dimension> sizeHandler() {
+    return sizeHandler;
   }
 
   @Override
-  public void setResizeHandler(Consumer<Dimension> handler) {
-    this.resizeHandler = handler;
+  public void setSizeHandler(Consumer<Dimension> handler) {
+    this.sizeHandler = handler;
     if (handler != null && size != null) {
       handler.accept(size);
     }

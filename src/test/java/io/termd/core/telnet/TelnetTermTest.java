@@ -1,20 +1,15 @@
 package io.termd.core.telnet;
 
-import io.termd.core.util.Dimension;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -28,7 +23,7 @@ public abstract class TelnetTermTest extends TelnetTestBase {
     server(() -> {
       final AtomicInteger count = new AtomicInteger();
       final TelnetTtyConnection connection = new TelnetTtyConnection();
-      connection.setResizeHandler(size -> {
+      connection.setSizeHandler(size -> {
         switch (count.getAndIncrement()) {
           case 0:
             assertEquals(20, size.getWidth());
@@ -43,8 +38,8 @@ public abstract class TelnetTermTest extends TelnetTestBase {
           case 2:
             assertEquals(180, size.getWidth());
             assertEquals(160, size.getHeight());
-            connection.setResizeHandler(null);
-            connection.setResizeHandler(size1 -> {
+            connection.setSizeHandler(null);
+            connection.setSizeHandler(size1 -> {
               assertEquals(180, size1.getWidth());
               assertEquals(160, size1.getHeight());
               testComplete();
