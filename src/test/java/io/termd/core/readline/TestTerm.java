@@ -122,6 +122,9 @@ class TestTerm {
       @Override
       public void setResizeHandler(Consumer<Dimension> handler) {
         this.resizeHandler = handler;
+        if (handler != null) {
+          handler.accept(new Dimension(40, 20));
+        }
       }
       @Override
       public Consumer<TtyEvent> eventHandler() {

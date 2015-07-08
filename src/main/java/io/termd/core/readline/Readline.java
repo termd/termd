@@ -18,12 +18,10 @@ package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -159,6 +157,7 @@ public class Readline {
 
       handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), () -> {
         if (completionHandler != null) {
+          Dimension dim = size; // Copy ref
           int index = lineBuffer.getCursor();
           while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
             index--;
@@ -171,10 +170,17 @@ public class Readline {
           LineBuffer copy = new LineBuffer(lineBuffer);
           final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
+
             @Override
             public int[] text() {
               return text;
             }
+
+            @Override
+            public Dimension size() {
+              return dim;
+            }
+
             @Override
             public void end() {
               while (true) {
@@ -204,36 +210,18 @@ public class Readline {
                 }
               }
             }
+
             @Override
-            public void complete(List<int[]> completions) {
-              int[] inline;
-              if (completions.size() == 0) {
-                // Do nothing
-                inline = new int[0];
-              } else if (completions.size() == 1) {
-                inline = completions.get(0);
-              } else {
-                // Find common prefix
-                int[] prefix = Helper.findLongestCommonPrefix(completions);
-                if (prefix.length > 0) {
-                  inline = prefix;
-                } else {
-                  // Todo : paginate vertically
-                  int[] block = computeBlock(completions);
-                  write(block);
-                  end();
-                  return;
-                }
-              }
+            public Completion inline(int[] line) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-                if (inline.length > 0) {
-                  lineBuffer.insert(inline);
+                if (line.length > 0) {
+                  lineBuffer.insert(line);
                   conn.writeHandler().accept(copy.compute(lineBuffer));
                 }
-                end();
               } else {
                 throw new IllegalStateException();
               }
+              return this;
             }
 
             @Override
@@ -257,36 +245,6 @@ public class Readline {
           });
         }
       });
-    }
-
-    private int[] computeBlock(List<int[]> completions) {
-
-      StringBuilder sb = new StringBuilder();
-
-      // Determine the longest value
-      int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
-
-      //
-      int row = size.getWidth() / (max + 1);
-
-      int count = 0;
-      for (int[] completion : completions) {
-        Helper.appendCodePoints(sb, completion);
-        for (int i = completion.length;i < max;i++) {
-          sb.append(' ');
-        }
-        if (count++ < row) {
-          sb.append(' ');
-        } else {
-          sb.append("\r\n");
-        }
-      }
-
-      //
-      sb.append("\r\n");
-
-      //
-      return Helper.toCodePoints(sb.toString());
     }
 
     @Override

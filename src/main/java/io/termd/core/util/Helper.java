@@ -151,4 +151,34 @@ public class Helper {
     }
     return Arrays.copyOf(entries.get(0), len);
   }
+
+  public static int[] computeBlock(Dimension size, List<int[]> completions) {
+
+    StringBuilder sb = new StringBuilder();
+
+    // Determine the longest value
+    int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
+
+    //
+    int row = size.getWidth() / (max + 1);
+
+    int count = 0;
+    for (int[] completion : completions) {
+      Helper.appendCodePoints(sb, completion);
+      for (int i = completion.length;i < max;i++) {
+        sb.append(' ');
+      }
+      if (count++ < row) {
+        sb.append(' ');
+      } else {
+        sb.append("\r\n");
+      }
+    }
+
+    //
+    sb.append("\r\n");
+
+    //
+    return Helper.toCodePoints(sb.toString());
+  }
 }
