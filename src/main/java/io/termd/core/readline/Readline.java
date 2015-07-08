@@ -75,8 +75,8 @@ public class Readline {
       throw new IllegalStateException("Wrong status " + status);
     }
     status = Status.ACTIVE;
-    Consumer<int[]> prevEventHandler = conn.getReadHandler();
-    Consumer<Dimension> prevResizeHandler = conn.getResizeHandler();
+    Consumer<int[]> prevEventHandler = conn.readHandler();
+    Consumer<Dimension> prevResizeHandler = conn.resizeHandler();
     Interaction interaction = new Interaction(conn, prompt, prevEventHandler, prevResizeHandler, requestHandler, completionHandler);
     conn.write(prompt);
   }

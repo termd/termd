@@ -109,7 +109,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<Dimension> getResizeHandler() {
+  public Consumer<Dimension> resizeHandler() {
     return resizeHandler;
   }
 
@@ -122,7 +122,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<String> getTermHandler() {
+  public Consumer<String> termHandler() {
     return termHandler;
   }
 
@@ -135,7 +135,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<TtyEvent> getEventHandler() {
+  public Consumer<TtyEvent> eventHandler() {
     return eventDecoder.getEventHandler();
   }
 
@@ -145,7 +145,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<int[]> getReadHandler() {
+  public Consumer<int[]> readHandler() {
     return readBuffer.getReadHandler();
   }
 

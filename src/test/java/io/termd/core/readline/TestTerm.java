@@ -108,7 +108,7 @@ class TestTerm {
     handler.readline(new TtyConnection() {
       Consumer<Dimension> resizeHandler;
       @Override
-      public Consumer<String> getTermHandler() {
+      public Consumer<String> termHandler() {
         throw new UnsupportedOperationException();
       }
       @Override
@@ -116,7 +116,7 @@ class TestTerm {
         throw new UnsupportedOperationException();
       }
       @Override
-      public Consumer<Dimension> getResizeHandler() {
+      public Consumer<Dimension> resizeHandler() {
         return resizeHandler;
       }
       @Override
@@ -124,7 +124,7 @@ class TestTerm {
         this.resizeHandler = handler;
       }
       @Override
-      public Consumer<TtyEvent> getEventHandler() {
+      public Consumer<TtyEvent> eventHandler() {
         throw new UnsupportedOperationException();
       }
       @Override
@@ -132,7 +132,7 @@ class TestTerm {
         throw new UnsupportedOperationException();
       }
       @Override
-      public Consumer<int[]> getReadHandler() {
+      public Consumer<int[]> readHandler() {
         return readHandler;
       }
       @Override

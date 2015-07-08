@@ -28,19 +28,19 @@ import java.util.function.Consumer;
  */
 public interface TtyConnection {
 
-  Consumer<String> getTermHandler();
+  Consumer<String> termHandler();
 
   void setTermHandler(Consumer<String> handler);
 
-  Consumer<Dimension> getResizeHandler();
+  Consumer<Dimension> resizeHandler();
 
   void setResizeHandler(Consumer<Dimension> handler);
 
-  Consumer<TtyEvent> getEventHandler();
+  Consumer<TtyEvent> eventHandler();
 
   void setEventHandler(Consumer<TtyEvent> handler);
 
-  Consumer<int[]> getReadHandler();
+  Consumer<int[]> readHandler();
 
   /**
    * Set the read handler on this connection.

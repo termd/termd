@@ -73,7 +73,7 @@ public class ReadlineBootstrap {
       private ChannelSession session;
 
       @Override
-      public Consumer<int[]> getReadHandler() {
+      public Consumer<int[]> readHandler() {
         return readBuffer.getReadHandler();
       }
 
@@ -83,7 +83,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Consumer<String> getTermHandler() {
+      public Consumer<String> termHandler() {
         return termHandler;
       }
 
@@ -96,7 +96,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Consumer<Dimension> getResizeHandler() {
+      public Consumer<Dimension> resizeHandler() {
         return resizeHandler;
       }
 
@@ -109,7 +109,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public Consumer<TtyEvent> getEventHandler() {
+      public Consumer<TtyEvent> eventHandler() {
         return eventDecoder.getEventHandler();
       }
 

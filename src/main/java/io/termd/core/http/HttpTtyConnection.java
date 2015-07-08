@@ -73,7 +73,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
     }
   }
 
-  public Consumer<String> getTermHandler() {
+  public Consumer<String> termHandler() {
     return null; //TODO
   }
 
@@ -81,7 +81,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
       //TODO
   }
 
-  public Consumer<Dimension> getResizeHandler() {
+  public Consumer<Dimension> resizeHandler() {
     return resizeHandler;
   }
 
@@ -93,7 +93,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   @Override
-  public Consumer<TtyEvent> getEventHandler() {
+  public Consumer<TtyEvent> eventHandler() {
     return onCharSignalDecoder.getEventHandler();
   }
 
@@ -102,7 +102,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
     onCharSignalDecoder.setEventHandler(handler);
   }
 
-  public Consumer<int[]> getReadHandler() {
+  public Consumer<int[]> readHandler() {
     return readBuffer.getReadHandler();
   }
 
