@@ -54,13 +54,9 @@ public class CompletionTest extends TestBase {
     }, completion::set);
     term.read('a');
     term.read('\t');
+    completion.get().complete(Arrays.asList(new int[]{'b'}));
     try {
-      completion.get().complete(Arrays.asList(new int[]{'b'}));
-      fail("Was expecting an IllegalArgumentException");
-    } catch (IllegalArgumentException ignore) {
-    }
-    try {
-      completion.get().complete(Arrays.asList(new int[]{'a', 'b'}));
+      completion.get().complete(Arrays.asList(new int[]{'c'}));
       fail("Was expecting an IllegalStateException");
     } catch (IllegalStateException ignore) {
     }
@@ -114,7 +110,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Collections.singletonList(Helper.toCodePoints("abcdef")));
+      completion.complete(Collections.singletonList(Helper.toCodePoints("bcdef")));
       completed.set(true);
     });
     term.read('a');
@@ -148,7 +144,7 @@ public class CompletionTest extends TestBase {
     term.read('g');
     term.assertScreen("% a");
     term.assertAt(0, 3);
-    completion.complete(Collections.singletonList(Helper.toCodePoints("abcdef")));
+    completion.complete(Collections.singletonList(Helper.toCodePoints("bcdef")));
     term.executeTasks();
     term.assertScreen("% abcdef g");
     term.assertAt(0, 10);
@@ -167,9 +163,9 @@ public class CompletionTest extends TestBase {
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
       completion.complete(Arrays.asList(
-          Helper.toCodePoints("fooabcdef"),
-          Helper.toCodePoints("foo123456"),
-          Helper.toCodePoints("fooab3456")
+          Helper.toCodePoints("oabcdef"),
+          Helper.toCodePoints("o123456"),
+          Helper.toCodePoints("oab3456")
       ));
       completed.set(true);
     });
@@ -205,9 +201,9 @@ public class CompletionTest extends TestBase {
     term.assertScreen("% fo");
     term.assertAt(0, 4);
     completion.complete(Arrays.asList(
-        Helper.toCodePoints("fooabcdef"),
-        Helper.toCodePoints("foo123456"),
-        Helper.toCodePoints("fooab3456")
+        Helper.toCodePoints("oabcdef"),
+        Helper.toCodePoints("o123456"),
+        Helper.toCodePoints("oab3456")
     ));
     term.executeTasks();
     term.assertScreen("% foog");
@@ -227,9 +223,9 @@ public class CompletionTest extends TestBase {
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
       completion.complete(Arrays.asList(
-          Helper.toCodePoints("fooa"),
-          Helper.toCodePoints("foob"),
-          Helper.toCodePoints("fooc")
+          Helper.toCodePoints("a"),
+          Helper.toCodePoints("b"),
+          Helper.toCodePoints("c")
       ));
       completed.set(true);
     });

@@ -21,6 +21,7 @@ import io.termd.core.util.Helper;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * An object for asynchronous completion.
@@ -35,11 +36,6 @@ public interface Completion {
   int[] line();
 
   /**
-   * @return the cursor position in the buffer when completion started
-   */
-  int linePos();
-
-  /**
    * @return the detected prefix to complete
    */
   int[] prefix();
@@ -50,8 +46,7 @@ public interface Completion {
   Dimension size();
 
   /**
-   * Complete this completion, this should be called once with the result, each result should be prefixed
-   * by {@link #prefix()} otherwise this method will throw an {@link java.lang.IllegalArgumentException}.
+   * Complete this completion, this should be called once with the result, each result being a possible suffix.
    * This method will end the completion whatsoever and {@link #end()} should not be called.
    *
    * @param candidates the candidates for completion
@@ -70,28 +65,23 @@ public interface Completion {
     } else {
       // Find common prefix
       int[] prefix = Helper.findLongestCommonPrefix(candidates);
-      if (prefix.length > text.length) {
+      if (prefix.length > 0) {
         line = prefix;
         terminate = false;
       } else {
         // Todo : paginate vertically somehow
-        int[] block = Helper.computeBlock(size(), candidates);
+        int[] block = Helper.computeBlock(size(), candidates.stream().map(i -> {
+          int[] concat = Arrays.copyOf(text, text.length + i.length);
+          System.arraycopy(i, 0, concat, text.length, i.length);
+          return concat;
+        }).collect(Collectors.toList()));
         write(block);
         end();
         return;
       }
     }
-    int delta = line.length - text.length;
-    if (delta > 0  && Arrays.equals(text, Arrays.copyOf(line, text.length))) {
-      int[] tmp = new int[delta];
-      System.arraycopy(line, text.length, tmp, 0, tmp.length);
-      inline(tmp, terminate);
-      end();
-    } else {
-      end();
-      throw new IllegalArgumentException("Determined completion " + Helper.fromCodePoints(line) +
-          " must be prefixed by " + Helper.fromCodePoints(text));
-    }
+    inline(line, terminate);
+    end();
   }
 
   /**

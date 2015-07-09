@@ -191,11 +191,6 @@ public class Readline {
             }
 
             @Override
-            public int linePos() {
-              return linePos;
-            }
-
-            @Override
             public int[] prefix() {
               return a.buffer.stream().mapToInt(i -> i).toArray();
             }
