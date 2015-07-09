@@ -158,6 +158,27 @@ public class CompletionTest extends TestBase {
   }
 
   @Test
+  public void testSingleEmptyCompletion() {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    Supplier<String> line = term.readlineComplete(completion -> {
+      completion.complete(Collections.singletonList(Helper.toCodePoints("")));
+      completed.set(true);
+    });
+    term.read('a', 'b');
+    term.assertScreen("% ab");
+    term.assertAt(0, 4);
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% ab ");
+    term.assertAt(0, 5);
+    term.read('\r');
+    term.assertScreen("% ab ");
+    term.assertAt(1, 0);
+    assertEquals("ab ", line.get());
+  }
+
+  @Test
   public void testCommonPrefixCompletion() {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();

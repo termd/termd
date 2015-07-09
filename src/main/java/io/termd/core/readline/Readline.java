@@ -233,7 +233,7 @@ public class Readline {
             @Override
             public Completion inline(int[] text, boolean terminate) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-                if (text.length > 0) {
+                if (text.length > 0 || terminate) {
                   for (int z : text) {
                     if (z < 32) {
                       // Todo support \n with $'\n'
