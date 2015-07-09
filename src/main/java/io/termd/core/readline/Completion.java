@@ -30,16 +30,6 @@ import java.util.List;
 public interface Completion {
 
   /**
-   * @return the full buffer when completion started
-   */
-  int[] buffer();
-
-  /**
-   * @return the cursor position in the buffer when completion started
-   */
-  int bufferPos();
-
-  /**
    * @return the line being edited when completion started
    */
   int[] line();
@@ -69,18 +59,20 @@ public interface Completion {
   default void complete(List<int[]> candidates) {
     int[] line;
     int[] text = prefix();
+    boolean terminate;
     if (candidates.size() == 0) {
       // Do nothing
       end();
       return;
     } else if (candidates.size() == 1) {
-      line = Arrays.copyOf(candidates.get(0), candidates.get(0).length + 1);
-      line[line.length - 1] = ' ';
+      line = Arrays.copyOf(candidates.get(0), candidates.get(0).length);
+      terminate = true;
     } else {
       // Find common prefix
       int[] prefix = Helper.findLongestCommonPrefix(candidates);
       if (prefix.length > text.length) {
         line = prefix;
+        terminate = false;
       } else {
         // Todo : paginate vertically somehow
         int[] block = Helper.computeBlock(size(), candidates);
@@ -93,7 +85,7 @@ public interface Completion {
     if (delta > 0  && Arrays.equals(text, Arrays.copyOf(line, text.length))) {
       int[] tmp = new int[delta];
       System.arraycopy(line, text.length, tmp, 0, tmp.length);
-      inline(tmp);
+      inline(tmp, terminate);
       end();
     } else {
       end();
@@ -103,15 +95,25 @@ public interface Completion {
   }
 
   /**
+   * Insert an inline completion with {@code terminate} arg set to false.
+   *
+   * @see #inline(int[], boolean)
+   */
+  default Completion inline(int[] text) {
+    return inline(text, false);
+  }
+
+  /**
    * Insert an inline completion, the {@code text} argument will be inserted at the current position and
    * the new position will be changed, the underlying edition buffer is also modified.<p/>
    *
    * Once this method is called, only the same method and the {@link #end()} method can be called.
    *
    * @param text the text to insert inline
+   * @param terminate true if an extra whitespace must be inserted after the text
    * @return this completion object
    */
-  Completion inline(int[] text);
+  Completion inline(int[] text, boolean terminate);
 
   /**
    * Write a block of text below the current edition line, the first time this method is called, a {@code CRLF}

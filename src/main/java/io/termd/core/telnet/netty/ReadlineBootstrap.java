@@ -168,7 +168,8 @@ public class ReadlineBootstrap {
         Task task = new Task(conn, readline, line);
         task.start();
       }, completion -> {
-        completion.complete(Arrays.asList(Helper.toCodePoints("foobar"), Helper.toCodePoints("juudaa")));
+        System.out.println("want to complete line=" + Helper.fromCodePoints(completion.line()) + ",prefix=" + Helper.fromCodePoints(completion.prefix()));
+        completion.inline(Helper.toCodePoints("abdeef"), true).end();
       });
     }
   };

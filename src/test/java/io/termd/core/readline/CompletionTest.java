@@ -355,5 +355,81 @@ public class CompletionTest extends TestBase {
     term.assertAt(1, 4);
   }
 
-  // Todo test (and probably implement) escaping when completing with blanks or other weird chars
+  @Test
+  public void testEscape() throws Exception {
+    assertPrefix("\\", "\\");
+    assertPrefix("\"", "\"");
+    assertPrefix("'", "'");
+    assertPrefix("\\a", "\\a");
+    assertPrefix("\"a", "\"a");
+    assertPrefix("'a", "'a");
+  }
+
+  @Test
+  public void testCompleteEscape() throws Exception {
+    assertCompleteInline("", "a", "% a");
+    assertCompleteInline("", "a", true, "% a ");
+
+    assertCompleteInline("", " ", "% \\ ");
+    assertCompleteInline("", " ", true, "% \\  ");
+    assertCompleteInline("", "\\", "% \\\\");
+    assertCompleteInline("", "\\", true, "% \\\\ ");
+    assertCompleteInline("", "'", "% \\'");
+    assertCompleteInline("", "'", true, "% \\' ");
+    assertCompleteInline("", "\"", "% \\\"");
+    assertCompleteInline("", "\"", true, "% \\\" ");
+
+    assertCompleteInline("\"", " ", "% \" ");
+    assertCompleteInline("\"", " ", true, "% \" \" ");
+    assertCompleteInline("\"", "\\", "% \"\\\\");
+    assertCompleteInline("\"", "\\", true, "% \"\\\\\" ");
+    assertCompleteInline("\"", "'", "% \"'");
+    assertCompleteInline("\"", "'", true, "% \"'\" ");
+    assertCompleteInline("\"", "\"", "% \"\\\"");
+    assertCompleteInline("\"", "\"", true, "% \"\\\"\" ");
+
+    assertCompleteInline("\"\\", "\"", "% \"\\\"");
+    assertCompleteInline("\"\\", "\"", true, "% \"\\\"\" ");
+    assertCompleteInline("\"\\", "\\", "% \"\\\\");
+    assertCompleteInline("\"\\", "\\", true, "% \"\\\\\" ");
+    assertCompleteInline("\"\\", "a", "% \"\\");
+    assertCompleteInline("\"\\", "a", true, "% \"\\");
+
+    assertCompleteInline("'", " ", "% ' ");
+    assertCompleteInline("'", " ", true, "% ' ' ");
+    assertCompleteInline("'", "\\", "% '\\");
+    assertCompleteInline("'", "\\", true, "% '\\' ");
+    assertCompleteInline("'", "'", "% ''\\''");
+    assertCompleteInline("'", "'", true, "% ''\\''' ");
+    assertCompleteInline("'", "\"", "% '\"");
+    assertCompleteInline("'", "\"", true, "% '\"' ");
+
+    assertCompleteInline("\\", "a", "% \\a");
+    assertCompleteInline("\\", "a", true, "% \\a ");
+  }
+
+  private void assertPrefix(String line, String expected) {
+    TestTerm term = new TestTerm(this);
+    AtomicReference<String> prefix = new AtomicReference<>();
+    term.readlineComplete(comp -> {
+      prefix.set(Helper.fromCodePoints(comp.prefix()));
+    });
+    term.read(Helper.toCodePoints(line));
+    term.read('\t');
+    assertEquals(expected, prefix.get());
+  }
+
+  private void assertCompleteInline(String line, String inline, String... expected) {
+    assertCompleteInline(line, inline, false, expected);
+  }
+
+  private void assertCompleteInline(String line, String inline, boolean terminate, String... expected) {
+    TestTerm term = new TestTerm(this);
+    AtomicReference<Completion> completion = new AtomicReference<>();
+    term.readlineComplete(completion::set);
+    term.read(Helper.toCodePoints(line));
+    term.read('\t');
+    completion.get().inline(Helper.toCodePoints(inline), terminate);
+    term.assertScreen(expected);
+  }
 }

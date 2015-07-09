@@ -18,7 +18,6 @@ package io.termd.core.readline;
 
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
-import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -111,20 +110,20 @@ public class Readline {
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         for (int j : lineBuffer) {
-          filter.accept(j);
+          parsed.filter.accept(j);
         }
         lineBuffer.setSize(0);
-        if (quoting == Quoting.ESC) {
-          filter.accept((int) '\r'); // Correct status
+        if (parsed.escaped) {
+          parsed.filter.accept((int) '\r'); // Correct status
           conn.write("\r\n> ");
         } else {
-          int[] l = new int[this.escaped.size()];
+          int[] l = new int[parsed.buffer.size()];
           for (int index = 0;index < l.length;index++) {
-            l[index] = this.escaped.get(index);
+            l[index] = parsed.buffer.get(index);
           }
-          escaped.clear();
+          parsed.buffer.clear();
           lines.add(l);
-          if (quoting == Quoting.WEAK || quoting == Quoting.STRONG) {
+          if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
             conn.write("\r\n> ");
           } else {
             final StringBuilder raw = new StringBuilder();
@@ -138,7 +137,7 @@ public class Readline {
               }
             }
             lines.clear();
-            escaped.clear();
+            parsed.buffer.clear();
             conn.write("\r\n");
             conn.setReadHandler(previousEventHandler);
             conn.setSizeHandler(previousSizeHandler);
@@ -158,42 +157,33 @@ public class Readline {
             index--;
           }
 
-          // Compute prefix
-          int[] prefix = new int[lineBuffer.getCursor() - index];
-          for (int i = 0; i < prefix.length;i++) {
-            prefix[i] = lineBuffer.getAt(index + i);
-          }
-
-          // Whole buffer
-          StringBuilder sb = new StringBuilder();
-          for (int[] l : lines) {
-            Helper.appendCodePoints(sb, l);
-          }
-
-          // Compute line
+          // Compute line : need to test full line :-)
           int linePos = lineBuffer.getCursor();
-          int[] line = new int[lineBuffer.getSize()];
-          for (int i = 0; i < line.length;i++) {
-            line[i] = lineBuffer.getAt(i);
-            sb.appendCodePoint(i);
+          ParsedBuffer line_ = new ParsedBuffer();
+          for (int[] l : lines) {
+            for (int j : l) {
+              line_.filter.accept(j);
+            }
+            line_.filter.accept('\n');
           }
+          for (int i : parsed.buffer) {
+            line_.filter.accept(i);
+          }
+          for (int i : lineBuffer) {
+            line_.filter.accept(i);
+          }
+          int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
 
-          int[] buffer = Helper.toCodePoints(sb.toString());
+          // Compute prefix
+          ParsedBuffer a = new ParsedBuffer();
+          for (int i = index; i < lineBuffer.getCursor();i++) {
+            a.filter.accept(lineBuffer.getAt(i));
+          }
 
           status = Status.COMPLETING;
           LineBuffer copy = new LineBuffer(lineBuffer);
           final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
-
-            @Override
-            public int[] buffer() {
-              return buffer;
-            }
-
-            @Override
-            public int bufferPos() {
-              return 0;
-            }
 
             @Override
             public int[] line() {
@@ -207,7 +197,7 @@ public class Readline {
 
             @Override
             public int[] prefix() {
-              return prefix;
+              return a.buffer.stream().mapToInt(i -> i).toArray();
             }
 
             @Override
@@ -224,7 +214,7 @@ public class Readline {
                     switch (current) {
                       case COMPLETING:
                         // Redraw last line with correct prompt
-                        if (lines.size() == 0 && escaped.size() == 0) {
+                        if (lines.size() == 0 && parsed.buffer.size() == 0) {
                           conn.write(prompt);
                         } else {
                           conn.write("> ");
@@ -246,17 +236,102 @@ public class Readline {
             }
 
             @Override
-            public Completion inline(int[] text) {
+            public Completion inline(int[] text, boolean terminate) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
                 if (text.length > 0) {
-                  switch (quoting) {
-                    case NONE:
-                      // Ok
-                      break;
-                    default:
-                      throw new UnsupportedOperationException("Todo");
+                  for (int z : text) {
+                    if (z < 32) {
+                      // Todo support \n with $'\n'
+                      throw new UnsupportedOperationException("todo");
+                    }
+                    switch (a.quoting) {
+                      case WEAK:
+                        switch (z) {
+                          case '\\':
+                          case '"':
+                            if (!a.escaped) {
+                              lineBuffer.insert('\\');
+                              a.filter.accept('\\');
+                            }
+                            lineBuffer.insert(z);
+                            a.filter.accept(z);
+                            break;
+                          default:
+                            if (a.escaped) {
+                              // Should beep
+                            } else {
+                              lineBuffer.insert(z);
+                              a.filter.accept(z);
+                            }
+                            break;
+                        }
+                        break;
+                      case STRONG:
+                        switch (z) {
+                          case '\'':
+                            lineBuffer.insert('\'', '\\', z, '\'');
+                            a.filter.accept('\'');
+                            a.filter.accept('\\');
+                            a.filter.accept(z);
+                            a.filter.accept('\'');
+                            break;
+                          default:
+                            lineBuffer.insert(z);
+                            a.filter.accept(z);
+                            break;
+                        }
+                        break;
+                      case NONE:
+                        if (a.escaped) {
+                          lineBuffer.insert(z);
+                          a.filter.accept(z);
+                        } else {
+                          switch (z) {
+                            case ' ':
+                            case '"':
+                            case '\'':
+                            case '\\':
+                              lineBuffer.insert('\\', z);
+                              a.filter.accept('\\');
+                              a.filter.accept(z);
+                              break;
+                            default:
+                              lineBuffer.insert(z);
+                              a.filter.accept(z);
+                              break;
+                          }
+                        }
+                        break;
+                      default:
+                        throw new UnsupportedOperationException("Todo " + a.quoting);
+                    }
                   }
-                  lineBuffer.insert(text);
+                  if (terminate) {
+                    switch (a.quoting) {
+                      case WEAK:
+                        if (a.escaped) {
+                          // Do nothing emit bell
+                        } else {
+                          lineBuffer.insert('"', ' ');
+                          a.filter.accept('"');
+                          a.filter.accept(' ');
+                        }
+                        break;
+                      case STRONG:
+                        lineBuffer.insert('\'', ' ');
+                        a.filter.accept('\'');
+                        a.filter.accept(' ');
+                        break;
+                      case NONE:
+                        if (a.escaped) {
+                          // Do nothing emit bell
+                        } else {
+                          lineBuffer.insert(' ');
+                          a.filter.accept(' ');
+                        }
+                        break;
+                    }
+                  }
                   conn.writeHandler().accept(copy.compute(lineBuffer));
                 }
               } else {
@@ -326,35 +401,6 @@ public class Readline {
 
     private final LinkedList<int[]> lines = new LinkedList<>();
     private final LineBuffer lineBuffer = new LineBuffer();
-    private LinkedList<Integer> escaped = new LinkedList<>();
-    private Quoting quoting = Quoting.NONE;
-    private QuoteFilter filter = new QuoteFilter(new Quoter() {
-      @Override
-      public void quotingChanged(Quoting prev, Quoting q) {
-        if (q == Quoting.NONE) {
-          if (quoting != Quoting.ESC) {
-            escaped.add(quoting.ch);
-          }
-        } else {
-          if (q != Quoting.ESC) {
-            escaped.add(q.ch);
-          }
-        }
-        quoting = q;
-      }
-      @Override
-      public void accept(int ch) {
-        switch (quoting) {
-          case ESC:
-            if (ch != '\r') {
-              escaped.add((int) '\\');
-              escaped.add(ch);
-            }
-            break;
-          default:
-            escaped.add(ch);
-        }
-      }
-    });
+    private final ParsedBuffer parsed = new ParsedBuffer();
   }
 }

@@ -23,58 +23,65 @@ import java.util.function.IntConsumer;
  */
 class QuoteFilter implements IntConsumer {
 
-  private Quoting status = Quoting.NONE;
-  private final Quoter quoter;
+  private Quote status = Quote.NONE;
+  private boolean escaping = false;
+  private final QuoteListener quoter;
 
-  QuoteFilter(Quoter quoter) {
+  QuoteFilter(QuoteListener quoter) {
     this.quoter = quoter;
   }
 
   @Override
   public void accept(int code) {
-    switch (status) {
-      case NONE:
-        switch (code) {
-          case '\'':
-            quoter.quotingChanged(Quoting.NONE, Quoting.STRONG);
-            status = Quoting.STRONG;
-            break;
-          case '"':
-            quoter.quotingChanged(Quoting.NONE, Quoting.WEAK);
-            status = Quoting.WEAK;
-            break;
-          case '\\':
-            quoter.quotingChanged(Quoting.NONE, Quoting.ESC);
-            status = Quoting.ESC;
-            break;
-          default:
+    if (escaping) {
+      escaping = false;
+      quoter.accept(code);
+    } else {
+      switch (status) {
+        case NONE:
+          switch (code) {
+            case '\'':
+              quoter.quotingChanged(Quote.NONE, Quote.STRONG);
+              status = Quote.STRONG;
+              break;
+            case '"':
+              quoter.quotingChanged(Quote.NONE, Quote.WEAK);
+              status = Quote.WEAK;
+              break;
+            case '\\':
+              quoter.escaping();
+              escaping = true;
+              break;
+            default:
+              quoter.accept(code);
+              break;
+          }
+          break;
+        case STRONG:
+          if (code == '\'') {
+            quoter.quotingChanged(Quote.STRONG, Quote.NONE);
+            status = Quote.NONE;
+          } else {
             quoter.accept(code);
-            break;
-        }
-        break;
-      case STRONG:
-        if (code == '\'') {
-          quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
-          status = Quoting.NONE;
-        } else {
-          quoter.accept(code);
-        }
-        break;
-      case WEAK:
-        if (code == '"') {
-          quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
-          status = Quoting.NONE;
-        } else {
-          quoter.accept(code);
-        }
-        break;
-      case ESC:
-        quoter.accept(code);
-        quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
-        status = Quoting.NONE;
-        break;
-      default:
-        break;
+          }
+          break;
+        case WEAK:
+          if (code == '"') {
+            quoter.quotingChanged(Quote.STRONG, Quote.NONE);
+            status = Quote.NONE;
+          } else if (code == '\\') {
+            // Note we don't make the distinction between special chars like " or \ from other chars
+            // that are supposed to not escaped (i.e "\a" is \a and "\$" is $)
+            // this interpretation is not done by termd
+            escaping = true;
+            quoter.escaping();
+          } else {
+            quoter.accept(code);
+          }
+          break;
+        default:
+          break;
+      }
     }
   }
 

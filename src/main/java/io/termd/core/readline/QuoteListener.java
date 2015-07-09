@@ -21,8 +21,10 @@ import java.util.function.IntConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface Quoter extends IntConsumer {
+interface QuoteListener extends IntConsumer {
 
-  void quotingChanged(Quoting prev, Quoting next);
+  void escaping();
+
+  void quotingChanged(Quote prev, Quote next);
 
 }

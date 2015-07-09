@@ -19,13 +19,13 @@ package io.termd.core.readline;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public enum Quoting {
+public enum Quote {
 
-  NONE(null), STRONG((int)'\''), WEAK((int)'"'), ESC((int)'\\');
+  NONE(null), STRONG((int)'\''), WEAK((int)'"');
 
   public final Integer ch;
 
-  Quoting(Integer ch) {
+  Quote(Integer ch) {
     this.ch = ch;
   }
 }

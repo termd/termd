@@ -36,7 +36,10 @@ public class QuotingTest {
     assertEscape("\"a\"", "<\">a</\">");
     assertEscape("\"'\"", "<\">'</\">");
     assertEscape("\"\n\"", "<\">\n</\">");
-    assertEscape("\"\\\"", "<\">\\</\">");
+    assertEscape("\"\\", "<\">[");
+    assertEscape("\"\\\"", "<\">[\"]");
+    assertEscape("\"\\\\", "<\">[\\]");
+    assertEscape("\"\\a", "<\">[a]");
     assertEscape("\"a\nb\"", "<\">a\nb</\">");
     assertEscape("\"a\"\n", "<\">a</\">\n");
   }
@@ -59,20 +62,21 @@ public class QuotingTest {
 
   private String escape(String line) {
     final StringBuilder builder = new StringBuilder();
-    QuoteFilter escaper = new QuoteFilter(new Quoter() {
-      Quoting quoting;
+    QuoteFilter escaper = new QuoteFilter(new QuoteListener() {
+      Quote quoting;
+      boolean escaping;
+
       @Override
-      public void quotingChanged(Quoting prev, Quoting next) {
+      public void escaping() {
+        builder.append("[");
+        escaping = true;
+      }
+
+      @Override
+      public void quotingChanged(Quote prev, Quote next) {
         switch (next) {
           case NONE:
-            if (this.quoting == Quoting.ESC) {
-              builder.append(']');
-            } else {
-              builder.append("</").appendCodePoint(this.quoting.ch).append(">");
-            }
-            break;
-          case ESC:
-            builder.append("[");
+            builder.append("</").appendCodePoint(this.quoting.ch).append(">");
             break;
           default:
             builder.append("<").appendCodePoint(next.ch).append(">");
@@ -82,6 +86,10 @@ public class QuotingTest {
       @Override
       public void accept(int value) {
         builder.appendCodePoint(value);
+        if (escaping) {
+          builder.append(']');
+          escaping = false;
+        }
       }
     });
     for (int offset = 0;offset < line.length();) {
