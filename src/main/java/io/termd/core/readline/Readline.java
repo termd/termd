@@ -110,11 +110,11 @@ public class Readline {
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         for (int j : lineBuffer) {
-          parsed.filter.accept(j);
+          parsed.accept(j);
         }
         lineBuffer.setSize(0);
         if (parsed.escaped) {
-          parsed.filter.accept((int) '\r'); // Correct status
+          parsed.accept((int) '\r'); // Correct status
           conn.write("\r\n> ");
         } else {
           int[] l = new int[parsed.buffer.size()];
@@ -162,22 +162,22 @@ public class Readline {
           ParsedBuffer line_ = new ParsedBuffer();
           for (int[] l : lines) {
             for (int j : l) {
-              line_.filter.accept(j);
+              line_.accept(j);
             }
-            line_.filter.accept('\n');
+            line_.accept('\n');
           }
           for (int i : parsed.buffer) {
-            line_.filter.accept(i);
+            line_.accept(i);
           }
           for (int i : lineBuffer) {
-            line_.filter.accept(i);
+            line_.accept(i);
           }
           int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
 
           // Compute prefix
           ParsedBuffer a = new ParsedBuffer();
           for (int i = index; i < lineBuffer.getCursor();i++) {
-            a.filter.accept(lineBuffer.getAt(i));
+            a.accept(lineBuffer.getAt(i));
           }
 
           status = Status.COMPLETING;
@@ -251,17 +251,17 @@ public class Readline {
                           case '"':
                             if (!a.escaped) {
                               lineBuffer.insert('\\');
-                              a.filter.accept('\\');
+                              a.accept('\\');
                             }
                             lineBuffer.insert(z);
-                            a.filter.accept(z);
+                            a.accept(z);
                             break;
                           default:
                             if (a.escaped) {
                               // Should beep
                             } else {
                               lineBuffer.insert(z);
-                              a.filter.accept(z);
+                              a.accept(z);
                             }
                             break;
                         }
@@ -270,21 +270,21 @@ public class Readline {
                         switch (z) {
                           case '\'':
                             lineBuffer.insert('\'', '\\', z, '\'');
-                            a.filter.accept('\'');
-                            a.filter.accept('\\');
-                            a.filter.accept(z);
-                            a.filter.accept('\'');
+                            a.accept('\'');
+                            a.accept('\\');
+                            a.accept(z);
+                            a.accept('\'');
                             break;
                           default:
                             lineBuffer.insert(z);
-                            a.filter.accept(z);
+                            a.accept(z);
                             break;
                         }
                         break;
                       case NONE:
                         if (a.escaped) {
                           lineBuffer.insert(z);
-                          a.filter.accept(z);
+                          a.accept(z);
                         } else {
                           switch (z) {
                             case ' ':
@@ -292,12 +292,12 @@ public class Readline {
                             case '\'':
                             case '\\':
                               lineBuffer.insert('\\', z);
-                              a.filter.accept('\\');
-                              a.filter.accept(z);
+                              a.accept('\\');
+                              a.accept(z);
                               break;
                             default:
                               lineBuffer.insert(z);
-                              a.filter.accept(z);
+                              a.accept(z);
                               break;
                           }
                         }
@@ -313,21 +313,21 @@ public class Readline {
                           // Do nothing emit bell
                         } else {
                           lineBuffer.insert('"', ' ');
-                          a.filter.accept('"');
-                          a.filter.accept(' ');
+                          a.accept('"');
+                          a.accept(' ');
                         }
                         break;
                       case STRONG:
                         lineBuffer.insert('\'', ' ');
-                        a.filter.accept('\'');
-                        a.filter.accept(' ');
+                        a.accept('\'');
+                        a.accept(' ');
                         break;
                       case NONE:
                         if (a.escaped) {
                           // Do nothing emit bell
                         } else {
                           lineBuffer.insert(' ');
-                          a.filter.accept(' ');
+                          a.accept(' ');
                         }
                         break;
                     }

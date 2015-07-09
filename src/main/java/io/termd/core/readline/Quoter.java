@@ -16,73 +16,61 @@
 
 package io.termd.core.readline;
 
-import java.util.function.IntConsumer;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class QuoteFilter implements IntConsumer {
+public class Quoter {
 
-  private Quote status = Quote.NONE;
+  private Quote quote = Quote.NONE;
   private boolean escaping = false;
-  private final QuoteListener quoter;
 
-  QuoteFilter(QuoteListener quoter) {
-    this.quoter = quoter;
+  public Quote getQuote() {
+    return quote;
   }
 
-  @Override
-  public void accept(int code) {
+  public QuoteResult update(int code) {
     if (escaping) {
       escaping = false;
-      quoter.accept(code);
+      return QuoteResult.CODE_POINT;
     } else {
-      switch (status) {
+      switch (quote) {
         case NONE:
           switch (code) {
             case '\'':
-              quoter.quotingChanged(Quote.NONE, Quote.STRONG);
-              status = Quote.STRONG;
-              break;
+              quote = Quote.STRONG;
+              return QuoteResult.UPDATED;
             case '"':
-              quoter.quotingChanged(Quote.NONE, Quote.WEAK);
-              status = Quote.WEAK;
-              break;
+              quote = Quote.WEAK;
+              return QuoteResult.UPDATED;
             case '\\':
-              quoter.escaping();
               escaping = true;
-              break;
+              return QuoteResult.ESC;
             default:
-              quoter.accept(code);
-              break;
+              return QuoteResult.CODE_POINT;
           }
-          break;
         case STRONG:
           if (code == '\'') {
-            quoter.quotingChanged(Quote.STRONG, Quote.NONE);
-            status = Quote.NONE;
+            quote = Quote.NONE;
+            return QuoteResult.UPDATED;
           } else {
-            quoter.accept(code);
+            return QuoteResult.CODE_POINT;
           }
-          break;
         case WEAK:
           if (code == '"') {
-            quoter.quotingChanged(Quote.STRONG, Quote.NONE);
-            status = Quote.NONE;
+            quote = Quote.NONE;
+            return QuoteResult.UPDATED;
           } else if (code == '\\') {
             // Note we don't make the distinction between special chars like " or \ from other chars
             // that are supposed to not escaped (i.e "\a" is \a and "\$" is $)
             // this interpretation is not done by termd
             escaping = true;
-            quoter.escaping();
+            return QuoteResult.ESC;
           } else {
-            quoter.accept(code);
+            return QuoteResult.CODE_POINT;
           }
-          break;
         default:
-          break;
+          throw new AssertionError();
       }
     }
   }
-
 }

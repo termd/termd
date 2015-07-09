@@ -16,15 +16,11 @@
 
 package io.termd.core.readline;
 
-import java.util.function.IntConsumer;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface QuoteListener extends IntConsumer {
+public enum QuoteResult {
 
-  void escaping();
-
-  void quotingChanged(Quote prev, Quote next);
+  UPDATED, ESC, CODE_POINT;
 
 }

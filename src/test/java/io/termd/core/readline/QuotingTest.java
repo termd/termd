@@ -62,39 +62,36 @@ public class QuotingTest {
 
   private String escape(String line) {
     final StringBuilder builder = new StringBuilder();
-    QuoteFilter escaper = new QuoteFilter(new QuoteListener() {
-      Quote quoting;
-      boolean escaping;
-
-      @Override
-      public void escaping() {
-        builder.append("[");
-        escaping = true;
-      }
-
-      @Override
-      public void quotingChanged(Quote prev, Quote next) {
-        switch (next) {
-          case NONE:
-            builder.append("</").appendCodePoint(this.quoting.ch).append(">");
-            break;
-          default:
-            builder.append("<").appendCodePoint(next.ch).append(">");
-        }
-        this.quoting = next;
-      }
-      @Override
-      public void accept(int value) {
-        builder.appendCodePoint(value);
-        if (escaping) {
-          builder.append(']');
-          escaping = false;
-        }
-      }
-    });
-    for (int offset = 0;offset < line.length();) {
+    Quoter escaper = new Quoter();
+    boolean escaping = false;
+    Quote prev = Quote.NONE;
+    for (int offset = 0; offset < line.length(); ) {
       int cp = line.codePointAt(offset);
-      escaper.accept(cp);
+      switch (escaper.update(cp)) {
+        case UPDATED:
+          Quote update = escaper.getQuote();
+          switch (update) {
+            case NONE:
+              builder.append("</").appendCodePoint(prev.ch).append(">");
+              break;
+            default:
+              builder.append("<").appendCodePoint(update.ch).append(">");
+              break;
+          }
+          prev = update;
+          break;
+        case ESC:
+          builder.append("[");
+          escaping = true;
+          break;
+        case CODE_POINT:
+          builder.appendCodePoint(cp);
+          if (escaping) {
+            builder.append(']');
+            escaping = false;
+          }
+          break;
+      }
       offset += Character.charCount(cp);
     }
     return builder.toString();
