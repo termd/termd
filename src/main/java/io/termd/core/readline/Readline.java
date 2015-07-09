@@ -80,10 +80,6 @@ public class Readline {
     conn.write(prompt);
   }
 
-  private enum LineStatus {
-    LITERAL, ESCAPED, QUOTED
-  }
-
   private class Interaction implements Consumer<int[]> {
 
     private final Consumer<String> requestHandler;
@@ -118,7 +114,7 @@ public class Readline {
         for (int j : lineBuffer) {
           filter.accept(j);
         }
-        if (lineStatus == LineStatus.ESCAPED) {
+        if (quoting == Quoting.ESC) {
           filter.accept((int) '\r'); // Correct status
           conn.write("\r\n> ");
           lineBuffer.setSize(0);
@@ -130,7 +126,7 @@ public class Readline {
           }
           escaped.clear();
           lines.add(l);
-          if (lineStatus == LineStatus.QUOTED) {
+          if (quoting == Quoting.WEAK || quoting == Quoting.STRONG) {
             conn.write("\r\n> ");
             lineBuffer.setSize(0);
             copy.setSize(0);
@@ -258,8 +254,8 @@ public class Readline {
             public Completion inline(int[] text) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
                 if (text.length > 0) {
-                  switch (lineStatus) {
-                    case LITERAL:
+                  switch (quoting) {
+                    case NONE:
                       // Ok
                       break;
                     default:
@@ -336,33 +332,33 @@ public class Readline {
     private final LinkedList<int[]> lines = new LinkedList<>();
     private final LineBuffer lineBuffer = new LineBuffer();
     private LinkedList<Integer> escaped = new LinkedList<>();
-    private LineStatus lineStatus = LineStatus.LITERAL;
-    private EscapeFilter filter = new EscapeFilter(new Escaper() {
+    private Quoting quoting = Quoting.NONE;
+    private QuoteFilter filter = new QuoteFilter(new Quoter() {
       @Override
-      public void escaping() {
-        lineStatus = LineStatus.ESCAPED;
-      }
-      @Override
-      public void escaped(int ch) {
-        if (ch != '\r') {
-          escaped.add((int) '\\');
-          escaped.add(ch);
+      public void quotingChanged(Quoting prev, Quoting q) {
+        if (q == Quoting.NONE) {
+          if (quoting != Quoting.ESC) {
+            escaped.add(quoting.ch);
+          }
+        } else {
+          if (q != Quoting.ESC) {
+            escaped.add(q.ch);
+          }
         }
-        lineStatus = LineStatus.LITERAL;
+        quoting = q;
       }
       @Override
-      public void beginQuotes(int delim) {
-        escaped.add(delim);
-        lineStatus = LineStatus.QUOTED;
-      }
-      @Override
-      public void endQuotes(int delim) {
-        escaped.add(delim);
-        lineStatus = LineStatus.LITERAL;
-      }
-      @Override
-      public void accept(Integer event) {
-        escaped.add(event);
+      public void accept(int ch) {
+        switch (quoting) {
+          case ESC:
+            if (ch != '\r') {
+              escaped.add((int) '\\');
+              escaped.add(ch);
+            }
+            break;
+          default:
+            escaped.add(ch);
+        }
       }
     });
   }

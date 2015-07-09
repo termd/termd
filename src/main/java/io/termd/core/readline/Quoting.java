@@ -16,19 +16,16 @@
 
 package io.termd.core.readline;
 
-import java.util.function.Consumer;
-
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
-interface Escaper extends Consumer<Integer> {
+* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+*/
+public enum Quoting {
 
-  void escaping();
+  NONE(null), STRONG((int)'\''), WEAK((int)'"'), ESC((int)'\\');
 
-  void escaped(int ch);
+  public final Integer ch;
 
-  void beginQuotes(int delim);
-
-  void endQuotes(int delim);
-
+  Quoting(Integer ch) {
+    this.ch = ch;
+  }
 }

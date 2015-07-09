@@ -3,13 +3,11 @@ package io.termd.core.readline;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class LineEscaperTest {
+public class QuotingTest {
 
   @Test
   public void testFoo() {
@@ -61,29 +59,28 @@ public class LineEscaperTest {
 
   private String escape(String line) {
     final StringBuilder builder = new StringBuilder();
-    EscapeFilter escaper = new EscapeFilter(new Escaper() {
-      Integer delimiter;
+    QuoteFilter escaper = new QuoteFilter(new Quoter() {
+      Quoting quoting;
       @Override
-      public void beginQuotes(int delim) {
-        builder.append("<").appendCodePoint(delim).append(">");
-        this.delimiter = delim;
+      public void quotingChanged(Quoting prev, Quoting next) {
+        switch (next) {
+          case NONE:
+            if (this.quoting == Quoting.ESC) {
+              builder.append(']');
+            } else {
+              builder.append("</").appendCodePoint(this.quoting.ch).append(">");
+            }
+            break;
+          case ESC:
+            builder.append("[");
+            break;
+          default:
+            builder.append("<").appendCodePoint(next.ch).append(">");
+        }
+        this.quoting = next;
       }
       @Override
-      public void escaping() {
-        builder.append('[');
-      }
-      @Override
-      public void escaped(int ch) {
-        builder.appendCodePoint(ch).appendCodePoint(']');
-      }
-      @Override
-      public void endQuotes(int delim) {
-        assertEquals((int)this.delimiter, delim);
-        builder.append("</").appendCodePoint(delim).append(">");
-        this.delimiter = null;
-      }
-      @Override
-      public void accept(Integer value) {
+      public void accept(int value) {
         builder.appendCodePoint(value);
       }
     });

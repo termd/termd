@@ -16,70 +16,66 @@
 
 package io.termd.core.readline;
 
-import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EscapeFilter implements Consumer<Integer> {
+class QuoteFilter implements IntConsumer {
 
-  private EscStatus status = EscStatus.NORMAL;
-  private final Escaper escaper;
+  private Quoting status = Quoting.NONE;
+  private final Quoter quoter;
 
-  EscapeFilter(Escaper escaper) {
-    this.escaper = escaper;
+  QuoteFilter(Quoter quoter) {
+    this.quoter = quoter;
   }
 
   @Override
-  public void accept(Integer code) {
+  public void accept(int code) {
     switch (status) {
-      case NORMAL:
-        switch ((int)code) {
+      case NONE:
+        switch (code) {
           case '\'':
-            escaper.beginQuotes('\'');
-            status = EscStatus.IN_QUOTE;
+            quoter.quotingChanged(Quoting.NONE, Quoting.STRONG);
+            status = Quoting.STRONG;
             break;
           case '"':
-            escaper.beginQuotes('\"');
-            status = EscStatus.IN_DOUBLE_QUOTE;
+            quoter.quotingChanged(Quoting.NONE, Quoting.WEAK);
+            status = Quoting.WEAK;
             break;
           case '\\':
-            escaper.escaping();
-            status = EscStatus.IN_BACKSLASH;
+            quoter.quotingChanged(Quoting.NONE, Quoting.ESC);
+            status = Quoting.ESC;
             break;
           default:
-            escaper.accept(code);
+            quoter.accept(code);
             break;
         }
         break;
-      case IN_QUOTE:
+      case STRONG:
         if (code == '\'') {
-          escaper.endQuotes('\'');
-          status = EscStatus.NORMAL;
+          quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
+          status = Quoting.NONE;
         } else {
-          escaper.accept(code);
+          quoter.accept(code);
         }
         break;
-      case IN_DOUBLE_QUOTE:
+      case WEAK:
         if (code == '"') {
-          escaper.endQuotes('\"');
-          status = EscStatus.NORMAL;
+          quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
+          status = Quoting.NONE;
         } else {
-          escaper.accept(code);
+          quoter.accept(code);
         }
         break;
-      case IN_BACKSLASH:
-        escaper.escaped(code);
-        status = EscStatus.NORMAL;
+      case ESC:
+        quoter.accept(code);
+        quoter.quotingChanged(Quoting.STRONG, Quoting.NONE);
+        status = Quoting.NONE;
         break;
       default:
         break;
     }
   }
 
-  public static enum EscStatus {
-
-    NORMAL, IN_QUOTE, IN_DOUBLE_QUOTE, IN_BACKSLASH
-
-  }
 }
