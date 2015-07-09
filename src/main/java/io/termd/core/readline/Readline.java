@@ -110,15 +110,13 @@ public class Readline {
       conn.setSizeHandler(dim -> this.size = dim);
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
-        LineBuffer copy = new LineBuffer(lineBuffer);
         for (int j : lineBuffer) {
           filter.accept(j);
         }
+        lineBuffer.setSize(0);
         if (quoting == Quoting.ESC) {
           filter.accept((int) '\r'); // Correct status
           conn.write("\r\n> ");
-          lineBuffer.setSize(0);
-          copy.setSize(0);
         } else {
           int[] l = new int[this.escaped.size()];
           for (int index = 0;index < l.length;index++) {
@@ -128,9 +126,7 @@ public class Readline {
           lines.add(l);
           if (quoting == Quoting.WEAK || quoting == Quoting.STRONG) {
             conn.write("\r\n> ");
-            lineBuffer.setSize(0);
-            copy.setSize(0);
-          }  else {
+          } else {
             final StringBuilder raw = new StringBuilder();
             for (int index = 0;index < lines.size();index++) {
               int[] a = lines.get(index);
@@ -144,7 +140,6 @@ public class Readline {
             lines.clear();
             escaped.clear();
             conn.write("\r\n");
-            lineBuffer.setSize(0);
             conn.setReadHandler(previousEventHandler);
             conn.setSizeHandler(previousSizeHandler);
             status = Status.PAUSED;
