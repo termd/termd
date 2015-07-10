@@ -81,14 +81,14 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
         System.out.println("CLIENT $TERM=" + term);
     });
     conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
-    read(conn, readline);
+    read(conn, readline, conn.getInvokerContext());
   }
 
-  public void read(final TtyConnection conn, final Readline readline) {
+  public void read(final TtyConnection conn, final Readline readline, String invokerContext) {
     Consumer<String> requestHandler = new Consumer<String>() {
       @Override
       public void accept(String line) {
-        PtyMaster task = new PtyMaster(PtyBootstrap.this, conn, readline, line);
+        PtyMaster task = new PtyMaster(PtyBootstrap.this, conn, readline, line, invokerContext);
         taskCreationListener.accept(task);
         task.start();
       }

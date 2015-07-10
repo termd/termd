@@ -50,6 +50,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private final BinaryDecoder decoder;
   private final BinaryEncoder encoder;
   private Consumer<Void> closeHandler;
+  private String invokerContext;
 
   public HttpTtyConnection() {
     readBuffer = new ReadBuffer(command -> {
@@ -59,6 +60,11 @@ public abstract class HttpTtyConnection implements TtyConnection {
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
     encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write);
+  }
+
+  public HttpTtyConnection(String invokerContext) {
+    this();
+    this.invokerContext = invokerContext;
   }
 
   protected abstract void write(byte[] buffer);
@@ -71,6 +77,10 @@ public abstract class HttpTtyConnection implements TtyConnection {
         decoder.write(data.getBytes()); //write back echo
         break;
     }
+  }
+
+  public String getInvokerContext() {
+    return invokerContext;
   }
 
   public Consumer<String> termHandler() {

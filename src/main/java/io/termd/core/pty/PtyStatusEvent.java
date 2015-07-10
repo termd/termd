@@ -23,11 +23,13 @@ public class PtyStatusEvent {
   private PtyMaster process;
   private Status oldStatus;
   private Status newStatus;
+  private String context;
 
-  public PtyStatusEvent(PtyMaster task, Status oldStatus, Status newStatus) {
+  public PtyStatusEvent(PtyMaster task, Status oldStatus, Status newStatus, String context) {
     this.process = task;
     this.oldStatus = oldStatus;
     this.newStatus = newStatus;
+    this.context = context;
   }
 
   public PtyMaster getProcess() {
@@ -42,4 +44,7 @@ public class PtyStatusEvent {
     return newStatus;
   }
 
+  public String getContext() {
+    return context;
+  }
 }

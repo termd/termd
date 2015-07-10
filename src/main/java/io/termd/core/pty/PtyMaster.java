@@ -18,8 +18,8 @@ package io.termd.core.pty;
 
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.readline.Readline;
-import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Helper;
 
 import java.io.IOException;
@@ -46,13 +46,15 @@ public class PtyMaster extends Thread {
   private Consumer<int[]> processOutputConsumer;
   private Consumer<String> processInputConsumer;
   private Status status;
+  private String invokerContext; //Context is attached to the PtyStatusEvent
 
-  public PtyMaster(PtyBootstrap bootstrap, TtyConnection conn, Readline readline, String line) {
+  public PtyMaster(PtyBootstrap bootstrap, TtyConnection conn, Readline readline, String line, String invokerContext) {
     this.bootstrap = bootstrap;
     this.conn = conn;
     this.readline = readline;
     this.line = line;
     status = Status.NEW;
+    this.invokerContext = invokerContext;
   }
 
   public void setProcessOutputConsumer(Consumer<int[]> processOutputConsumer) {
@@ -142,14 +144,10 @@ public class PtyMaster extends Thread {
       Pipe stderr = new Pipe(process.getErrorStream());
       stdout.start();
       stderr.start();
+      int exitValue = -1;
       try {
         process.waitFor();
-        int exitValue = process.exitValue();
-        if (exitValue == 0) {
-          setStatus(Status.COMPLETED);
-        } else {
-          setStatus(Status.FAILED);
-        }
+        exitValue = process.exitValue();
       } catch (InterruptedException e) {
         setStatus(Status.INTERRUPTED);
         Thread.currentThread().interrupt();
@@ -164,19 +162,24 @@ public class PtyMaster extends Thread {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+      if (exitValue == 0) {
+        setStatus(Status.COMPLETED);
+      } else {
+        setStatus(Status.FAILED);
+      }
     } catch (IOException e) {
       conn.writeHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
     }
 
     // Read line again
     conn.setEventHandler(null);
-    conn.schedule(() -> bootstrap.read(conn, readline));
+    conn.schedule(() -> bootstrap.read(conn, readline, invokerContext));
   }
 
   private void setStatus(Status status) {
     Status old = this.status;
     this.status = status;
-    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status);
+    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status, invokerContext);
     if (taskStatusUpdateListener != null) {
       taskStatusUpdateListener.accept(statusUpdateEvent);
     }
