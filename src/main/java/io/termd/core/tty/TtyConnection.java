@@ -77,4 +77,7 @@ public interface TtyConnection {
    */
   void schedule(Runnable task);
 
+  default String getInvokerContext() {
+    return null;
+  }
 }
