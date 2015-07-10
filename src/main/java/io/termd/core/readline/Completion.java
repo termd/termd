@@ -51,7 +51,7 @@ public interface Completion {
    *
    * @param candidates the candidates for completion
    */
-  default void complete(List<int[]> candidates) {
+  default void complete(List<Entry> candidates) {
     int[] line;
     int[] text = prefix();
     boolean terminate;
@@ -60,19 +60,20 @@ public interface Completion {
       end();
       return;
     } else if (candidates.size() == 1) {
-      line = Arrays.copyOf(candidates.get(0), candidates.get(0).length);
-      terminate = true;
+      line = Arrays.copyOf(candidates.get(0).value, candidates.get(0).value.length);
+      terminate = candidates.get(0).terminal;
     } else {
       // Find common prefix
-      int[] prefix = Helper.findLongestCommonPrefix(candidates);
+      int[] prefix = Helper.findLongestCommonPrefix(candidates.stream().map(entry -> entry.value).collect(Collectors.toList()));
       if (prefix.length > 0) {
         line = prefix;
         terminate = false;
       } else {
         // Todo : paginate vertically somehow
         int[] block = Helper.computeBlock(size(), candidates.stream().map(i -> {
-          int[] concat = Arrays.copyOf(text, text.length + i.length);
-          System.arraycopy(i, 0, concat, text.length, i.length);
+          int[] data = i.value;
+          int[] concat = Arrays.copyOf(text, text.length + data.length);
+          System.arraycopy(data, 0, concat, text.length, data.length);
           return concat;
         }).collect(Collectors.toList()));
         write(block);
@@ -82,6 +83,51 @@ public interface Completion {
     }
     inline(line, terminate);
     end();
+  }
+
+  static class Entry {
+    final int[] value;
+    final boolean terminal;
+    public Entry(boolean terminal, int... value) {
+      this.value = value;
+      this.terminal = terminal;
+    }
+    private Entry(int... value) {
+      this.value = value;
+      this.terminal = true;
+    }
+    private Entry(String value) {
+      this.value = Helper.toCodePoints(value);
+      this.terminal = true;
+    }
+    private Entry(boolean terminal, String value) {
+      this.value = Helper.toCodePoints(value);
+      this.terminal = terminal;
+    }
+  }
+
+  static Entry nonTerminalEntry(int... value) {
+    return new Entry(false, value);
+  }
+
+  static Entry nontTerminalEntry(String value) {
+    return new Entry(false, value);
+  }
+
+  static Entry terminalEntry(int... value) {
+    return new Entry(true, value);
+  }
+
+  static Entry terminalEntry(String value) {
+    return new Entry(true, value);
+  }
+
+  static Entry entry(boolean terminal, int... value) {
+    return new Entry(terminal, value);
+  }
+
+  static Entry entry(boolean terminal, String value) {
+    return new Entry(terminal, value);
   }
 
   /**
