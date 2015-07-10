@@ -231,9 +231,9 @@ public class Readline {
             }
 
             @Override
-            public Completion inline(int[] text, boolean terminate) {
+            public Completion complete(int[] text, boolean terminal) {
               if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-                if (text.length > 0 || terminate) {
+                if (text.length > 0 || terminal) {
                   for (int z : text) {
                     if (z < 32) {
                       // Todo support \n with $'\n'
@@ -301,7 +301,7 @@ public class Readline {
                         throw new UnsupportedOperationException("Todo " + a.quoting);
                     }
                   }
-                  if (terminate) {
+                  if (terminal) {
                     switch (a.quoting) {
                       case WEAK:
                         if (a.escaped) {
@@ -336,7 +336,7 @@ public class Readline {
             }
 
             @Override
-            public Completion write(int[] text) {
+            public Completion suggest(int[] text) {
               while (true) {
                 CompletionStatus current = status.get();
                 if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {

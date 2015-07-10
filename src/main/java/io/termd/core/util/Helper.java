@@ -172,6 +172,7 @@ public class Helper {
         sb.append(' ');
       } else {
         sb.append("\r\n");
+        count = 0;
       }
     }
 

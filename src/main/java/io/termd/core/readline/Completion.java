@@ -19,9 +19,7 @@ package io.termd.core.readline;
 import io.termd.core.util.Dimension;
 import io.termd.core.util.Helper;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * An object for asynchronous completion.
@@ -29,6 +27,10 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface Completion {
+
+  static int[] findLongestCommonPrefix(List<int[]> entries) {
+    return Helper.findLongestCommonPrefix(entries);
+  }
 
   /**
    * @return the line being edited when completion started
@@ -46,97 +48,12 @@ public interface Completion {
   Dimension size();
 
   /**
-   * Complete this completion, this should be called once with the result, each result being a possible suffix.
-   * This method will end the completion whatsoever and {@link #end()} should not be called.
-   *
-   * @param candidates the candidates for completion
-   */
-  default void complete(List<Entry> candidates) {
-    int[] line;
-    int[] text = prefix();
-    boolean terminate;
-    if (candidates.size() == 0) {
-      // Do nothing
-      end();
-      return;
-    } else if (candidates.size() == 1) {
-      line = Arrays.copyOf(candidates.get(0).value, candidates.get(0).value.length);
-      terminate = candidates.get(0).terminal;
-    } else {
-      // Find common prefix
-      int[] prefix = Helper.findLongestCommonPrefix(candidates.stream().map(entry -> entry.value).collect(Collectors.toList()));
-      if (prefix.length > 0) {
-        line = prefix;
-        terminate = false;
-      } else {
-        // Todo : paginate vertically somehow
-        int[] block = Helper.computeBlock(size(), candidates.stream().map(i -> {
-          int[] data = i.value;
-          int[] concat = Arrays.copyOf(text, text.length + data.length);
-          System.arraycopy(data, 0, concat, text.length, data.length);
-          return concat;
-        }).collect(Collectors.toList()));
-        write(block);
-        end();
-        return;
-      }
-    }
-    inline(line, terminate);
-    end();
-  }
-
-  static class Entry {
-    final int[] value;
-    final boolean terminal;
-    public Entry(boolean terminal, int... value) {
-      this.value = value;
-      this.terminal = terminal;
-    }
-    private Entry(int... value) {
-      this.value = value;
-      this.terminal = true;
-    }
-    private Entry(String value) {
-      this.value = Helper.toCodePoints(value);
-      this.terminal = true;
-    }
-    private Entry(boolean terminal, String value) {
-      this.value = Helper.toCodePoints(value);
-      this.terminal = terminal;
-    }
-  }
-
-  static Entry nonTerminalEntry(int... value) {
-    return new Entry(false, value);
-  }
-
-  static Entry nontTerminalEntry(String value) {
-    return new Entry(false, value);
-  }
-
-  static Entry terminalEntry(int... value) {
-    return new Entry(true, value);
-  }
-
-  static Entry terminalEntry(String value) {
-    return new Entry(true, value);
-  }
-
-  static Entry entry(boolean terminal, int... value) {
-    return new Entry(terminal, value);
-  }
-
-  static Entry entry(boolean terminal, String value) {
-    return new Entry(terminal, value);
-  }
-
-  /**
    * Insert an inline completion with {@code terminate} arg set to false.
    *
-   * @see #inline(int[], boolean)
+   * @see #complete(int[], boolean)
    */
-  default Completion inline(int[] text) {
-    return inline(text, false);
+  default Completion complete(int[] text) {
+    return complete(text, false);
   }
 
   /**
@@ -146,10 +63,20 @@ public interface Completion {
    * Once this method is called, only the same method and the {@link #end()} method can be called.
    *
    * @param text the text to insert inline
-   * @param terminate true if an extra whitespace must be inserted after the text
+   * @param terminal true if an extra whitespace must be inserted after the text
    * @return this completion object
    */
-  Completion inline(int[] text, boolean terminate);
+  Completion complete(int[] text, boolean terminal);
+
+  /**
+   * Complete this completion, this should be called once with the result, each result being a possible suffix.
+   * This method will end the completion whatsoever and {@link #end()} should not be called.
+   *
+   * @param candidates the candidates for completion
+   */
+  default Completion suggest(List<int[]> candidates) {
+    return suggest(Helper.computeBlock(size(), candidates));
+  }
 
   /**
    * Write a block of text below the current edition line, the first time this method is called, a {@code CRLF}
@@ -161,7 +88,7 @@ public interface Completion {
    * @param text the text to insert inline
    * @return this completion object
    */
-  Completion write(int[] text);
+  Completion suggest(int[] text);
 
   /**
    * End the completion, doing the necessary udpates if necessary. This method should be called once, and after

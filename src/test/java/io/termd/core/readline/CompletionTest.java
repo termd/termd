@@ -54,9 +54,9 @@ public class CompletionTest extends TestBase {
     }, completion::set);
     term.read('a');
     term.read('\t');
-    completion.get().complete(Arrays.asList(Completion.terminalEntry("b")));
+    completion.get().suggest(new int[]{'b'}).end();
     try {
-      completion.get().complete(Arrays.asList(Completion.terminalEntry("c")));
+      completion.get().suggest(new int[]{'c'});
       fail("Was expecting an IllegalStateException");
     } catch (IllegalStateException ignore) {
     }
@@ -67,7 +67,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Collections.emptyList());
+      completion.end();
       completed.set(true);
     });
     term.read('\t');
@@ -95,7 +95,7 @@ public class CompletionTest extends TestBase {
     term.assertScreen("% ");
     term.assertAt(0, 2);
     Completion completion = completed.get();
-    completion.complete(Collections.emptyList());
+    completion.end();
     term.executeTasks();
     term.assertScreen("% a");
     term.assertAt(0, 3);
@@ -110,7 +110,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Collections.singletonList(Completion.terminalEntry("bcdef")));
+      completion.complete(new int[]{'b','c','d','e','f'}, true).end();
       completed.set(true);
     });
     term.read('a');
@@ -144,7 +144,7 @@ public class CompletionTest extends TestBase {
     term.read('g');
     term.assertScreen("% a");
     term.assertAt(0, 3);
-    completion.complete(Collections.singletonList(Completion.terminalEntry("bcdef")));
+    completion.complete(new int[]{'b', 'c', 'd', 'e', 'f'}, true).end();
     term.executeTasks();
     term.assertScreen("% abcdef g");
     term.assertAt(0, 10);
@@ -162,7 +162,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Collections.singletonList(Completion.nontTerminalEntry("bcdef")));
+      completion.complete(new int[]{'b','c','d','e','f'}).end();
       completed.set(true);
     });
     term.read('a');
@@ -186,7 +186,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Collections.singletonList(Completion.terminalEntry("")));
+      completion.complete(new int[0], true).end();
       completed.set(true);
     });
     term.read('a', 'b');
@@ -203,75 +203,15 @@ public class CompletionTest extends TestBase {
   }
 
   @Test
-  public void testCommonPrefixCompletion() {
-    TestTerm term = new TestTerm(this);
-    AtomicBoolean completed = new AtomicBoolean();
-    Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Arrays.asList(
-          Completion.terminalEntry("oabcdef"),
-          Completion.terminalEntry("o123456"),
-          Completion.terminalEntry("oab3456")
-      ));
-      completed.set(true);
-    });
-    term.read('f', 'o');
-    term.assertScreen("% fo");
-    term.assertAt(0, 4);
-    term.read('\t');
-    assertTrue(completed.get());
-    term.assertScreen("% foo");
-    term.assertAt(0, 5);
-    term.read('g');
-    term.assertScreen("% foog");
-    term.assertAt(0, 6);
-    term.read('\r');
-    term.assertScreen("% foog");
-    term.assertAt(1, 0);
-    assertEquals("foog", line.get());
-  }
-
-  @Test
-  public void testCommonPrefixCompletionAsync() throws Exception {
-    TestTerm term = new TestTerm(this);
-    CompletableFuture<Completion> completed = new CompletableFuture<>();
-    Supplier<String> line = term.readlineComplete(completed::complete);
-    term.read('f', 'o');
-    term.assertScreen("% fo");
-    term.assertAt(0, 4);
-    term.read('\t');
-    Completion completion = completed.get();
-    term.assertScreen("% fo");
-    term.assertAt(0, 4);
-    term.read('g');
-    term.assertScreen("% fo");
-    term.assertAt(0, 4);
-    completion.complete(Arrays.asList(
-        Completion.terminalEntry("oabcdef"),
-        Completion.terminalEntry("o123456"),
-        Completion.terminalEntry("oab3456")
-    ));
-    term.executeTasks();
-    term.assertScreen("% foog");
-    term.assertAt(0, 6);
-    term.read('h');
-    term.assertScreen("% foogh");
-    term.assertAt(0, 7);
-    term.read('\r');
-    term.assertScreen("% foogh");
-    term.assertAt(1, 0);
-    assertEquals("foogh", line.get());
-  }
-
-  @Test
   public void testNoCommonPrefixCompletion() {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(Arrays.asList(
-          Completion.terminalEntry("a"),
-          Completion.terminalEntry("b"),
-          Completion.terminalEntry("c")
-      ));
+      completion.suggest(Arrays.asList(
+          new int[]{'f','o','o','a'},
+          new int[]{'f','o','o','b'},
+          new int[]{'f','o','o','c'}
+      )).end();
       completed.set(true);
     });
     term.read('f', 'o', 'o');
@@ -295,7 +235,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
       completed.set(true);
     });
     term.read('a', 'b');
@@ -320,7 +260,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
       completed.set(true);
     });
     term.read('a', '\\', '\r', 'b', 'c');
@@ -345,7 +285,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.write(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
       completed.set(true);
     });
     term.read('a', '"', '\r', 'b', 'c');
@@ -377,16 +317,16 @@ public class CompletionTest extends TestBase {
     term.assertAt(0, 2);
     Completion completion = completed.get();
     assertNull(line.get());
-    completion.write(new int[]{'a'});
+    completion.suggest(new int[]{'a'});
     assertNull(line.get());
     term.assertScreen("% ", "a");
     term.assertAt(1, 1);
     try {
-      completion.complete(Collections.singletonList(Completion.terminalEntry("a")));
+      completion.complete(new int[]{'a'});
       fail("Was expecting an IllegalStateException");
     } catch (IllegalStateException ignore) {
     }
-    completion.write(new int[]{'b'});
+    completion.suggest(new int[]{'b'});
     assertNull(line.get());
     term.assertScreen("% ", "ab");
     term.assertAt(1, 2);
@@ -470,7 +410,7 @@ public class CompletionTest extends TestBase {
     term.readlineComplete(completion::set);
     term.read(Helper.toCodePoints(line));
     term.read('\t');
-    completion.get().inline(Helper.toCodePoints(inline), terminate);
+    completion.get().complete(Helper.toCodePoints(inline), terminate);
     term.assertScreen(expected);
   }
 }
