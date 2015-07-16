@@ -65,7 +65,7 @@ public class TtyEventDecoder implements Consumer<int[]> {
         } else if (val == vsusp) {
           event = TtyEvent.SUSP;
         } else if (val == veof) {
-          event = TtyEvent.EOF;
+          event = TtyEvent.EOT;
         }
         if (event != null) {
           if (eventHandler != null) {

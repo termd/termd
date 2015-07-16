@@ -165,7 +165,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
                   count = 1;
                   break;
                 case 1:
-                  assertEquals(TtyEvent.EOF, event);
+                  assertEquals(TtyEvent.EOT, event);
                   count = 2;
                   break;
                 case 2:

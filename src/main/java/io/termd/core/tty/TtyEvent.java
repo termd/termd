@@ -21,7 +21,7 @@ package io.termd.core.tty;
  */
 public enum TtyEvent {
 
-  EOF,
+  EOT,
 
   INTR,
 
