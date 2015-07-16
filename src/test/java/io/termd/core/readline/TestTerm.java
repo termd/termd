@@ -70,7 +70,7 @@ class TestTerm {
       }
     }
   };
-  final Readline handler;
+  final Readline readline;
 
   Consumer<int[]> readHandler;
   Consumer<Dimension> sizeHandler;
@@ -150,10 +150,11 @@ class TestTerm {
   public TestTerm(TestBase test) {
     this.readlineTest = test;
     Keymap keymap = InputrcParser.create();
-    handler = new Readline(keymap);
-    handler.addFunction(new BackwardDeleteChar());
-    handler.addFunction(new BackwardChar());
-    handler.addFunction(new ForwardChar());
+    readline = new Readline(keymap);
+    readline.addFunction(new BackwardDeleteChar());
+    readline.addFunction(new BackwardChar());
+    readline.addFunction(new ForwardChar());
+    readline.install(conn);
   }
 
   public void readlineFail() {
@@ -177,7 +178,7 @@ class TestTerm {
   }
 
   public void readline(Consumer<String> readlineHandler, Consumer<Completion> completionHandler) {
-    handler.readline(conn, "% ", readlineHandler, completionHandler);
+    readline.readline(conn, "% ", readlineHandler, completionHandler);
   }
 
   public void executeTasks() {

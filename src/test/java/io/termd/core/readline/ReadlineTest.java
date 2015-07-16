@@ -2,9 +2,10 @@ package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
 import io.termd.core.util.Dimension;
+import io.termd.core.util.Helper;
 import org.junit.Test;
 
-import java.util.function.Consumer;
+import java.util.LinkedList;
 import java.util.function.Supplier;
 
 /**
@@ -214,6 +215,7 @@ public class ReadlineTest extends TestBase {
     assertEquals("A\"\nB\nC\"", a.get());
   }
 
+/*
   @Test
   public void testPreserveOriginalHandlers() {
     TestTerm term = new TestTerm(this);
@@ -228,6 +230,60 @@ public class ReadlineTest extends TestBase {
     assertEquals(term.readHandler, readHandler);
     assertEquals(term.sizeHandler, sizeHandler);
   }
+*/
+
+  @Test
+  public void testBuffering1() {
+    LinkedList<int[]> data = new LinkedList<>();
+    TestTerm term = new TestTerm(this);
+    term.readline.setReadHandler(data::add);
+    term.read('h', 'e', 'l', 'l', 'o');
+    assertEquals(1, data.size());
+    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
+    term.assertScreen();
+    term.assertAt(0, 0);
+  }
+
+  @Test
+  public void testBuffering2() {
+    LinkedList<int[]> data = new LinkedList<>();
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.readline.setReadHandler(data::add);
+    term.read('A', '\r', 'h', 'e', 'l', 'l', 'o');
+    assertEquals(1, data.size());
+    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
+    assertEquals("A", line.get());
+  }
+
+  @Test
+  public void testBuffering3() {
+    LinkedList<int[]> data = new LinkedList<>();
+    TestTerm term = new TestTerm(this);
+    term.read('A', '\r', 'h', 'e', 'l', 'l', 'o');
+    term.assertScreen();
+    term.assertAt(0, 0);
+    Supplier<String> line = term.readlineComplete();
+    term.readline.setReadHandler(data::add);
+    term.readline.schedulePending();
+    term.executeTasks();
+    assertEquals(1, data.size());
+    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
+    assertEquals("A", line.get());
+  }
+
+  @Test
+  public void testResize() {
+    TestTerm term = new TestTerm(this);
+    term.readline.setSizeHandler(dim -> {
+      assertEquals(new Dimension(3, 4), term.readline.size());
+      assertEquals(new Dimension(3, 4), dim);
+      testComplete();
+    });
+    term.sizeHandler.accept(new Dimension(3, 4));
+    await();
+  }
+
 /*
 
   @Test

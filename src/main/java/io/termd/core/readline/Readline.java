@@ -33,22 +33,90 @@ import java.util.function.Consumer;
  */
 public class Readline {
 
-  static enum Status {
-    PAUSED, ACTIVE, COMPLETING
-  }
-
   private final Keymap keymap;
   private final Map<String, Function> functions = new HashMap<>();
   private final KeyDecoder decoder;
-  private Status status = Status.PAUSED;
+  private TtyConnection conn;
+  private Consumer<int[]> prevReadHandler;
+  private Consumer<Dimension> prevSizeHandler;
+  private Consumer<int[]> defaultReadHandler;
+  private Consumer<Dimension> defaultSizeHandler;
+  private Dimension size;
+  private Interaction interaction;
 
   public Readline(Keymap keymap) {
     this.keymap = keymap;
     this.decoder = new KeyDecoder(keymap);
   }
 
+  /**
+   * @return the last known size
+   */
+  public Dimension size() {
+    return size;
+  }
+
   public Readline addFunction(Function function) {
     functions.put(function.name(), function);
+    return this;
+  }
+
+  public Readline install(TtyConnection conn) {
+    this.prevReadHandler = conn.readHandler();
+    this.prevSizeHandler = conn.sizeHandler();
+    this.conn = conn;
+    this.conn.setReadHandler(data -> {
+      decoder.append(data);
+      deliver();
+    });
+    this.conn.setSizeHandler(dim -> {
+      size = dim;
+      if (defaultSizeHandler != null) {
+        defaultSizeHandler.accept(dim);
+      }
+    });
+    return this;
+  }
+
+  private void deliver() {
+    while (decoder.hasNext()) {
+      if (interaction != null){
+        if (!interaction.completing) {
+          interaction.handle(decoder.next());
+        } else {
+          return;
+        }
+      } else {
+        if (defaultReadHandler != null) {
+          defaultReadHandler.accept(decoder.clear());
+        } else {
+          return;
+        }
+      }
+    }
+  }
+
+  public void uninstall() {
+    conn.setReadHandler(prevReadHandler);
+    conn.setSizeHandler(prevSizeHandler);
+    conn = null;
+  }
+
+  public Consumer<int[]> readHandler() {
+    return defaultReadHandler;
+  }
+
+  public Readline setReadHandler(Consumer<int[]> readHandler) {
+    this.defaultReadHandler = readHandler;
+    return this;
+  }
+
+  public Consumer<Dimension> sizeHandler() {
+    return defaultSizeHandler;
+  }
+
+  public Readline setSizeHandler(Consumer<Dimension> sizeHandler) {
+    defaultSizeHandler = sizeHandler;
     return this;
   }
 
@@ -63,50 +131,41 @@ public class Readline {
   }
 
   /**
+   * Schedule delivery of pending data in the buffer.
+   */
+  public void schedulePending() {
+    if (decoder.hasNext()) {
+      conn.schedule(Readline.this::deliver);
+    }
+  }
+
+  /**
    * Read a line until a request can be processed.
    *
    * @param conn the tty connection
    * @param requestHandler the requestHandler
    */
   public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
-    if (status != Status.PAUSED) {
-      throw new IllegalStateException("Wrong status " + status);
+    if (interaction != null) {
+      throw new IllegalStateException("Already reading a line");
     }
-    status = Status.ACTIVE;
-    Consumer<int[]> prevEventHandler = conn.readHandler();
-    Consumer<Dimension> prevResizeHandler = conn.sizeHandler();
-    Interaction interaction = new Interaction(conn, prompt, prevEventHandler, prevResizeHandler, requestHandler, completionHandler);
+    interaction = new Interaction(prompt, requestHandler, completionHandler);
     conn.write(prompt);
   }
 
-  private class Interaction implements Consumer<int[]> {
+  private class Interaction {
 
-    private final Consumer<String> requestHandler;
-    private final TtyConnection conn;
-    private final String prompt;
-    private final Consumer<int[]> prevEventHandler;
-    private final Consumer<Dimension> prevSizeHandler;
-    private final Consumer<Completion> completionHandler;
     private final Map<IntBuffer, Runnable> handlers;
-    private Dimension size;
+    private boolean completing;
+    private final LinkedList<int[]> lines = new LinkedList<>();
+    private final LineBuffer lineBuffer = new LineBuffer();
+    private final ParsedBuffer parsed = new ParsedBuffer();
 
     public Interaction(
-        TtyConnection conn,
         String prompt,
-        Consumer<int[]> previousEventHandler,
-        Consumer<Dimension> previousSizeHandler,
         Consumer<String> requestHandler,
         Consumer<Completion> completionHandler) {
-      this.conn = conn;
-      this.prompt = prompt;
-      this.prevEventHandler = previousEventHandler;
-      this.requestHandler = requestHandler;
-      this.completionHandler = completionHandler;
-      this.prevSizeHandler = previousSizeHandler;
       this.handlers = new HashMap<>();
-
-      this.conn.setReadHandler(this);
-      conn.setSizeHandler(dim -> this.size = dim);
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         for (int j : lineBuffer) {
@@ -139,9 +198,7 @@ public class Readline {
             lines.clear();
             parsed.buffer.clear();
             conn.write("\r\n");
-            conn.setReadHandler(previousEventHandler);
-            conn.setSizeHandler(previousSizeHandler);
-            status = Status.PAUSED;
+            interaction = null;
             requestHandler.accept(raw.toString());
           }
         }
@@ -180,7 +237,7 @@ public class Readline {
             a.accept(lineBuffer.getAt(i));
           }
 
-          status = Status.COMPLETING;
+          completing = true;
           LineBuffer copy = new LineBuffer(lineBuffer);
           final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
@@ -218,9 +275,9 @@ public class Readline {
                         break;
                     }
                     // Update status
-                    Readline.this.status = Status.ACTIVE;
-                    // Schedule a resume
-                    conn.schedule(Interaction.this::handle);
+                    completing = false;
+                    // Schedule a delivery of pending data
+                    schedulePending();
                     break;
                   }
                   // Try again
@@ -358,44 +415,30 @@ public class Readline {
       });
     }
 
-    @Override
-    public void accept(int[] data) {
-      decoder.append(data);
-      handle();
-    }
-
-    private void handle() {
-
-      while (status == Status.ACTIVE && decoder.hasNext()) {
-        Event event = decoder.next();
-        LineBuffer copy = new LineBuffer(lineBuffer);
-        if (event instanceof KeyEvent) {
-          KeyEvent key = (KeyEvent) event;
-          Runnable handler = handlers.get(key.buffer());
-          if (handler != null) {
-            handler.run();
-          } else {
-            for (int i = 0;i < key.length();i++) {
-              int codePoint = key.getAt(i);
-              lineBuffer.insert(codePoint);
-            }
-            conn.writeHandler().accept(copy.compute(lineBuffer));
-          }
+    private void handle(Event event) {
+      LineBuffer copy = new LineBuffer(lineBuffer);
+      if (event instanceof KeyEvent) {
+        KeyEvent key = (KeyEvent) event;
+        Runnable handler = handlers.get(key.buffer());
+        if (handler != null) {
+          handler.run();
         } else {
-          FunctionEvent fname = (FunctionEvent) event;
-          Function function = functions.get(fname.name());
-          if (function != null) {
-            function.apply(lineBuffer);
-          } else {
-            System.out.println("Unimplemented function " + fname.name());
+          for (int i = 0;i < key.length();i++) {
+            int codePoint = key.getAt(i);
+            lineBuffer.insert(codePoint);
           }
           conn.writeHandler().accept(copy.compute(lineBuffer));
         }
+      } else {
+        FunctionEvent fname = (FunctionEvent) event;
+        Function function = functions.get(fname.name());
+        if (function != null) {
+          function.apply(lineBuffer);
+        } else {
+          System.out.println("Unimplemented function " + fname.name());
+        }
+        conn.writeHandler().accept(copy.compute(lineBuffer));
       }
     }
-
-    private final LinkedList<int[]> lines = new LinkedList<>();
-    private final LineBuffer lineBuffer = new LineBuffer();
-    private final ParsedBuffer parsed = new ParsedBuffer();
   }
 }

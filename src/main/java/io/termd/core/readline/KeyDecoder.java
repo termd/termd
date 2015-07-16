@@ -61,6 +61,12 @@ public class KeyDecoder {
     }
   }
 
+  public int[] clear() {
+    int[] buffer = state.buffer;
+    state = new State(new int[0]);
+    return buffer;
+  }
+
   /**
    * @return the buffer chars as a read-only int buffer
    */

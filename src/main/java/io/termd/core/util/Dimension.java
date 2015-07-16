@@ -19,7 +19,7 @@ package io.termd.core.util;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Dimension {
+public final class Dimension {
 
   private final int width;
   private final int height;
@@ -35,6 +35,18 @@ public class Dimension {
 
   public int getHeight() {
     return height;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof Dimension) {
+      Dimension that = (Dimension) obj;
+      return width == that.width && height == that.height;
+    }
+    return false;
   }
 
   @Override
