@@ -24,12 +24,7 @@ import java.util.function.Supplier;
  */
 public abstract class TelnetBootstrap {
 
-  protected final String host;
-  protected final int port;
-
-  public TelnetBootstrap(String host, int port) {
-    this.host = host;
-    this.port = port;
+  public TelnetBootstrap() {
   }
 
   public void start() {

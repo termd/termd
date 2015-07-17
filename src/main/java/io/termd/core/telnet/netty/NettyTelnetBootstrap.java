@@ -41,8 +41,12 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
     new NettyTelnetBootstrap("localhost", 4000).start();
   }
 
+  protected final String host;
+  protected final int port;
+
   public NettyTelnetBootstrap(String host, int port) {
-    super(host, port);
+    this.host = host;
+    this.port = port;
   }
 
   @Override

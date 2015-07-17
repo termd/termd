@@ -20,6 +20,7 @@ import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -36,20 +37,25 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   }
 
   private final Vertx vertx;
+  private final NetServerOptions options;
+
+  public VertxTelnetBootstrap(Vertx vertx, NetServerOptions options) {
+    this.vertx = vertx;
+    this.options = options;
+  }
 
   public VertxTelnetBootstrap(String host, int port) {
     this(Vertx.vertx(), host, port);
   }
 
   public VertxTelnetBootstrap(Vertx vertx, String host, int port) {
-    super(host, port);
-    this.vertx = vertx;
+    this(vertx, new NetServerOptions().setHost(host).setPort(port));
   }
 
   @Override
   public void start(Supplier<TelnetHandler> factory) {
-    NetServer server = vertx.createNetServer();
+    NetServer server = vertx.createNetServer(options);
     server.connectHandler(new TelnetSocketHandler(vertx, factory));
-    server.listen(port, host);
+    server.listen();
   }
 }
