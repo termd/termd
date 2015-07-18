@@ -38,7 +38,7 @@ import java.util.function.Consumer;
  */
 public class PtyMaster extends Thread {
 
-  private final PtyBootstrap bootstrap;
+  private final TtyBridge bridge;
   private final TtyConnection conn;
   private final Readline readline;
   private final String line;
@@ -48,8 +48,8 @@ public class PtyMaster extends Thread {
   private Status status;
   private String invokerContext; //Context is attached to the PtyStatusEvent
 
-  public PtyMaster(PtyBootstrap bootstrap, TtyConnection conn, Readline readline, String line, String invokerContext) {
-    this.bootstrap = bootstrap;
+  public PtyMaster(TtyBridge bridge, TtyConnection conn, Readline readline, String line, String invokerContext) {
+    this.bridge = bridge;
     this.conn = conn;
     this.readline = readline;
     this.line = line;
@@ -173,7 +173,7 @@ public class PtyMaster extends Thread {
 
     // Read line again
     conn.setEventHandler(null);
-    conn.schedule(() -> bootstrap.read(conn, readline, invokerContext));
+    conn.schedule(() -> bridge.read(conn, readline, invokerContext));
   }
 
   private void setStatus(Status status) {

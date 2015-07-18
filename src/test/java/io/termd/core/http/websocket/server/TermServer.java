@@ -39,7 +39,6 @@ public class TermServer {
   private static Thread serverThread;
   Logger log = LoggerFactory.getLogger(TermServer.class);
 
-  PtyBootstrap ptyBootstrap;
   private UndertowBootstrap undertowBootstrap;
   private int port;
 
@@ -83,8 +82,6 @@ public class TermServer {
     }
     this.port = portCandidate;
 
-    ptyBootstrap = new PtyBootstrap(onTaskCreated());
-
     undertowBootstrap = new UndertowBootstrap(host, port, this);
 
     undertowBootstrap.bootstrap(completionHandler -> {
@@ -107,7 +104,7 @@ public class TermServer {
     }
   }
 
-  private Consumer<PtyMaster> onTaskCreated() {
+  public Consumer<PtyMaster> onTaskCreated() {
     return (ptyMaster) -> {
       Optional<FileOutputStream> fileOutputStream = Optional.empty();
       ptyMaster.setTaskStatusUpdateListener(onTaskStatusUpdate(fileOutputStream));
@@ -125,10 +122,6 @@ public class TermServer {
       log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, statusUpdateEvent.getProcess().getId(), statusUpdateEvent.getNewStatus());
       statusUpdateListener.accept(statusUpdateEvent);
     }
-  }
-
-  public PtyBootstrap getPtyBootstrap() {
-    return ptyBootstrap;
   }
 
   public void stop() {

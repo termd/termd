@@ -17,15 +17,8 @@
 package io.termd.core.pty;
 
 import io.termd.core.http.vertx.VertxSockJSBootstrap;
-import io.termd.core.readline.KeyDecoder;
-import io.termd.core.readline.Keymap;
-import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Helper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -34,8 +27,6 @@ import java.util.function.Consumer;
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public class PtyBootstrap implements Consumer<TtyConnection> {
-
-  Logger log = LoggerFactory.getLogger(PtyBootstrap.class);
 
   private Consumer<PtyMaster> taskCreationListener;
 
@@ -68,31 +59,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
 
   @Override
   public void accept(final TtyConnection conn) {
-    InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
-    Keymap keymap = new Keymap(inputrc);
-    Readline readline = new Readline(keymap);
-    for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
-      log.trace("Server is adding function to readline: {}", function);
-
-      readline.addFunction(function);
-    }
-    conn.setTermHandler(term -> {
-        // Not used yet but we should propagage this to the process builder
-        System.out.println("CLIENT $TERM=" + term);
-    });
-    conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
-    read(conn, readline, conn.getInvokerContext());
-  }
-
-  public void read(final TtyConnection conn, final Readline readline, String invokerContext) {
-    Consumer<String> requestHandler = new Consumer<String>() {
-      @Override
-      public void accept(String line) {
-        PtyMaster task = new PtyMaster(PtyBootstrap.this, conn, readline, line, invokerContext);
-        taskCreationListener.accept(task);
-        task.start();
-      }
-    };
-    readline.readline(conn, "% ", requestHandler);
+    TtyBridge bridge = new TtyBridge(conn, taskCreationListener);
+    bridge.handle();
   }
 }

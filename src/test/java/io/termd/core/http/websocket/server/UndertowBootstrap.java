@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.http.websocket.Configurations;
 import io.termd.core.pty.PtyStatusEvent;
+import io.termd.core.pty.TtyBridge;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -97,7 +98,7 @@ public class UndertowBootstrap {
   private HttpHandler getWebSocketHandler(String invokerContext) {
     WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
       WebSocketTtyConnection conn = new WebSocketTtyConnection(webSocketChannel, executor, invokerContext);
-      termServer.getPtyBootstrap().accept(conn);
+      new TtyBridge(conn, termServer.onTaskCreated()).handle();
     };
 
     HttpHandler webSocketHandshakeHandler = new WebSocketProtocolHandshakeHandler(onWebSocketConnected);
