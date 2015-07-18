@@ -55,14 +55,14 @@ public class TtyBridge {
       System.out.println("CLIENT $TERM=" + term);
     });
     conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
-    read(conn, readline, conn.getInvokerContext());
+    read(conn, readline);
   }
 
-  public void read(final TtyConnection conn, final Readline readline, String invokerContext) {
+  public void read(final TtyConnection conn, final Readline readline) {
     Consumer<String> requestHandler = new Consumer<String>() {
       @Override
       public void accept(String line) {
-        PtyMaster task = new PtyMaster(TtyBridge.this, conn, readline, line, invokerContext);
+        PtyMaster task = new PtyMaster(TtyBridge.this, conn, readline, line);
         taskCreationListener.accept(task);
         task.start();
       }

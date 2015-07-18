@@ -42,11 +42,11 @@ public class TaskStatusUpdateEvent implements Serializable {
   private final Status newStatus;
   private final String context;
 
-  public TaskStatusUpdateEvent(PtyStatusEvent taskStatusUpdateEvent) {
+  public TaskStatusUpdateEvent(PtyStatusEvent taskStatusUpdateEvent, String context) {
     taskId = taskStatusUpdateEvent.getProcess().getId() + "";
     oldStatus = taskStatusUpdateEvent.getOldStatus();
     newStatus = taskStatusUpdateEvent.getNewStatus();
-    context = taskStatusUpdateEvent.getContext();
+    this.context = context;
   }
 
   public TaskStatusUpdateEvent(String taskId, Status oldStatus, Status newStatus, String context) {

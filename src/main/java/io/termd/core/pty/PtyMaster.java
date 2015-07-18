@@ -46,15 +46,13 @@ public class PtyMaster extends Thread {
   private Consumer<int[]> processOutputConsumer;
   private Consumer<String> processInputConsumer;
   private Status status;
-  private String invokerContext; //Context is attached to the PtyStatusEvent
 
-  public PtyMaster(TtyBridge bridge, TtyConnection conn, Readline readline, String line, String invokerContext) {
+  public PtyMaster(TtyBridge bridge, TtyConnection conn, Readline readline, String line) {
     this.bridge = bridge;
     this.conn = conn;
     this.readline = readline;
     this.line = line;
     status = Status.NEW;
-    this.invokerContext = invokerContext;
   }
 
   public void setProcessOutputConsumer(Consumer<int[]> processOutputConsumer) {
@@ -173,13 +171,13 @@ public class PtyMaster extends Thread {
 
     // Read line again
     conn.setEventHandler(null);
-    conn.schedule(() -> bridge.read(conn, readline, invokerContext));
+    conn.schedule(() -> bridge.read(conn, readline));
   }
 
   private void setStatus(Status status) {
     Status old = this.status;
     this.status = status;
-    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status, invokerContext);
+    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status);
     if (taskStatusUpdateListener != null) {
       taskStatusUpdateListener.accept(statusUpdateEvent);
     }

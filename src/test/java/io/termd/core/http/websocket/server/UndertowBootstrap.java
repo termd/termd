@@ -63,10 +63,12 @@ public class UndertowBootstrap {
 
     if (requestPath.startsWith(Configurations.TERM_PATH)) {
       String invokerContext = requestPath.replace(Configurations.TERM_PATH + "/", "");
-      termServer.getWebSocketHandler(invokerContext).handleRequest(exchange);
+      TermServer.Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> termServer.newTerm(invokerContext));
+      term.getWebSocketHandler(invokerContext).handleRequest(exchange);
     } else  if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
       String invokerContext = requestPath.replace(Configurations.PROCESS_UPDATES_PATH + "/", "");
-      termServer.webSocketStatusUpdateHandler(invokerContext).handleRequest(exchange);
+      TermServer.Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> termServer.newTerm(invokerContext));
+      term.webSocketStatusUpdateHandler().handleRequest(exchange);
     }
   }
 
