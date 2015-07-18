@@ -39,47 +39,47 @@ import java.util.function.Consumer;
  */
 public class UndertowServerTest {
 
-    private static final String TEST_COMMAND = "java -cp ./target/test-classes/ " + MockProcess.class.getName() + " 1 100";
+  private static final String TEST_COMMAND = "java -cp ./target/test-classes/ " + MockProcess.class.getName() + " 1 100";
 
-    TermServer termServer;
+  TermServer termServer;
 
-    @Before
-    public void startTermServer() throws InterruptedException {
-        termServer = TermServer.start();
-    }
+  @Before
+  public void startTermServer() throws InterruptedException {
+    termServer = TermServer.start();
+  }
 
-    @Test
-    public void serverShouldStart() throws Exception {
-        URL url = new URL("http://" + Configurations.HOST + ":" + termServer.getPort() + "/");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setDoOutput(true);
+  @Test
+  public void serverShouldStart() throws Exception {
+    URL url = new URL("http://" + Configurations.HOST + ":" + termServer.getPort() + "/");
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("GET");
+    connection.setDoOutput(true);
 
-        Assert.assertEquals(200, connection.getResponseCode());
-    }
+    Assert.assertEquals(200, connection.getResponseCode());
+  }
 
-    @Test
-    public void remoteCommandShouldBeExecutedAndResponsesReceived() throws Exception {
-        String updatesSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.PROCESS_UPDATES_PATH;
-        List<Status> receivedEventUpdates = new ArrayList<>();
-        Consumer<TaskStatusUpdateEvent> onStatusUpdate = (statusUpdateEvent) -> {
-            receivedEventUpdates.add(statusUpdateEvent.getNewStatus());
-        };
-        Client.connectStatusListenerClient(updatesSocketUrl, onStatusUpdate, "");
+  @Test
+  public void remoteCommandShouldBeExecutedAndResponsesReceived() throws Exception {
+    String updatesSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.PROCESS_UPDATES_PATH;
+    List<Status> receivedEventUpdates = new ArrayList<>();
+    Consumer<TaskStatusUpdateEvent> onStatusUpdate = (statusUpdateEvent) -> {
+      receivedEventUpdates.add(statusUpdateEvent.getNewStatus());
+    };
+    Client.connectStatusListenerClient(updatesSocketUrl, onStatusUpdate, "");
 
-        String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.TERM_PATH;
-        StringBuilder responseData = new StringBuilder();
-        Consumer<String> responseConsumer = (data) -> {
-            responseData.append(data);
-        };
-        Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer), "");
+    String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.TERM_PATH;
+    StringBuilder responseData = new StringBuilder();
+    Consumer<String> responseConsumer = (data) -> {
+      responseData.append(data);
+    };
+    Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer), "");
 
-        Client.executeRemoteCommand(client, TEST_COMMAND);
+    Client.executeRemoteCommand(client, TEST_COMMAND);
 
 
-        Wait.forCondition(() -> receivedEventUpdates.contains(Status.COMPLETED), 5, ChronoUnit.SECONDS);
+    Wait.forCondition(() -> receivedEventUpdates.contains(Status.COMPLETED), 5, ChronoUnit.SECONDS);
 
-        Assert.assertTrue("Missing response data.", responseData.toString().contains(MockProcess.FINAL_MESSAGE));
-    }
+    Assert.assertTrue("Missing response data.", responseData.toString().contains(MockProcess.FINAL_MESSAGE));
+  }
 
 }

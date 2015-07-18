@@ -35,61 +35,61 @@ import java.io.Serializable;
 @JsonDeserialize(using = TaskStatusUpdateEventDeserializer.class)
 public class TaskStatusUpdateEvent implements Serializable {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskStatusUpdateEvent.class);
+  private static final Logger log = LoggerFactory.getLogger(TaskStatusUpdateEvent.class);
 
-    private final String taskId;
-    private final Status oldStatus;
-    private final Status newStatus;
-    private final String context;
+  private final String taskId;
+  private final Status oldStatus;
+  private final Status newStatus;
+  private final String context;
 
-    public TaskStatusUpdateEvent(PtyStatusEvent taskStatusUpdateEvent) {
-        taskId = taskStatusUpdateEvent.getProcess().getId() + "";
-        oldStatus = taskStatusUpdateEvent.getOldStatus();
-        newStatus = taskStatusUpdateEvent.getNewStatus();
-        context = taskStatusUpdateEvent.getContext();
+  public TaskStatusUpdateEvent(PtyStatusEvent taskStatusUpdateEvent) {
+    taskId = taskStatusUpdateEvent.getProcess().getId() + "";
+    oldStatus = taskStatusUpdateEvent.getOldStatus();
+    newStatus = taskStatusUpdateEvent.getNewStatus();
+    context = taskStatusUpdateEvent.getContext();
+  }
+
+  public TaskStatusUpdateEvent(String taskId, Status oldStatus, Status newStatus, String context) {
+    this.taskId = taskId;
+    this.oldStatus = oldStatus;
+    this.newStatus = newStatus;
+    this.context = context;
+  }
+
+  public String getTaskId() {
+    return taskId;
+  }
+
+  public Status getOldStatus() {
+    return oldStatus;
+  }
+
+  public Status getNewStatus() {
+    return newStatus;
+  }
+
+  public String getContext() {
+    return context;
+  }
+
+  public String toString() {
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.writeValueAsString(this);
+    } catch (JsonProcessingException e) {
+      log.error("Cannot serialize object.", e);
     }
+    return null;
+  }
 
-    public TaskStatusUpdateEvent(String taskId, Status oldStatus, Status newStatus, String context) {
-        this.taskId = taskId;
-        this.oldStatus = oldStatus;
-        this.newStatus = newStatus;
-        this.context = context;
+  public static TaskStatusUpdateEvent fromJson(String serialized) throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.readValue(serialized, TaskStatusUpdateEvent.class);
+    } catch (JsonParseException | JsonMappingException e) {
+      log.error("Cannot deserialize object from json", e);
+      throw e;
     }
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public Status getOldStatus() {
-        return oldStatus;
-    }
-
-    public Status getNewStatus() {
-        return newStatus;
-    }
-
-    public String getContext() {
-        return context;
-    }
-
-    public String toString() {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            log.error("Cannot serialize object.", e);
-        }
-        return null;
-    }
-
-    public static TaskStatusUpdateEvent fromJson(String serialized) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.readValue(serialized, TaskStatusUpdateEvent.class);
-        } catch (JsonParseException | JsonMappingException e) {
-            log.error("Cannot deserialize object from json", e);
-            throw e;
-        }
-    }
+  }
 
 }

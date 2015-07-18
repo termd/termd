@@ -36,113 +36,113 @@ import java.util.function.Consumer;
  */
 public class TermServer {
 
-    private static Thread serverThread;
-    Logger log = LoggerFactory.getLogger(TermServer.class);
+  private static Thread serverThread;
+  Logger log = LoggerFactory.getLogger(TermServer.class);
 
-    PtyBootstrap ptyBootstrap;
-    private UndertowBootstrap undertowBootstrap;
-    private int port;
+  PtyBootstrap ptyBootstrap;
+  private UndertowBootstrap undertowBootstrap;
+  private int port;
 
-    private Set<Consumer<PtyStatusEvent>> statusUpdateListeners = new HashSet<>();
+  private Set<Consumer<PtyStatusEvent>> statusUpdateListeners = new HashSet<>();
 
-    /**
-     * Method returns once server is started.
-     *
-     * @throws InterruptedException
-     */
-    public static TermServer start() throws InterruptedException {
-        Semaphore mutex = new Semaphore(1);
+  /**
+   * Method returns once server is started.
+   *
+   * @throws InterruptedException
+   */
+  public static TermServer start() throws InterruptedException {
+    Semaphore mutex = new Semaphore(1);
 
-        Runnable onStart = () ->  {
-            mutex.release();
-        };
-        TermServer termServer = new TermServer();
+    Runnable onStart = () -> {
+      mutex.release();
+    };
+    TermServer termServer = new TermServer();
 
-        serverThread = new Thread(() -> {
-            try {
-                termServer.start("localhost", 0, Optional.of(onStart));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        mutex.acquire();
-        serverThread.start();
+    serverThread = new Thread(() -> {
+      try {
+        termServer.start("localhost", 0, Optional.of(onStart));
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    });
+    mutex.acquire();
+    serverThread.start();
 
-        mutex.acquire();
-        return termServer;
+    mutex.acquire();
+    return termServer;
+  }
+
+  public static void stopServer() {
+    serverThread.interrupt();
+  }
+
+
+  public void start(String host, int portCandidate, final Optional<Runnable> onStart) throws InterruptedException {
+    if (portCandidate == 0) {
+      portCandidate = findFirstFreePort();
     }
+    this.port = portCandidate;
 
-    public static void stopServer() {
-        serverThread.interrupt();
+    ptyBootstrap = new PtyBootstrap(onTaskCreated());
+
+    undertowBootstrap = new UndertowBootstrap(host, port, this);
+
+    undertowBootstrap.bootstrap(completionHandler -> {
+      if (completionHandler) {
+        log.info("Server started on " + host + ":" + port);
+        onStart.ifPresent(r -> r.run());
+      } else {
+        log.info("Could not start server");
+      }
+    });
+  }
+
+  private int findFirstFreePort() {
+    try (ServerSocket s = new ServerSocket(0)) {
+      return s.getLocalPort();
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Could not obtain default port, try specifying it explicitly");
     }
+  }
 
+  private Consumer<PtyMaster> onTaskCreated() {
+    return (ptyMaster) -> {
+      Optional<FileOutputStream> fileOutputStream = Optional.empty();
+      ptyMaster.setTaskStatusUpdateListener(onTaskStatusUpdate(fileOutputStream));
+    };
+  }
 
-    public void start(String host, int portCandidate, final Optional<Runnable> onStart) throws InterruptedException {
-        if(portCandidate == 0) {
-            portCandidate = findFirstFreePort();
-        }
-        this.port = portCandidate;
+  private Consumer<PtyStatusEvent> onTaskStatusUpdate(Optional<FileOutputStream> fileOutputStream) {
+    return (statusUpdateEvent) -> {
+      notifyStatusUpdated(statusUpdateEvent);
+    };
+  }
 
-        ptyBootstrap = new PtyBootstrap(onTaskCreated());
-
-        undertowBootstrap = new UndertowBootstrap(host, port, this);
-
-        undertowBootstrap.bootstrap(completionHandler -> {
-            if (completionHandler) {
-                log.info("Server started on " + host + ":" + port);
-                onStart.ifPresent(r -> r.run());
-            } else {
-                log.info("Could not start server");
-            }
-        });
+  void notifyStatusUpdated(PtyStatusEvent statusUpdateEvent) {
+    for (Consumer<PtyStatusEvent> statusUpdateListener : statusUpdateListeners) {
+      log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, statusUpdateEvent.getProcess().getId(), statusUpdateEvent.getNewStatus());
+      statusUpdateListener.accept(statusUpdateEvent);
     }
+  }
 
-    private int findFirstFreePort() {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Could not obtain default port, try specifying it explicitly");
-        }
-    }
+  public PtyBootstrap getPtyBootstrap() {
+    return ptyBootstrap;
+  }
 
-    private Consumer<PtyMaster> onTaskCreated() {
-        return (ptyMaster) -> {
-            Optional<FileOutputStream> fileOutputStream = Optional.empty();
-            ptyMaster.setTaskStatusUpdateListener(onTaskStatusUpdate(fileOutputStream));
-        };
-    }
+  public void stop() {
+    undertowBootstrap.stop();
+    log.info("Server stopped");
+  }
 
-    private Consumer<PtyStatusEvent> onTaskStatusUpdate(Optional<FileOutputStream> fileOutputStream) {
-        return (statusUpdateEvent) -> {
-            notifyStatusUpdated(statusUpdateEvent);
-        };
-    }
+  public void addStatusUpdateListener(Consumer<PtyStatusEvent> statusUpdateListener) {
+    statusUpdateListeners.add(statusUpdateListener);
+  }
 
-    void notifyStatusUpdated(PtyStatusEvent statusUpdateEvent) {
-        for (Consumer<PtyStatusEvent> statusUpdateListener : statusUpdateListeners) {
-            log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, statusUpdateEvent.getProcess().getId(), statusUpdateEvent.getNewStatus());
-            statusUpdateListener.accept(statusUpdateEvent);
-        }
-    }
+  public void removeStatusUpdateListener(Consumer<PtyStatusEvent> statusUpdateListener) {
+    statusUpdateListeners.remove(statusUpdateListener);
+  }
 
-    public PtyBootstrap getPtyBootstrap() {
-        return ptyBootstrap;
-    }
-
-    public void stop() {
-        undertowBootstrap.stop();
-        log.info("Server stopped");
-    }
-
-    public void addStatusUpdateListener(Consumer<PtyStatusEvent> statusUpdateListener) {
-        statusUpdateListeners.add(statusUpdateListener);
-    }
-
-    public void removeStatusUpdateListener(Consumer<PtyStatusEvent> statusUpdateListener) {
-        statusUpdateListeners.remove(statusUpdateListener);
-    }
-
-    public int getPort() {
-        return port;
-    }
+  public int getPort() {
+    return port;
+  }
 }
