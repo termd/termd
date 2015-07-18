@@ -16,18 +16,30 @@
 
 package io.termd.core.http.websocket.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.pty.PtyBootstrap;
 import io.termd.core.pty.PtyMaster;
 import io.termd.core.pty.PtyStatusEvent;
+import io.termd.core.pty.TtyBridge;
+import io.undertow.server.HttpHandler;
+import io.undertow.websockets.WebSocketConnectionCallback;
+import io.undertow.websockets.WebSocketProtocolHandshakeHandler;
+import io.undertow.websockets.core.CloseMessage;
+import io.undertow.websockets.core.WebSockets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
@@ -39,6 +51,7 @@ public class TermServer {
   private static Thread serverThread;
   Logger log = LoggerFactory.getLogger(TermServer.class);
 
+  private final Executor executor = Executors.newFixedThreadPool(1);
   private UndertowBootstrap undertowBootstrap;
   private int port;
 
@@ -139,5 +152,46 @@ public class TermServer {
 
   public int getPort() {
     return port;
+  }
+
+  HttpHandler getWebSocketHandler(String invokerContext) {
+    WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
+      WebSocketTtyConnection conn = new WebSocketTtyConnection(webSocketChannel, executor, invokerContext);
+      new TtyBridge(conn, onTaskCreated()).handle();
+    };
+
+    HttpHandler webSocketHandshakeHandler = new WebSocketProtocolHandshakeHandler(onWebSocketConnected);
+    return webSocketHandshakeHandler;
+  }
+
+  HttpHandler webSocketStatusUpdateHandler(String invokerContext) {
+    WebSocketConnectionCallback webSocketConnectionCallback = (exchange, webSocketChannel) -> {
+      Consumer<PtyStatusEvent> statusUpdateListener = (statusUpdateEvent) -> {
+        boolean isContextDefined = invokerContext != null && !invokerContext.equals("");
+        boolean isContextMatching = invokerContext.equals(statusUpdateEvent.getContext());
+        if (!isContextDefined || isContextMatching) {
+          Map<String, Object> statusUpdate = new HashMap<>();
+          statusUpdate.put("action", "status-update");
+          TaskStatusUpdateEvent taskStatusUpdateEventWrapper = new TaskStatusUpdateEvent(statusUpdateEvent);
+          statusUpdate.put("event", taskStatusUpdateEventWrapper);
+
+          ObjectMapper objectMapper = new ObjectMapper();
+          try {
+            String message = objectMapper.writeValueAsString(statusUpdate);
+            WebSockets.sendText(message, webSocketChannel, null);
+          } catch (JsonProcessingException e) {
+            log.error("Cannot write object to JSON", e);
+            String errorMessage = "Cannot write object to JSON: " + e.getMessage();
+            WebSockets.sendClose(CloseMessage.UNEXPECTED_ERROR, errorMessage, webSocketChannel, null);
+          }
+        }
+      };
+      log.debug("Registering new status update listener {}.", statusUpdateListener);
+      addStatusUpdateListener(statusUpdateListener);
+      webSocketChannel.addCloseTask((task) -> removeStatusUpdateListener(statusUpdateListener));
+    };
+
+    HttpHandler webSocketHandshakeHandler = new WebSocketProtocolHandshakeHandler(webSocketConnectionCallback);
+    return webSocketHandshakeHandler;
   }
 }

@@ -16,25 +16,12 @@
 
 package io.termd.core.http.websocket.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.http.websocket.Configurations;
-import io.termd.core.pty.PtyStatusEvent;
-import io.termd.core.pty.TtyBridge;
 import io.undertow.Undertow;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.websockets.WebSocketConnectionCallback;
-import io.undertow.websockets.WebSocketProtocolHandshakeHandler;
-import io.undertow.websockets.core.CloseMessage;
-import io.undertow.websockets.core.WebSockets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 
@@ -47,7 +34,6 @@ public class UndertowBootstrap {
 
   final String host;
   final int port;
-  private final Executor executor = Executors.newFixedThreadPool(1);
   private Undertow server;
   private TermServer termServer;
 
@@ -77,63 +63,11 @@ public class UndertowBootstrap {
 
     if (requestPath.startsWith(Configurations.TERM_PATH)) {
       String invokerContext = requestPath.replace(Configurations.TERM_PATH + "/", "");
-      getWebSocketHandler(invokerContext).handleRequest(exchange);
-      return;
-    }
-    if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
+      termServer.getWebSocketHandler(invokerContext).handleRequest(exchange);
+    } else  if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
       String invokerContext = requestPath.replace(Configurations.PROCESS_UPDATES_PATH + "/", "");
-      webSocketStatusUpdateHandler(invokerContext).handleRequest(exchange);
-      return;
+      termServer.webSocketStatusUpdateHandler(invokerContext).handleRequest(exchange);
     }
-  }
-
-  private void handleHttpRequests(HttpServerExchange exchange) throws Exception {
-    String requestPath = exchange.getRequestPath();
-    if (requestPath.equals("/")) {
-      exchange.getResponseSender().send("Hello! This page is served by Undertow.");
-      return;
-    }
-  }
-
-  private HttpHandler getWebSocketHandler(String invokerContext) {
-    WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
-      WebSocketTtyConnection conn = new WebSocketTtyConnection(webSocketChannel, executor, invokerContext);
-      new TtyBridge(conn, termServer.onTaskCreated()).handle();
-    };
-
-    HttpHandler webSocketHandshakeHandler = new WebSocketProtocolHandshakeHandler(onWebSocketConnected);
-    return webSocketHandshakeHandler;
-  }
-
-  private HttpHandler webSocketStatusUpdateHandler(String invokerContext) {
-    WebSocketConnectionCallback webSocketConnectionCallback = (exchange, webSocketChannel) -> {
-      Consumer<PtyStatusEvent> statusUpdateListener = (statusUpdateEvent) -> {
-        boolean isContextDefined = invokerContext != null && !invokerContext.equals("");
-        boolean isContextMatching = invokerContext.equals(statusUpdateEvent.getContext());
-        if (!isContextDefined || isContextMatching) {
-          Map<String, Object> statusUpdate = new HashMap<>();
-          statusUpdate.put("action", "status-update");
-          TaskStatusUpdateEvent taskStatusUpdateEventWrapper = new TaskStatusUpdateEvent(statusUpdateEvent);
-          statusUpdate.put("event", taskStatusUpdateEventWrapper);
-
-          ObjectMapper objectMapper = new ObjectMapper();
-          try {
-            String message = objectMapper.writeValueAsString(statusUpdate);
-            WebSockets.sendText(message, webSocketChannel, null);
-          } catch (JsonProcessingException e) {
-            log.error("Cannot write object to JSON", e);
-            String errorMessage = "Cannot write object to JSON: " + e.getMessage();
-            WebSockets.sendClose(CloseMessage.UNEXPECTED_ERROR, errorMessage, webSocketChannel, null);
-          }
-        }
-      };
-      log.debug("Registering new status update listener {}.", statusUpdateListener);
-      termServer.addStatusUpdateListener(statusUpdateListener);
-      webSocketChannel.addCloseTask((task) -> termServer.removeStatusUpdateListener(statusUpdateListener));
-    };
-
-    HttpHandler webSocketHandshakeHandler = new WebSocketProtocolHandshakeHandler(webSocketConnectionCallback);
-    return webSocketHandshakeHandler;
   }
 
   public void stop() {
