@@ -60,7 +60,7 @@ public class TermServer {
 
     serverThread = new Thread(() -> {
       try {
-        termServer.start("localhost", 0, Optional.of(onStart));
+        termServer.start("localhost", 0, onStart);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -77,7 +77,7 @@ public class TermServer {
   }
 
 
-  public void start(String host, int portCandidate, final Optional<Runnable> onStart) throws InterruptedException {
+  public void start(String host, int portCandidate, Runnable onStart) throws InterruptedException {
     if (portCandidate == 0) {
       portCandidate = findFirstFreePort();
     }
@@ -90,7 +90,9 @@ public class TermServer {
     undertowBootstrap.bootstrap(completionHandler -> {
       if (completionHandler) {
         log.info("Server started on " + host + ":" + port);
-        onStart.ifPresent(r -> r.run());
+        if (onStart != null) {
+          onStart.run();
+        }
       } else {
         log.info("Could not start server");
       }
