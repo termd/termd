@@ -60,14 +60,23 @@ public class UndertowServerTest {
 
   @Test
   public void remoteCommandShouldBeExecutedAndResponsesReceived() throws Exception {
-    String updatesSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.PROCESS_UPDATES_PATH;
+    doRemoteCommandShouldBeExecutedAndResponsesReceived("");
+  }
+
+  @Test
+  public void remoteCommandShouldBeExecutedAndResponsesReceivedWithContext() throws Exception {
+    doRemoteCommandShouldBeExecutedAndResponsesReceived("/the_context");
+  }
+
+  private void doRemoteCommandShouldBeExecutedAndResponsesReceived(String context) throws Exception {
+    String updatesSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.PROCESS_UPDATES_PATH + context;
     List<Status> receivedEventUpdates = new ArrayList<>();
     Consumer<TaskStatusUpdateEvent> onStatusUpdate = (statusUpdateEvent) -> {
       receivedEventUpdates.add(statusUpdateEvent.getNewStatus());
     };
     Client.connectStatusListenerClient(updatesSocketUrl, onStatusUpdate, "");
 
-    String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.TERM_PATH;
+    String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() +  Configurations.TERM_PATH + context;
     StringBuilder responseData = new StringBuilder();
     Consumer<String> responseConsumer = (data) -> {
       responseData.append(data);
