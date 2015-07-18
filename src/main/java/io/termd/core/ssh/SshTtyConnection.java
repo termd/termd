@@ -68,17 +68,17 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<int[]> readHandler() {
+  public Consumer<int[]> getStdinHandler() {
     return readBuffer.getReadHandler();
   }
 
   @Override
-  public void setReadHandler(Consumer<int[]> handler) {
+  public void setStdinHandler(Consumer<int[]> handler) {
     readBuffer.setReadHandler(handler);
   }
 
   @Override
-  public Consumer<String> termHandler() {
+  public Consumer<String> getTermHandler() {
     return termHandler;
   }
 
@@ -91,7 +91,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<Dimension> sizeHandler() {
+  public Consumer<Dimension> getSizeHandler() {
     return sizeHandler;
   }
 
@@ -104,7 +104,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<TtyEvent> eventHandler() {
+  public Consumer<TtyEvent> getEventHandler() {
     return eventDecoder.getEventHandler();
   }
 
@@ -114,7 +114,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<int[]> writeHandler() {
+  public Consumer<int[]> stdoutHandler() {
     return encoder;
   }
 
@@ -244,7 +244,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<Void> closeHandler() {
+  public Consumer<Void> getCloseHandler() {
     return closeHandler;
   }
 

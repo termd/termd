@@ -21,7 +21,7 @@ package io.termd.core.readline;
  */
 interface EventContext {
 
-  Event getEvent();
+  Event event();
 
   void end();
 

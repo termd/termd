@@ -29,11 +29,11 @@ public final class Dimension {
     this.height = height;
   }
 
-  public int getWidth() {
+  public int width() {
     return width;
   }
 
-  public int getHeight() {
+  public int height() {
     return height;
   }
 

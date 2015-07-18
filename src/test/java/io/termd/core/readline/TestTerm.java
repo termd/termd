@@ -79,7 +79,7 @@ class TestTerm {
   TtyConnection conn = new TtyConnection() {
 
     @Override
-    public Consumer<String> termHandler() {
+    public Consumer<String> getTermHandler() {
       throw new UnsupportedOperationException();
     }
 
@@ -89,7 +89,7 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<Dimension> sizeHandler() {
+    public Consumer<Dimension> getSizeHandler() {
       return sizeHandler;
     }
 
@@ -102,7 +102,7 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<TtyEvent> eventHandler() {
+    public Consumer<TtyEvent> getEventHandler() {
       throw new UnsupportedOperationException();
     }
 
@@ -112,17 +112,17 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<int[]> readHandler() {
+    public Consumer<int[]> getStdinHandler() {
       return readHandler;
     }
 
     @Override
-    public void setReadHandler(Consumer<int[]> handler) {
+    public void setStdinHandler(Consumer<int[]> handler) {
       readHandler = handler;
     }
 
     @Override
-    public Consumer<int[]> writeHandler() {
+    public Consumer<int[]> stdoutHandler() {
       return writeHandler;
     }
 
@@ -137,7 +137,7 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<Void> closeHandler() {
+    public Consumer<Void> getCloseHandler() {
       throw new UnsupportedOperationException();
     }
 

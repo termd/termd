@@ -28,35 +28,35 @@ import java.util.function.Consumer;
  */
 public interface TtyConnection {
 
-  Consumer<String> termHandler();
+  Consumer<String> getTermHandler();
 
   void setTermHandler(Consumer<String> handler);
 
-  Consumer<Dimension> sizeHandler();
+  Consumer<Dimension> getSizeHandler();
 
   void setSizeHandler(Consumer<Dimension> handler);
 
-  Consumer<TtyEvent> eventHandler();
+  Consumer<TtyEvent> getEventHandler();
 
   void setEventHandler(Consumer<TtyEvent> handler);
 
-  Consumer<int[]> readHandler();
+  Consumer<int[]> getStdinHandler();
 
   /**
    * Set the read handler on this connection.
    *
    * @param handler the event handler
    */
-  void setReadHandler(Consumer<int[]> handler);
+  void setStdinHandler(Consumer<int[]> handler);
 
   /**
-   * @return the write handler of this connection
+   * @return the stdout handler of this connection
    */
-  Consumer<int[]> writeHandler();
+  Consumer<int[]> stdoutHandler();
 
   void setCloseHandler(Consumer<Void> closeHandler);
 
-  Consumer<Void> closeHandler();
+  Consumer<Void> getCloseHandler();
 
   void close();
 
@@ -67,7 +67,7 @@ public interface TtyConnection {
    */
   default void write(String s) {
     int[] codePoints = Helper.toCodePoints(s);
-    writeHandler().accept(codePoints);
+    stdoutHandler().accept(codePoints);
   }
 
   /**

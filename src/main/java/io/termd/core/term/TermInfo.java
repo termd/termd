@@ -16,13 +16,14 @@
 
 package io.termd.core.term;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Map;
 
 /**
+ * A term info database.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TermInfo {
@@ -42,7 +43,10 @@ public class TermInfo {
 
   private static final TermInfo DEFAULT = loadDefault();
 
-  public static TermInfo getDefault() {
+  /**
+   * @return the default term info database loaded from the {@code terminfo.src} resource
+   */
+  public static TermInfo defaultInfo() {
     return DEFAULT;
   }
 
@@ -52,11 +56,20 @@ public class TermInfo {
     this.devices = devices;
   }
 
+  /**
+   * Return a particular known device given its name.
+   *
+   * @param name the device name
+   * @return the device or null
+   */
   public Device getDevice(String name) {
     return devices.get(name);
   }
 
-  public Collection<Device> getDevices() {
+  /**
+   * @return the devices present in this term info database.
+   */
+  public Collection<Device> devices() {
     return devices.values();
   }
 }

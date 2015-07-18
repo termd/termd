@@ -49,11 +49,11 @@ public class Feature<T> {
     this.value = value;
   }
 
-  public T getValue() {
+  public T value() {
     return value;
   }
 
-  public Capability<T> getCapability() {
+  public Capability<T> capability() {
     return capability;
   }
 

@@ -18,11 +18,9 @@ package io.termd.core.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.stream.Stream;
 
 /**
  * Various utils.
@@ -160,7 +158,7 @@ public class Helper {
     int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
 
     //
-    int row = size.getWidth() / (max + 1);
+    int row = size.width() / (max + 1);
 
     int count = 0;
     for (int[] completion : completions) {

@@ -62,10 +62,10 @@ public class Readline {
   }
 
   public Readline install(TtyConnection conn) {
-    this.prevReadHandler = conn.readHandler();
-    this.prevSizeHandler = conn.sizeHandler();
+    this.prevReadHandler = conn.getStdinHandler();
+    this.prevSizeHandler = conn.getSizeHandler();
     this.conn = conn;
-    this.conn.setReadHandler(data -> {
+    this.conn.setStdinHandler(data -> {
       decoder.append(data);
       deliver();
     });
@@ -97,7 +97,7 @@ public class Readline {
   }
 
   public void uninstall() {
-    conn.setReadHandler(prevReadHandler);
+    conn.setStdinHandler(prevReadHandler);
     conn.setSizeHandler(prevSizeHandler);
     conn = null;
   }
@@ -271,7 +271,7 @@ public class Readline {
                         } else {
                           conn.write("> ");
                         }
-                        conn.writeHandler().accept(new LineBuffer().compute(lineBuffer));
+                        conn.stdoutHandler().accept(new LineBuffer().compute(lineBuffer));
                         break;
                     }
                     // Update status
@@ -384,7 +384,7 @@ public class Readline {
                         break;
                     }
                   }
-                  conn.writeHandler().accept(copy.compute(lineBuffer));
+                  conn.stdoutHandler().accept(copy.compute(lineBuffer));
                 }
               } else {
                 throw new IllegalStateException();
@@ -401,7 +401,7 @@ public class Readline {
                     if (current == CompletionStatus.PENDING) {
                       conn.write("\r\n");
                     }
-                    conn.writeHandler().accept(text);
+                    conn.stdoutHandler().accept(text);
                     return this;
                   }
                   // Try again
@@ -427,7 +427,7 @@ public class Readline {
             int codePoint = key.getAt(i);
             lineBuffer.insert(codePoint);
           }
-          conn.writeHandler().accept(copy.compute(lineBuffer));
+          conn.stdoutHandler().accept(copy.compute(lineBuffer));
         }
       } else {
         FunctionEvent fname = (FunctionEvent) event;
@@ -437,7 +437,7 @@ public class Readline {
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
-        conn.writeHandler().accept(copy.compute(lineBuffer));
+        conn.stdoutHandler().accept(copy.compute(lineBuffer));
       }
     }
   }

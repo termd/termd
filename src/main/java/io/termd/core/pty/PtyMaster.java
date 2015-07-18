@@ -89,7 +89,7 @@ public class PtyMaster extends Thread {
             corrected[ptr++] = codepoints[i];
           }
         }
-        conn.writeHandler().accept(corrected);
+        conn.stdoutHandler().accept(corrected);
         if (processOutputConsumer != null) {
           processOutputConsumer.accept(corrected);
         }
@@ -165,7 +165,7 @@ public class PtyMaster extends Thread {
         Thread.currentThread().interrupt();
       }
     } catch (IOException e) {
-      conn.writeHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
+      conn.stdoutHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
     }
 
     // Read line again

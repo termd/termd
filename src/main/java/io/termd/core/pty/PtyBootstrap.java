@@ -80,7 +80,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
         // Not used yet but we should propagage this to the process builder
         System.out.println("CLIENT $TERM=" + term);
     });
-    conn.writeHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
+    conn.stdoutHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
     read(conn, readline);
   }
 

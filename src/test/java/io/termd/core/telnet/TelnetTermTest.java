@@ -26,22 +26,22 @@ public abstract class TelnetTermTest extends TelnetTestBase {
       connection.setSizeHandler(size -> {
         switch (count.getAndIncrement()) {
           case 0:
-            assertEquals(20, size.getWidth());
-            assertEquals(10, size.getHeight());
+            assertEquals(20, size.width());
+            assertEquals(10, size.height());
             latch1.countDown();
             break;
           case 1:
-            assertEquals(80, size.getWidth());
-            assertEquals(24, size.getHeight());
+            assertEquals(80, size.width());
+            assertEquals(24, size.height());
             latch2.countDown();
             break;
           case 2:
-            assertEquals(180, size.getWidth());
-            assertEquals(160, size.getHeight());
+            assertEquals(180, size.width());
+            assertEquals(160, size.height());
             connection.setSizeHandler(null);
             connection.setSizeHandler(size1 -> {
-              assertEquals(180, size1.getWidth());
-              assertEquals(160, size1.getHeight());
+              assertEquals(180, size1.width());
+              assertEquals(160, size1.height());
               testComplete();
             });
             break;

@@ -71,7 +71,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
             requestCount.incrementAndGet();
-            writeHandler().accept(new int[]{'%', ' '});
+            stdoutHandler().accept(new int[]{'%', ' '});
           }
         };
       }
@@ -92,9 +92,9 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            setReadHandler(data -> {
+            setStdinHandler(data -> {
               queue.add(data);
-              writeHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
+              stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
             });
           }
         };
@@ -118,7 +118,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            setReadHandler(event -> Helper.appendTo(event, buffer));
+            setStdinHandler(event -> Helper.appendTo(event, buffer));
             setEventHandler(event -> {
               if (event == TtyEvent.INTR) {
                 switch (count) {
@@ -157,7 +157,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            setReadHandler(event -> Helper.appendTo(event, buffer));
+            setStdinHandler(event -> Helper.appendTo(event, buffer));
             setEventHandler(event -> {
               switch (count) {
                 case 0:
@@ -238,7 +238,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
               @Override
               public void accept(TtyEvent event) {
-                setReadHandler(new Consumer<int[]>() {
+                setStdinHandler(new Consumer<int[]>() {
                   @Override
                   public void accept(int[] event) {
                     switch (count.getAndIncrement()) {
@@ -303,7 +303,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
             setCloseHandler(v -> {
               testComplete();
             });
-            setReadHandler(text -> {
+            setStdinHandler(text -> {
               close();
             });
             super.onOpen(conn);

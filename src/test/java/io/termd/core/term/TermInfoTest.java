@@ -473,7 +473,7 @@ public class TermInfoTest {
     TermInfoBuilder builder = new TermInfoBuilder();
     parser.parseDatabase(builder);
     TermInfo info = builder.build();
-    Collection<Device> entries = info.getDevices();
+    Collection<Device> entries = info.devices();
     assertEquals(2645, entries.size());
     Device device = info.getDevice("xterm-color");
     assertNotNull(device);
@@ -481,11 +481,11 @@ public class TermInfoTest {
 
   @Test
   public void testSomeEval() throws Exception {
-    Sequence cup = TermInfo.getDefault().getDevice("xterm-color").getFeature(Capability.cursor_address);
-    Sequence smcup = TermInfo.getDefault().getDevice("xterm-color").getFeature(Capability.enter_ca_mode);
+    Sequence cup = TermInfo.defaultInfo().getDevice("xterm-color").getFeature(Capability.cursor_address);
+    Sequence smcup = TermInfo.defaultInfo().getDevice("xterm-color").getFeature(Capability.enter_ca_mode);
     assertSequenceEquals("\033[1;1H", cup.eval("0", "0"));
     assertSequenceEquals("\0337\033[?47h", smcup.eval());
-    Sequence setb = TermInfo.getDefault().getDevice("xtermc").getFeature(Capability.set_background);
+    Sequence setb = TermInfo.defaultInfo().getDevice("xtermc").getFeature(Capability.set_background);
     assertSequenceEquals("\033[44m", setb.eval("1"));
     assertSequenceEquals("\033[42m", setb.eval("2"));
     assertSequenceEquals("\033[46m", setb.eval("3"));
@@ -495,7 +495,7 @@ public class TermInfoTest {
     assertSequenceEquals("\033[47m", setb.eval("7"));
     assertSequenceEquals("\033[412m", setb.eval("12"));
 
-    Sequence pfkey = TermInfo.getDefault().getDevice("tvi924").getFeature(Capability.pkey_key);
+    Sequence pfkey = TermInfo.defaultInfo().getDevice("tvi924").getFeature(Capability.pkey_key);
     assertEquals("\033|2foo\031", pfkey.eval("1", "foo"));
   }
 

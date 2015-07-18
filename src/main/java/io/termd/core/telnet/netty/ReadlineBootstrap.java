@@ -106,12 +106,12 @@ public class ReadlineBootstrap {
         readline.addFunction(function);
       }
       conn.setTermHandler(term -> {
-        TermInfo info = TermInfo.getDefault();
+        TermInfo info = TermInfo.defaultInfo();
         Device device = info.getDevice(term.toLowerCase());
         Integer maxColors = device.getFeature(Capability.max_colors);
         StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\r\n");
         for (Feature<?> feature : device.getFeatures()) {
-          Capability<?> capability = feature.getCapability();
+          Capability<?> capability = feature.capability();
           msg.append(capability.name).append(" (").append(capability.description).
               append(")").append("\r\n");
         }

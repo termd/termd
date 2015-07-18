@@ -23,7 +23,7 @@ public class ReadlineTest extends TestBase {
     }
 
     @Override
-    public Event getEvent() {
+    public Event event() {
       return event;
     }
 
