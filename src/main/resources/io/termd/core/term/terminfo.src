@@ -183,7 +183,7 @@
 # code packaged with ncurses and contemplating the resulting error messages.
 # In many cases, these indicated obvious fixes to syntax garbled by the
 # composers.  In a few cases, I was able to deduce corrected forms for garbled
-# capabilities by looking at invokerContext.  All the information in the original
+# capabilities by looking at context.  All the information in the original
 # entries is preserved in the comments.
 #
 # In the comments, terminfo capability names are bracketed with <> (angle
@@ -12227,10 +12227,10 @@ aaa-30-s|aaa-s|ann arbor ambassador/30 lines w/status,
 	tsl=\E[>51h\E[1;%p1%dH\E[2K, use=aaa+unk,
 aaa-30-s-rv|aaa-s-rv|ann arbor ambassador/30 lines+status+reverse video,
 	use=aaa+rv, use=aaa-30-s,
-aaa-s-ctxt|aaa-30-s-ctxt|ann arbor ambassador/30 lines+status+save invokerContext,
+aaa-s-ctxt|aaa-30-s-ctxt|ann arbor ambassador/30 lines+status+save context,
 	rmcup=\E[60;1;0;30p\E[59;1H\E[K,
 	smcup=\E[30;1H\E[K\E[30;1;0;30p, use=aaa-30-s,
-aaa-s-rv-ctxt|aaa-30-s-rv-ct|ann arbor ambassador/30 lines+status+save invokerContext+reverse video,
+aaa-s-rv-ctxt|aaa-30-s-rv-ct|ann arbor ambassador/30 lines+status+save context+reverse video,
 	rmcup=\E[60;1;0;30p\E[59;1H\E[K,
 	smcup=\E[30;1H\E[K\E[30;1;0;30p, use=aaa-30-s-rv,
 aaa|aaa-30|ambas|ambassador|ann arbor ambassador/30 lines,
@@ -12240,10 +12240,10 @@ aaa|aaa-30|ambas|ambassador|ann arbor ambassador/30 lines,
 	smcup=\E[H\E[J$<156>\E[30;0;0;30p, use=aaa+unk,
 aaa-30-rv|aaa-rv|ann arbor ambassador/30 lines in reverse video,
 	use=aaa+rv, use=aaa-30,
-aaa-30-ctxt|aaa-ctxt|ann arbor ambassador/30 lines; saving invokerContext,
+aaa-30-ctxt|aaa-ctxt|ann arbor ambassador/30 lines; saving context,
 	rmcup=\E[60;0;0;30p\E[60;1H\E[K, smcup=\E[30;0;0;30p,
 	use=aaa-30,
-aaa-30-rv-ctxt|aaa-rv-ctxt|ann arbor ambassador/30 lines reverse video; saving invokerContext,
+aaa-30-rv-ctxt|aaa-rv-ctxt|ann arbor ambassador/30 lines reverse video; saving context,
 	rmcup=\E[60;0;0;30p\E[60;1H\E[K, smcup=\E[30;0;0;30p,
 	use=aaa+rv, use=aaa-30,
 aaa-36|ann arbor ambassador/36 lines,
@@ -12301,7 +12301,7 @@ guru+s|guru status line,
 	dsl=\E7\E[;0p\E[1;1H\E[K\E[H\E8\r\n\E[K, fsl=\E[>51l,
 	rmcup=\E[255;1p\E[255;1H\E[K, smcup=,
 	tsl=\E[>51h\E[1;%p1%dH\E[2K,
-guru-nctxt|guru with no saved invokerContext,
+guru-nctxt|guru with no saved context,
 	smcup=\E[H\E[J$<156>\E[33p\E[255;1H\E[K, use=guru,
 guru-s|guru-33-s|ann arbor guru/33 lines+status,
 	lines#32,
@@ -14245,7 +14245,7 @@ ts100|ts100-sp|falco ts100-sp,
 	sgr0=\E[m\017$<2>, smacs=^N, smam=\E[?7h, smkx=\E[?1h\E=,
 	smso=\E[1;7m$<2>, smul=\E[4m$<2>, tbc=\E[3g,
 	use=vt100+fnkeys,
-ts100-ctxt|falco ts-100 saving invokerContext,
+ts100-ctxt|falco ts-100 saving context,
 	rmcup=\E~_b, smcup=\E~_d\E[2J, use=ts100,
 
 #### Florida Computer Graphics
@@ -22869,7 +22869,7 @@ v3220|LANPAR Vision II model 3220/3221/3222,
 #	* add/use xterm+tmux chunk from xterm #271 -TD
 #	* resync xterm-new entry from xterm #271 -TD
 #	* add E3 extended capability to linux-basic (Miroslav Lichvar)
-#	* add linux2.2, linux2.6, linux3.0 entries to give invokerContext for E3 -TD
+#	* add linux2.2, linux2.6, linux3.0 entries to give context for E3 -TD
 #	* add SI/SO change to linux2.6 entry (Debian #515609) -TD
 #
 # 2011-07-21
