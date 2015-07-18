@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -42,10 +43,11 @@ public class PtyMaster extends Thread {
   private final TtyConnection conn;
   private final Readline readline;
   private final String line;
-  private Consumer<PtyStatusEvent> taskStatusUpdateListener;
+  private BiConsumer<Status, Status> statusChangeHandler;
   private Consumer<int[]> processOutputConsumer;
   private Consumer<String> processInputConsumer;
   private Status status;
+  private Process process;
 
   public PtyMaster(TtyBridge bridge, TtyConnection conn, Readline readline, String line) {
     this.bridge = bridge;
@@ -55,16 +57,28 @@ public class PtyMaster extends Thread {
     status = Status.NEW;
   }
 
+  public Consumer<String> getProcessInputConsumer() {
+    return processInputConsumer;
+  }
+
   public void setProcessOutputConsumer(Consumer<int[]> processOutputConsumer) {
     this.processOutputConsumer = processOutputConsumer;
+  }
+
+  public Consumer<int[]> getProcessOutputConsumer() {
+    return processOutputConsumer;
   }
 
   public void setProcessInputConsumer(Consumer<String> processInputConsumer) {
     this.processInputConsumer = processInputConsumer;
   }
 
-  public void setTaskStatusUpdateListener(Consumer<PtyStatusEvent> taskStatusUpdateListener) {
-    this.taskStatusUpdateListener = taskStatusUpdateListener;
+  public BiConsumer<Status, Status> getStatusChangeHandler() {
+    return statusChangeHandler;
+  }
+
+  public void setStatusChangeHandler(BiConsumer<Status, Status> statusChangeHandler) {
+    this.statusChangeHandler = statusChangeHandler;
   }
 
   private class Pipe extends Thread {
@@ -116,6 +130,8 @@ public class PtyMaster extends Thread {
     }
   }
 
+  private Consumer<Status> onChange;
+
   @Override
   public void run() {
     if (processInputConsumer != null) {
@@ -123,7 +139,7 @@ public class PtyMaster extends Thread {
     }
     ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
     try {
-      final java.lang.Process process = builder.start();
+      process = builder.start();
       setStatus(Status.RUNNING);
       conn.setEventHandler(new Consumer<TtyEvent>() {
         boolean interrupted; // Signal state
@@ -174,13 +190,16 @@ public class PtyMaster extends Thread {
     conn.schedule(() -> bridge.read(conn, readline));
   }
 
-  private void setStatus(Status status) {
-    Status old = this.status;
-    this.status = status;
-    PtyStatusEvent statusUpdateEvent = new PtyStatusEvent(this, old, status);
-    if (taskStatusUpdateListener != null) {
-      taskStatusUpdateListener.accept(statusUpdateEvent);
+  private void setStatus(Status next) {
+    Status prev = status;
+    status = next;
+    if (statusChangeHandler != null) {
+      statusChangeHandler.accept(prev, next);
     }
+  }
+
+  public Process getProcess() {
+    return process;
   }
 
   public Status getStatus() {

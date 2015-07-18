@@ -44,13 +44,9 @@ public class UndertowBootstrap {
   }
 
   public void bootstrap(final Consumer<Boolean> completionHandler) {
-    String servletPath = "/servlet";
-    String socketPath = "/socket";
-    String httpPath = "/";
-
     server = Undertow.builder()
         .addHttpListener(port, host)
-        .setHandler(exchange -> UndertowBootstrap.this.handleWebSocketRequests(exchange))
+        .setHandler(UndertowBootstrap.this::handleWebSocketRequests)
         .build();
 
     server.start();
@@ -60,14 +56,13 @@ public class UndertowBootstrap {
 
   private void handleWebSocketRequests(HttpServerExchange exchange) throws Exception {
     String requestPath = exchange.getRequestPath();
-
     if (requestPath.startsWith(Configurations.TERM_PATH)) {
       String invokerContext = requestPath.replace(Configurations.TERM_PATH + "/", "");
-      TermServer.Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> termServer.newTerm(invokerContext));
+      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
       term.getWebSocketHandler(invokerContext).handleRequest(exchange);
     } else  if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
       String invokerContext = requestPath.replace(Configurations.PROCESS_UPDATES_PATH + "/", "");
-      TermServer.Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> termServer.newTerm(invokerContext));
+      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
       term.webSocketStatusUpdateHandler().handleRequest(exchange);
     }
   }

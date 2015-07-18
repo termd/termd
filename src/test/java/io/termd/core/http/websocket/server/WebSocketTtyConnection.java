@@ -49,7 +49,7 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
     executor.execute(task);
   }
 
-  public WebSocketTtyConnection(final WebSocketChannel webSocketChannel, Executor executor) {
+  public WebSocketTtyConnection(WebSocketChannel webSocketChannel, Executor executor) {
     this.webSocketChannel = webSocketChannel;
     this.executor = executor;
 
