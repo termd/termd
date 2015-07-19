@@ -13,33 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.termd.core.util;
 
-package io.termd.core.pty;
 
 /**
- * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
+ * Created by <a href="mailto:matejonnet@gmail.com">Matej Lazar</a> on 2014-12-09.
  */
-public class PtyStatusEvent {
-  private PtyMaster process;
-  private Status oldStatus;
-  private Status newStatus;
+public class ObjectWrapper<T> {
+    private T obj;
 
-  public PtyStatusEvent(PtyMaster task, Status oldStatus, Status newStatus) {
-    this.process = task;
-    this.oldStatus = oldStatus;
-    this.newStatus = newStatus;
-  }
+    public ObjectWrapper() {
+    }
 
-  public PtyMaster getProcess() {
-    return process;
-  }
+    public ObjectWrapper(T obj) {
+        this.obj = obj;
+    }
 
-  public Status getOldStatus() {
-    return oldStatus;
-  }
+    public void set(T obj) {
+        this.obj = obj;
+    }
 
-  public Status getNewStatus() {
-    return newStatus;
-  }
+    public T get() {
+        return obj;
+    }
 
 }

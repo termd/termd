@@ -14,28 +14,13 @@
  * limitations under the License.
  */
 
-package io.termd.core.pty;
+package io.termd.core.http.websocket;
 
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
-public class PtyStatus {
-
-  private Status status;
-
-  public PtyStatus(Status status) {
-    this.status = status;
-  }
-
-  public void setStatus(Status status) {
-    this.status = status;
-  }
-
-  public Status getStatus() {
-    return status;
-  }
-
-  public String toJson() {
-    return "{\"status\" : \"" + status + "\"}";
-  }
+public class Configurations {
+  public static final String HOST = "localhost";
+  public static final String TERM_PATH = "/term";
+  public static final String PROCESS_UPDATES_PATH = "/process-status-updates";
 }

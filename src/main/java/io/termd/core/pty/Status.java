@@ -20,9 +20,9 @@ package io.termd.core.pty;
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public enum Status {
-    NEW,
-    RUNNING,
-    COMPLETED,
-    FAILED,
-    INTERRUPTED;
+  NEW,
+  RUNNING,
+  COMPLETED,
+  FAILED,
+  INTERRUPTED;
 }
