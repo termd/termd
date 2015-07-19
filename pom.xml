@@ -103,7 +103,7 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${version.org.slf4j}</version>
-      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -366,6 +366,14 @@
       <properties>
         <skipTests>true</skipTests>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-simple</artifactId>
+          <version>${version.org.slf4j}</version>
+          <optional>true</optional>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>

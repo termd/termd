@@ -102,6 +102,7 @@ public class ReadlineBootstrap {
       InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
       Keymap keymap = new Keymap(inputrc);
       Readline readline = new Readline(keymap);
+      readline.install(conn);
       for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
         readline.addFunction(function);
       }
