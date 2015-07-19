@@ -123,11 +123,10 @@ public class Readline {
   /**
    * Read a line until a request can be processed.
    *
-   * @param conn the tty connection
    * @param requestHandler the requestHandler
    */
-  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler) {
-    readline(conn, prompt, requestHandler, null);
+  public void readline(String prompt, Consumer<String> requestHandler) {
+    readline(prompt, requestHandler, null);
   }
 
   /**
@@ -142,10 +141,9 @@ public class Readline {
   /**
    * Read a line until a request can be processed.
    *
-   * @param conn the tty connection
    * @param requestHandler the requestHandler
    */
-  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
+  public void readline(String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
     if (interaction != null) {
       throw new IllegalStateException("Already reading a line");
     }

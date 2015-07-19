@@ -178,7 +178,7 @@ class TestTerm {
   }
 
   public void readline(Consumer<String> readlineHandler, Consumer<Completion> completionHandler) {
-    readline.readline(conn, "% ", readlineHandler, completionHandler);
+    readline.readline("% ", readlineHandler, completionHandler);
   }
 
   public void executeTasks() {

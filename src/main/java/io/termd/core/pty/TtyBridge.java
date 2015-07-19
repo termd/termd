@@ -89,7 +89,7 @@ public class TtyBridge {
   }
 
   void read(final TtyConnection conn, final Readline readline) {
-    readline.readline(conn, "% ", line -> {
+    readline.readline("% ", line -> {
       if (processStdinListener != null) {
         processStdinListener.accept(line);
       }

@@ -163,7 +163,7 @@ public class ReadlineBootstrap {
     }
 
     public void read(final TtyConnection conn, final Readline readline) {
-      readline.readline(conn, "% ", line -> {
+      readline.readline("% ", line -> {
         Task task = new Task(conn, readline, line);
         task.start();
       }, completion -> {
