@@ -46,11 +46,13 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
       <version>3.0.0</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web</artifactId>
       <version>3.0.0</version>
+      <optional>true</optional>
     </dependency>
 
     <!-- Apache SSHD -->
@@ -58,11 +60,13 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.1.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-core</artifactId>
       <version>0.11.0</version>
+      <optional>true</optional>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -74,33 +78,32 @@
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-pam</artifactId>
       <version>0.11.0</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.49</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
       <version>1.49</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-core</artifactId>
       <version>2.0.7</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${version.org.slf4j}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${version.org.slf4j}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -110,9 +113,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${version.org.slf4j}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>commons-net</groupId>
       <artifactId>commons-net</artifactId>
       <version>3.3</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.undertow</groupId>
@@ -130,6 +140,7 @@
       <groupId>io.undertow</groupId>
       <artifactId>undertow-websockets-jsr</artifactId>
       <version>1.2.7.Final</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
