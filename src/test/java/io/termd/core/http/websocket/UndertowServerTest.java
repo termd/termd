@@ -86,7 +86,7 @@ public class UndertowServerTest {
     Client.executeRemoteCommand(client, TEST_COMMAND);
 
 
-    Wait.forCondition(() -> receivedEventUpdates.contains(Status.COMPLETED), 5, ChronoUnit.SECONDS);
+    Wait.forCondition(() -> receivedEventUpdates.contains(Status.COMPLETED), 60, ChronoUnit.SECONDS);
 
     Assert.assertTrue("Missing response data.", responseData.toString().contains(MockProcess.FINAL_MESSAGE));
   }
