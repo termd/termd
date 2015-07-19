@@ -17,9 +17,6 @@
 package io.termd.core.pty;
 
 import io.termd.core.io.BinaryDecoder;
-import io.termd.core.readline.Readline;
-import io.termd.core.tty.TtyConnection;
-import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Helper;
 
 import java.io.IOException;
@@ -39,75 +36,54 @@ import java.util.function.Consumer;
  */
 public class PtyMaster extends Thread {
 
-  private final TtyBridge bridge;
-  private final TtyConnection conn;
-  private final Readline readline;
   private final String line;
-  private BiConsumer<Status, Status> statusChangeHandler;
-  private Consumer<int[]> processOutputConsumer;
-  private Consumer<String> processInputConsumer;
+  private BiConsumer<Status, Status> changeHandler;
+  private final Consumer<Void> doneHandler;
+  private final Consumer<int[]> stdout;
   private Status status;
   private Process process;
+  private boolean interrupted;
 
-  public PtyMaster(TtyBridge bridge, TtyConnection conn, Readline readline, String line) {
-    this.bridge = bridge;
-    this.conn = conn;
-    this.readline = readline;
+
+  public PtyMaster(String line, Consumer<int[]> stdout, Consumer<Void> doneHandler) {
     this.line = line;
-    status = Status.NEW;
+    this.doneHandler = doneHandler;
+    this.stdout = stdout;
+    this.status = Status.NEW;
   }
 
-  public Consumer<String> getProcessInputConsumer() {
-    return processInputConsumer;
+  public BiConsumer<Status, Status> getChangeHandler() {
+    return changeHandler;
   }
 
-  public void setProcessOutputConsumer(Consumer<int[]> processOutputConsumer) {
-    this.processOutputConsumer = processOutputConsumer;
-  }
-
-  public Consumer<int[]> getProcessOutputConsumer() {
-    return processOutputConsumer;
-  }
-
-  public void setProcessInputConsumer(Consumer<String> processInputConsumer) {
-    this.processInputConsumer = processInputConsumer;
-  }
-
-  public BiConsumer<Status, Status> getStatusChangeHandler() {
-    return statusChangeHandler;
-  }
-
-  public void setStatusChangeHandler(BiConsumer<Status, Status> statusChangeHandler) {
-    this.statusChangeHandler = statusChangeHandler;
+  public void setChangeHandler(BiConsumer<Status, Status> changeHandler) {
+    this.changeHandler = changeHandler;
   }
 
   private class Pipe extends Thread {
 
     private final Charset charset = StandardCharsets.UTF_8; // We suppose the process out/err uses UTF-8
     private final InputStream in;
-    private final BinaryDecoder decoder = new BinaryDecoder(charset, codepoints -> conn.schedule(() -> {
-        // Replace any \n by \r\n (need to improve that somehow...)
-        int len = codepoints.length;
-        for (int i = 0;i < codepoints.length;i++) {
-          if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-            len++;
-          }
+    private final BinaryDecoder decoder = new BinaryDecoder(charset, codepoints -> {
+      // Replace any \n by \r\n (need to improve that somehow...)
+      int len = codepoints.length;
+      for (int i = 0;i < codepoints.length;i++) {
+        if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
+          len++;
         }
-        int ptr = 0;
-        int[] corrected = new int[len];
-        for (int i = 0;i < codepoints.length;i++) {
-          if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-            corrected[ptr++] = '\r';
-            corrected[ptr++] = '\n';
-          } else {
-            corrected[ptr++] = codepoints[i];
-          }
+      }
+      int ptr = 0;
+      int[] corrected = new int[len];
+      for (int i = 0;i < codepoints.length;i++) {
+        if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
+          corrected[ptr++] = '\r';
+          corrected[ptr++] = '\n';
+        } else {
+          corrected[ptr++] = codepoints[i];
         }
-        conn.writeHandler().accept(corrected);
-        if (processOutputConsumer != null) {
-          processOutputConsumer.accept(corrected);
-        }
-    }));
+      }
+      stdout.accept(corrected);
+    });
 
     public Pipe(InputStream in) {
       this.in = in;
@@ -130,30 +106,27 @@ public class PtyMaster extends Thread {
     }
   }
 
-  private Consumer<Status> onChange;
+  public Process getProcess() {
+    return process;
+  }
+
+  public Status getStatus() {
+    return status;
+  }
+
+  public void interruptProcess() {
+    if (!interrupted) {
+      interrupted = true;
+      process.destroy();
+    }
+  }
 
   @Override
   public void run() {
-    if (processInputConsumer != null) {
-      processInputConsumer.accept(line);
-    }
     ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
     try {
       process = builder.start();
       setStatus(Status.RUNNING);
-      conn.setEventHandler(new Consumer<TtyEvent>() {
-        boolean interrupted; // Signal state
-
-        @Override
-        public void accept(TtyEvent event) {
-          if (event == TtyEvent.INTR) {
-            if (!interrupted) {
-              interrupted = true;
-              process.destroy();
-            }
-          }
-        }
-      });
       Pipe stdout = new Pipe(process.getInputStream());
       Pipe stderr = new Pipe(process.getErrorStream());
       stdout.start();
@@ -182,27 +155,18 @@ public class PtyMaster extends Thread {
         setStatus(Status.FAILED);
       }
     } catch (IOException e) {
-      conn.writeHandler().accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
+      stdout.accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
     }
 
-    // Read line again
-    conn.setEventHandler(null);
-    conn.schedule(() -> bridge.read(conn, readline));
+    //
+    doneHandler.accept(null);
   }
 
   private void setStatus(Status next) {
     Status prev = status;
     status = next;
-    if (statusChangeHandler != null) {
-      statusChangeHandler.accept(prev, next);
+    if (changeHandler != null) {
+      changeHandler.accept(prev, next);
     }
-  }
-
-  public Process getProcess() {
-    return process;
-  }
-
-  public Status getStatus() {
-    return status;
   }
 }

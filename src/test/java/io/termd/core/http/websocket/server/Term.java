@@ -59,7 +59,7 @@ class Term {
   public Consumer<PtyMaster> onTaskCreated() {
     return (ptyMaster) -> {
       Optional<FileOutputStream> fileOutputStream = Optional.empty();
-      ptyMaster.setStatusChangeHandler((prev, next) -> {
+      ptyMaster.setChangeHandler((prev, next) -> {
         notifyStatusUpdated(
             new TaskStatusUpdateEvent("" + ptyMaster.getId(), prev, next, context)
         );
@@ -77,7 +77,7 @@ class Term {
   HttpHandler getWebSocketHandler(String invokerContext) {
     WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
       WebSocketTtyConnection conn = new WebSocketTtyConnection(webSocketChannel, termServer.executor);
-      new TtyBridge(conn, onTaskCreated()).handle();
+      new TtyBridge(conn).setProcessListener(onTaskCreated()).readline();
     };
     return new WebSocketProtocolHandshakeHandler(onWebSocketConnected);
   }

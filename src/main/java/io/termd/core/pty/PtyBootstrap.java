@@ -28,14 +28,7 @@ import java.util.function.Consumer;
  */
 public class PtyBootstrap implements Consumer<TtyConnection> {
 
-  private Consumer<PtyMaster> taskCreationListener;
-
   public PtyBootstrap() {
-    this((taskStatusUpdateEvent) -> {});
-  }
-
-  public PtyBootstrap(Consumer<PtyMaster> taskCreationListener) {
-    this.taskCreationListener = taskCreationListener;
   }
 
   public static void main(String[] args) throws Exception {
@@ -59,7 +52,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
 
   @Override
   public void accept(final TtyConnection conn) {
-    TtyBridge bridge = new TtyBridge(conn, taskCreationListener);
-    bridge.handle();
+    TtyBridge bridge = new TtyBridge(conn);
+    bridge.readline();
   }
 }

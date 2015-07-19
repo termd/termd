@@ -20,6 +20,7 @@ import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +35,42 @@ public class TtyBridge {
 
   Logger log = LoggerFactory.getLogger(TtyBridge.class);
   final TtyConnection conn;
-  final Consumer<PtyMaster> taskCreationListener;
+  private Consumer<PtyMaster> processListener;
+  private Consumer<int[]> processStdoutListener;
+  private Consumer<String> processStdinListener;
 
-  public TtyBridge(TtyConnection conn, Consumer<PtyMaster> taskCreationListener) {
+  public TtyBridge(TtyConnection conn) {
     this.conn = conn;
-    this.taskCreationListener = taskCreationListener;
   }
 
-  public void handle() {
+  public Consumer<PtyMaster> getProcessListener() {
+    return processListener;
+  }
+
+  public TtyBridge setProcessListener(Consumer<PtyMaster> processListener) {
+    this.processListener = processListener;
+    return this;
+  }
+
+  public Consumer<String> getProcessStdinListener() {
+    return processStdinListener;
+  }
+
+  public TtyBridge setProcessStdinListener(Consumer<String> processStdinListener) {
+    this.processStdinListener = processStdinListener;
+    return this;
+  }
+
+  public Consumer<int[]> getProcessStdoutListener() {
+    return processStdoutListener;
+  }
+
+  public TtyBridge setProcessStdoutListener(Consumer<int[]> processStdoutListener) {
+    this.processStdoutListener = processStdoutListener;
+    return this;
+  }
+
+  public void readline() {
     InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
     Keymap keymap = new Keymap(inputrc);
     Readline readline = new Readline(keymap);
@@ -58,15 +87,31 @@ public class TtyBridge {
     read(conn, readline);
   }
 
-  public void read(final TtyConnection conn, final Readline readline) {
-    Consumer<String> requestHandler = new Consumer<String>() {
-      @Override
-      public void accept(String line) {
-        PtyMaster task = new PtyMaster(TtyBridge.this, conn, readline, line);
-        taskCreationListener.accept(task);
-        task.start();
+  void read(final TtyConnection conn, final Readline readline) {
+    readline.readline(conn, "% ", line -> {
+      if (processStdinListener != null) {
+        processStdinListener.accept(line);
       }
-    };
-    readline.readline(conn, "% ", requestHandler);
+      PtyMaster task = new PtyMaster(line,
+          buffer -> {
+            conn.schedule(() -> {
+              conn.writeHandler().accept(buffer);
+            });
+            if (processStdoutListener != null) {
+              processStdoutListener.accept(buffer);
+            }
+          },
+          v -> {
+        conn.setEventHandler(null);
+        conn.schedule(() -> read(conn, readline));
+      });
+      conn.setEventHandler(event -> {
+        if (event == TtyEvent.INTR) {
+          task.interruptProcess();
+        }
+      });
+      processListener.accept(task);
+      task.start();
+    });
   }
 }
