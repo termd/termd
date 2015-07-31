@@ -16,6 +16,8 @@
 
 package io.termd.core.readline;
 
+import java.util.List;
+
 /**
  * A readline function.
  *
@@ -31,8 +33,9 @@ public interface Function {
   /**
    * Apply the function on the line buffer.
    *
+   * @param history the current history
    * @param buffer the buffer to update
    */
-  void apply(LineBuffer buffer);
+  void apply(List<int[]> history, LineBuffer buffer);
 
 }

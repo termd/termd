@@ -24,15 +24,15 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BackwardChar implements Function {
+public class PreviousHistory implements Function {
 
   @Override
   public String name() {
-    return "backward-char";
+    return "previous-history";
   }
 
   @Override
   public void apply(List<int[]> history, LineBuffer buffer) {
-    buffer.moveCursor(-1);
+    // Todo
   }
 }

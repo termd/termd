@@ -20,8 +20,10 @@ import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -43,10 +45,12 @@ public class Readline {
   private Consumer<Dimension> defaultSizeHandler;
   private Dimension size;
   private Interaction interaction;
+  private List<int[]> history;
 
   public Readline(Keymap keymap) {
     this.keymap = keymap;
     this.decoder = new KeyDecoder(keymap);
+    this.history = new ArrayList<>();
   }
 
   /**
@@ -431,7 +435,7 @@ public class Readline {
         FunctionEvent fname = (FunctionEvent) event;
         Function function = functions.get(fname.name());
         if (function != null) {
-          function.apply(lineBuffer);
+          function.apply(history, lineBuffer);
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
