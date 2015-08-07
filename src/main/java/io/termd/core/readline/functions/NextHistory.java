@@ -17,20 +17,37 @@
 package io.termd.core.readline.functions;
 
 import io.termd.core.readline.Function;
+import io.termd.core.readline.LineBuffer;
 import io.termd.core.readline.Readline;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BackwardDeleteChar implements Function {
+public class NextHistory implements Function {
 
   @Override
   public String name() {
-    return "backward-delete-char";
+    return "next-history";
   }
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.buffer().deleteAt(-1);
+    List<int[]> history = interaction.history();
+    int curr = interaction.getHistoryIndex();
+    if (curr >= 0) {
+      int next = curr - 1;
+      int[] line;
+      if (next == -1) {
+        line = (int[]) interaction.data().get("abc");
+      } else {
+        line = history.get(next);
+      }
+      LineBuffer buffer = interaction.buffer();
+      buffer.clear();
+      buffer.insert(line);
+      interaction.setHistoryIndex(next);
+    }
   }
 }

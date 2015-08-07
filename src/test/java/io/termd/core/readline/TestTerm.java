@@ -19,6 +19,8 @@ package io.termd.core.readline;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.ForwardChar;
+import io.termd.core.readline.functions.NextHistory;
+import io.termd.core.readline.functions.PreviousHistory;
 import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
@@ -154,6 +156,8 @@ class TestTerm {
     readline.addFunction(new BackwardDeleteChar());
     readline.addFunction(new BackwardChar());
     readline.addFunction(new ForwardChar());
+    readline.addFunction(new PreviousHistory());
+    readline.addFunction(new NextHistory());
     readline.install(conn);
   }
 

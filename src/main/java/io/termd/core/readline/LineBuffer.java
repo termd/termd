@@ -16,6 +16,7 @@
 
 package io.termd.core.readline;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
@@ -37,6 +38,10 @@ public class LineBuffer implements Iterable<Integer> {
     data = that.data.clone();
     cursor = that.cursor;
     size = that.size;
+  }
+
+  public int[] toArray() {
+    return Arrays.copyOf(data, size);
   }
 
   public int getAt(int index) {
@@ -110,6 +115,11 @@ public class LineBuffer implements Iterable<Integer> {
 
   public void setCursor(int next) {
     this.cursor = next < 0 ? 0 : (next > size ? size : next);
+  }
+
+  public void clear() {
+    size = 0;
+    cursor = 0;
   }
 
   public int moveCursor(int delta) {

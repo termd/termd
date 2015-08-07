@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -51,6 +52,30 @@ public class Readline {
     this.keymap = keymap;
     this.decoder = new KeyDecoder(keymap);
     this.history = new ArrayList<>();
+  }
+
+  public Interaction getInteraction() {
+    return interaction;
+  }
+
+  public void setInteraction(Interaction interaction) {
+    this.interaction = interaction;
+  }
+
+  /**
+   * @return the current history
+   */
+  public List<int[]> getHistory() {
+    return history;
+  }
+
+  /**
+   * Set the history
+   *
+   * @param history the history
+   */
+  public void setHistory(List<int[]> history) {
+    this.history = history;
   }
 
   /**
@@ -155,19 +180,22 @@ public class Readline {
     conn.write(prompt);
   }
 
-  private class Interaction {
+  public class Interaction {
 
+    private final Map<String, Object> data;
     private final Map<IntBuffer, Runnable> handlers;
     private boolean completing;
     private final LinkedList<int[]> lines = new LinkedList<>();
     private final LineBuffer lineBuffer = new LineBuffer();
     private final ParsedBuffer parsed = new ParsedBuffer();
+    private int historyIndex = -1;
 
     public Interaction(
         String prompt,
         Consumer<String> requestHandler,
         Consumer<Completion> completionHandler) {
       this.handlers = new HashMap<>();
+      this.data = new HashMap<>();
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
         for (int j : lineBuffer) {
@@ -188,16 +216,20 @@ public class Readline {
             conn.write("\r\n> ");
           } else {
             final StringBuilder raw = new StringBuilder();
+            ArrayList<Integer> hist = new ArrayList<>();
             for (int index = 0;index < lines.size();index++) {
               int[] a = lines.get(index);
               if (index > 0) {
                 raw.append('\n'); // Use \n for processing
+                hist.add((int) '\n');
               }
               for (int b : a) {
                 raw.appendCodePoint(b);
+                hist.add(b);
               }
             }
             lines.clear();
+            history.add(hist.stream().mapToInt(Integer::intValue).toArray());
             parsed.buffer.clear();
             conn.write("\r\n");
             interaction = null;
@@ -435,12 +467,32 @@ public class Readline {
         FunctionEvent fname = (FunctionEvent) event;
         Function function = functions.get(fname.name());
         if (function != null) {
-          function.apply(history, lineBuffer);
+          function.apply(this);
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
         conn.stdoutHandler().accept(copy.compute(lineBuffer));
       }
+    }
+
+    public Map<String, Object> data() {
+      return data;
+    }
+
+    public List<int[]> history() {
+      return history;
+    }
+
+    public int getHistoryIndex() {
+      return historyIndex;
+    }
+
+    public void setHistoryIndex(int historyIndex) {
+      this.historyIndex = historyIndex;
+    }
+
+    public LineBuffer buffer() {
+      return lineBuffer;
     }
   }
 }

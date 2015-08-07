@@ -31,11 +31,10 @@ public interface Function {
   String name();
 
   /**
-   * Apply the function on the line buffer.
+   * Apply the function on the current interaction.
    *
-   * @param history the current history
-   * @param buffer the buffer to update
+   * @param interaction the current interaction
    */
-  void apply(List<int[]> history, LineBuffer buffer);
+  void apply(Readline.Interaction interaction);
 
 }

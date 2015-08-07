@@ -1,3 +1,5 @@
 io.termd.core.readline.functions.BackwardChar
 io.termd.core.readline.functions.ForwardChar
 io.termd.core.readline.functions.BackwardDeleteChar
+io.termd.core.readline.functions.PreviousHistory
+io.termd.core.readline.functions.NextHistory

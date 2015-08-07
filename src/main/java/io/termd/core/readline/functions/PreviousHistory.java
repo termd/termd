@@ -18,10 +18,12 @@ package io.termd.core.readline.functions;
 
 import io.termd.core.readline.Function;
 import io.termd.core.readline.LineBuffer;
+import io.termd.core.readline.Readline;
 
 import java.util.List;
 
 /**
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class PreviousHistory implements Function {
@@ -32,7 +34,22 @@ public class PreviousHistory implements Function {
   }
 
   @Override
-  public void apply(List<int[]> history, LineBuffer buffer) {
-    // Todo
+  public void apply(Readline.Interaction interaction) {
+    List<int[]> history = interaction.history();
+    if (history.size() > 0) {
+      int curr = interaction.getHistoryIndex();
+      int next = curr + 1;
+      if (next < history.size()) {
+        if (curr == -1) {
+          int[] tmp = interaction.buffer().toArray();
+          interaction.data().put("abc", tmp);
+        }
+        int[] line = history.get(next);
+        LineBuffer buffer = interaction.buffer();
+        buffer.clear();
+        buffer.insert(line);
+        interaction.setHistoryIndex(next);
+      }
+    }
   }
 }

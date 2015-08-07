@@ -17,9 +17,7 @@
 package io.termd.core.readline.functions;
 
 import io.termd.core.readline.Function;
-import io.termd.core.readline.LineBuffer;
-
-import java.util.List;
+import io.termd.core.readline.Readline;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -32,7 +30,7 @@ public class ForwardChar implements Function {
   }
 
   @Override
-  public void apply(List<int[]> history, LineBuffer buffer) {
-    buffer.moveCursor(1);
+  public void apply(Readline.Interaction interaction) {
+    interaction.buffer().moveCursor(1);
   }
 }
