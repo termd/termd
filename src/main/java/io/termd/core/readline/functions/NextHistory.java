@@ -44,7 +44,7 @@ public class NextHistory implements Function {
       } else {
         line = history.get(next);
       }
-      LineBuffer buffer = interaction.buffer();
+      LineBuffer buffer = interaction.prompt();
       buffer.clear();
       buffer.insert(line);
       interaction.setHistoryIndex(next);

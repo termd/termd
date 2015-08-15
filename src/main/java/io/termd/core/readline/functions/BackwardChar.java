@@ -31,6 +31,6 @@ public class BackwardChar implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.buffer().moveCursor(-1);
+    interaction.prompt().moveCursor(-1);
   }
 }

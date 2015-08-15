@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -186,7 +185,7 @@ public class Readline {
     private final Map<IntBuffer, Runnable> handlers;
     private boolean completing;
     private final LinkedList<int[]> lines = new LinkedList<>();
-    private final LineBuffer lineBuffer = new LineBuffer();
+    private final LineBuffer prompt = new LineBuffer();
     private final ParsedBuffer parsed = new ParsedBuffer();
     private int historyIndex = -1;
 
@@ -198,10 +197,10 @@ public class Readline {
       this.data = new HashMap<>();
 
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
-        for (int j : lineBuffer) {
+        for (int j : this.prompt) {
           parsed.accept(j);
         }
-        lineBuffer.setSize(0);
+        this.prompt.setSize(0);
         if (parsed.escaped) {
           parsed.accept((int) '\r'); // Correct status
           conn.write("\r\n> ");
@@ -241,15 +240,15 @@ public class Readline {
       handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), () -> {
         if (completionHandler != null) {
           Dimension dim = size; // Copy ref
-          int index = lineBuffer.getCursor();
+          int index = this.prompt.getCursor();
 
           //
-          while (index > 0 && lineBuffer.getAt(index - 1) != ' ') {
+          while (index > 0 && this.prompt.getAt(index - 1) != ' ') {
             index--;
           }
 
           // Compute line : need to test full line :-)
-          int linePos = lineBuffer.getCursor();
+          int linePos = this.prompt.getCursor();
           ParsedBuffer line_ = new ParsedBuffer();
           for (int[] l : lines) {
             for (int j : l) {
@@ -260,19 +259,19 @@ public class Readline {
           for (int i : parsed.buffer) {
             line_.accept(i);
           }
-          for (int i : lineBuffer) {
+          for (int i : this.prompt) {
             line_.accept(i);
           }
           int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
 
           // Compute prefix
           ParsedBuffer a = new ParsedBuffer();
-          for (int i = index; i < lineBuffer.getCursor();i++) {
-            a.accept(lineBuffer.getAt(i));
+          for (int i = index; i < this.prompt.getCursor();i++) {
+            a.accept(this.prompt.getAt(i));
           }
 
           completing = true;
-          LineBuffer copy = new LineBuffer(lineBuffer);
+          LineBuffer copy = new LineBuffer(this.prompt);
           final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
           completionHandler.accept(new Completion() {
 
@@ -305,7 +304,7 @@ public class Readline {
                         } else {
                           conn.write("> ");
                         }
-                        conn.stdoutHandler().accept(new LineBuffer().compute(lineBuffer));
+                        conn.stdoutHandler().accept(new LineBuffer().compute(Interaction.this.prompt));
                         break;
                     }
                     // Update status
@@ -336,17 +335,17 @@ public class Readline {
                           case '\\':
                           case '"':
                             if (!a.escaped) {
-                              lineBuffer.insert('\\');
+                              Interaction.this.prompt.insert('\\');
                               a.accept('\\');
                             }
-                            lineBuffer.insert(z);
+                            Interaction.this.prompt.insert(z);
                             a.accept(z);
                             break;
                           default:
                             if (a.escaped) {
                               // Should beep
                             } else {
-                              lineBuffer.insert(z);
+                              Interaction.this.prompt.insert(z);
                               a.accept(z);
                             }
                             break;
@@ -355,21 +354,21 @@ public class Readline {
                       case STRONG:
                         switch (z) {
                           case '\'':
-                            lineBuffer.insert('\'', '\\', z, '\'');
+                            Interaction.this.prompt.insert('\'', '\\', z, '\'');
                             a.accept('\'');
                             a.accept('\\');
                             a.accept(z);
                             a.accept('\'');
                             break;
                           default:
-                            lineBuffer.insert(z);
+                            Interaction.this.prompt.insert(z);
                             a.accept(z);
                             break;
                         }
                         break;
                       case NONE:
                         if (a.escaped) {
-                          lineBuffer.insert(z);
+                          Interaction.this.prompt.insert(z);
                           a.accept(z);
                         } else {
                           switch (z) {
@@ -377,12 +376,12 @@ public class Readline {
                             case '"':
                             case '\'':
                             case '\\':
-                              lineBuffer.insert('\\', z);
+                              Interaction.this.prompt.insert('\\', z);
                               a.accept('\\');
                               a.accept(z);
                               break;
                             default:
-                              lineBuffer.insert(z);
+                              Interaction.this.prompt.insert(z);
                               a.accept(z);
                               break;
                           }
@@ -398,13 +397,13 @@ public class Readline {
                         if (a.escaped) {
                           // Do nothing emit bell
                         } else {
-                          lineBuffer.insert('"', ' ');
+                          Interaction.this.prompt.insert('"', ' ');
                           a.accept('"');
                           a.accept(' ');
                         }
                         break;
                       case STRONG:
-                        lineBuffer.insert('\'', ' ');
+                        Interaction.this.prompt.insert('\'', ' ');
                         a.accept('\'');
                         a.accept(' ');
                         break;
@@ -412,13 +411,13 @@ public class Readline {
                         if (a.escaped) {
                           // Do nothing emit bell
                         } else {
-                          lineBuffer.insert(' ');
+                          Interaction.this.prompt.insert(' ');
                           a.accept(' ');
                         }
                         break;
                     }
                   }
-                  conn.stdoutHandler().accept(copy.compute(lineBuffer));
+                  conn.stdoutHandler().accept(copy.compute(Interaction.this.prompt));
                 }
               } else {
                 throw new IllegalStateException();
@@ -450,7 +449,7 @@ public class Readline {
     }
 
     private void handle(Event event) {
-      LineBuffer copy = new LineBuffer(lineBuffer);
+      LineBuffer copy = new LineBuffer(prompt);
       if (event instanceof KeyEvent) {
         KeyEvent key = (KeyEvent) event;
         Runnable handler = handlers.get(key.buffer());
@@ -459,9 +458,9 @@ public class Readline {
         } else {
           for (int i = 0;i < key.length();i++) {
             int codePoint = key.getAt(i);
-            lineBuffer.insert(codePoint);
+            prompt.insert(codePoint);
           }
-          conn.stdoutHandler().accept(copy.compute(lineBuffer));
+          conn.stdoutHandler().accept(copy.compute(prompt));
         }
       } else {
         FunctionEvent fname = (FunctionEvent) event;
@@ -471,7 +470,7 @@ public class Readline {
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
-        conn.stdoutHandler().accept(copy.compute(lineBuffer));
+        conn.stdoutHandler().accept(copy.compute(prompt));
       }
     }
 
@@ -491,8 +490,8 @@ public class Readline {
       this.historyIndex = historyIndex;
     }
 
-    public LineBuffer buffer() {
-      return lineBuffer;
+    public LineBuffer prompt() {
+      return prompt;
     }
   }
 }
