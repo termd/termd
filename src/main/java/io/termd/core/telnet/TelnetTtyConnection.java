@@ -19,6 +19,7 @@ package io.termd.core.telnet;
 import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
+import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Dimension;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
@@ -44,7 +45,8 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
   private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
-  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, event -> conn.write(event));
+  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, data -> conn.write(data));
+  private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
 
   public TelnetTtyConnection() {
   }
@@ -156,7 +158,7 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
 
   @Override
   public Consumer<int[]> stdoutHandler() {
-    return encoder;
+    return stdout;
   }
 
   @Override

@@ -203,7 +203,7 @@ public class Readline {
         this.prompt.setSize(0);
         if (parsed.escaped) {
           parsed.accept((int) '\r'); // Correct status
-          conn.write("\r\n> ");
+          conn.write("\n> ");
         } else {
           int[] l = new int[parsed.buffer.size()];
           for (int index = 0;index < l.length;index++) {
@@ -212,7 +212,7 @@ public class Readline {
           parsed.buffer.clear();
           lines.add(l);
           if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
-            conn.write("\r\n> ");
+            conn.write("\n> ");
           } else {
             final StringBuilder raw = new StringBuilder();
             ArrayList<Integer> hist = new ArrayList<>();
@@ -230,7 +230,7 @@ public class Readline {
             lines.clear();
             history.add(hist.stream().mapToInt(Integer::intValue).toArray());
             parsed.buffer.clear();
-            conn.write("\r\n");
+            conn.write("\n");
             interaction = null;
             requestHandler.accept(raw.toString());
           }
@@ -432,7 +432,7 @@ public class Readline {
                 if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
                   if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
                     if (current == CompletionStatus.PENDING) {
-                      conn.write("\r\n");
+                      conn.write("\n");
                     }
                     conn.stdoutHandler().accept(text);
                     return this;

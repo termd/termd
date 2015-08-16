@@ -24,6 +24,7 @@ import io.termd.core.readline.functions.PreviousHistory;
 import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
+import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Dimension;
 
 import java.util.ArrayList;
@@ -72,6 +73,7 @@ class TestTerm {
       }
     }
   };
+  final Consumer<int[]> stdout = new TtyOutputMode(writeHandler);
   final Readline readline;
 
   Consumer<int[]> readHandler;
@@ -125,7 +127,7 @@ class TestTerm {
 
     @Override
     public Consumer<int[]> stdoutHandler() {
-      return writeHandler;
+      return stdout;
     }
 
     @Override

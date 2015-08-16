@@ -64,26 +64,7 @@ public class PtyMaster extends Thread {
 
     private final Charset charset = StandardCharsets.UTF_8; // We suppose the process out/err uses UTF-8
     private final InputStream in;
-    private final BinaryDecoder decoder = new BinaryDecoder(charset, codepoints -> {
-      // Replace any \n by \r\n (need to improve that somehow...)
-      int len = codepoints.length;
-      for (int i = 0;i < codepoints.length;i++) {
-        if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-          len++;
-        }
-      }
-      int ptr = 0;
-      int[] corrected = new int[len];
-      for (int i = 0;i < codepoints.length;i++) {
-        if (codepoints[i] == '\n' && (i == 0 || codepoints[i -1] != '\r')) {
-          corrected[ptr++] = '\r';
-          corrected[ptr++] = '\n';
-        } else {
-          corrected[ptr++] = codepoints[i];
-        }
-      }
-      stdout.accept(corrected);
-    });
+    private final BinaryDecoder decoder = new BinaryDecoder(charset, stdout::accept);
 
     public Pipe(InputStream in) {
       this.in = in;

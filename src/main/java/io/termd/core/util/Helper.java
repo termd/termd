@@ -169,13 +169,13 @@ public class Helper {
       if (count++ < row) {
         sb.append(' ');
       } else {
-        sb.append("\r\n");
+        sb.append('\n');
         count = 0;
       }
     }
 
     //
-    sb.append("\r\n");
+    sb.append("\n");
 
     //
     return Helper.toCodePoints(sb.toString());

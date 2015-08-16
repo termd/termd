@@ -22,6 +22,7 @@ import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
+import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Dimension;
 import org.apache.sshd.common.PtyMode;
 import org.apache.sshd.server.ChannelSessionAware;
@@ -55,7 +56,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   private TtyEventDecoder eventDecoder;
   private ReadBuffer readBuffer;
   private BinaryDecoder decoder;
-  private BinaryEncoder encoder;
+  private Consumer<int[]> stdout;
   private Consumer<byte[]> out;
   private Dimension size = null;
   private Consumer<Dimension> sizeHandler;
@@ -115,7 +116,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
 
   @Override
   public Consumer<int[]> stdoutHandler() {
-    return encoder;
+    return stdout;
   }
 
   @Override
@@ -200,7 +201,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
     readBuffer = new ReadBuffer(this::schedule);
     eventDecoder = new TtyEventDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, charset, eventDecoder);
-    encoder = new BinaryEncoder(512, charset, out);
+    stdout = new TtyOutputMode(new BinaryEncoder(512, charset, out));
     term = env.getEnv().get("TERM");
 
     //

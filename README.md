@@ -33,7 +33,6 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 
 ### Todo
 
-- telnet crlf mode
 - see to use IntStream or not
 - handle % stuff in parser
 - ^X

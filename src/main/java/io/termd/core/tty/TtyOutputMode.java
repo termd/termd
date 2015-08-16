@@ -23,15 +23,10 @@ import java.util.function.Consumer;
  */
 public class TtyOutputMode implements Consumer<int[]> {
 
-  private Consumer<int[]> readHandler;
+  private final Consumer<int[]> readHandler;
 
-  public Consumer<int[]> getReadHandler() {
-    return readHandler;
-  }
-
-  public TtyOutputMode setReadHandler(Consumer<int[]> readHandler) {
+  public TtyOutputMode(Consumer<int[]> readHandler) {
     this.readHandler = readHandler;
-    return this;
   }
 
   @Override

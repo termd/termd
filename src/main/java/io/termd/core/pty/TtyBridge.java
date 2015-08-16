@@ -84,7 +84,7 @@ public class TtyBridge {
       // Not used yet but we should propagage this to the process builder
       System.out.println("CLIENT $TERM=" + term);
     });
-    conn.stdoutHandler().accept(Helper.toCodePoints("Welcome sir\r\n"));
+    conn.stdoutHandler().accept(Helper.toCodePoints("Welcome sir\n"));
     read(conn, readline);
   }
 
@@ -111,7 +111,9 @@ public class TtyBridge {
           task.interruptProcess();
         }
       });
-      processListener.accept(task);
+      if (processListener != null) {
+        processListener.accept(task);
+      }
       task.start();
     });
   }

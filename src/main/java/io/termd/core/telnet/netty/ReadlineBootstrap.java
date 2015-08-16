@@ -110,15 +110,15 @@ public class ReadlineBootstrap {
         TermInfo info = TermInfo.defaultInfo();
         Device device = info.getDevice(term.toLowerCase());
         Integer maxColors = device.getFeature(Capability.max_colors);
-        StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\r\n");
+        StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\n");
         for (Feature<?> feature : device.getFeatures()) {
           Capability<?> capability = feature.capability();
           msg.append(capability.name).append(" (").append(capability.description).
-              append(")").append("\r\n");
+              append(")").append("\n");
         }
         conn.write(msg.toString());
       });
-      conn.write("Welcome sir\r\n\r\n");
+      conn.write("Welcome sir\n\n");
       read(conn, readline);
     }
 
@@ -148,13 +148,13 @@ public class ReadlineBootstrap {
 
       @Override
       public void run() {
-        conn.write("Running " + line + "\r\n");
+        conn.write("Running " + line + "\n");
         conn.setEventHandler(this);
         sleeping = true;
         try {
           Thread.sleep(3000);
         } catch (InterruptedException e) {
-          conn.write("Interrupted\r\n");
+          conn.write("Interrupted\n");
         } finally {
           sleeping = false;
           conn.setEventHandler(null);

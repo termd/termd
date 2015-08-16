@@ -23,6 +23,7 @@ import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Dimension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private final ReadBuffer readBuffer;
   private final TtyEventDecoder onCharSignalDecoder;
   private final BinaryDecoder decoder;
-  private final BinaryEncoder encoder;
+  private final Consumer<int[]> stdout;
   private Consumer<Void> closeHandler;
 
   public HttpTtyConnection() {
@@ -58,7 +59,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
     });
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
-    encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write);
+    stdout = new TtyOutputMode(new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write));
   }
 
   protected abstract void write(byte[] buffer);
@@ -111,7 +112,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   public Consumer<int[]> stdoutHandler() {
-    return encoder;
+    return stdout;
   }
 
   @Override

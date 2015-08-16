@@ -39,10 +39,9 @@ public class TtyOutputModeTest {
   }
 
   private void assertOutput(String expected, String actual) {
-    TtyOutputMode abc = new TtyOutputMode();
     Stream.Builder<int[]> builder = Stream.<int[]>builder();
-    abc.setReadHandler(builder);
-    abc.accept(Helper.toCodePoints(actual));
+    TtyOutputMode out = new TtyOutputMode(builder);
+    out.accept(Helper.toCodePoints(actual));
     String result = Helper.fromCodePoints(builder.build().flatMapToInt(IntStream::of).toArray());
     assertEquals(expected, result);
   }
