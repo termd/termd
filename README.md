@@ -20,16 +20,24 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 
 - Telnet protocol using _Vert.x 3_ or _Netty 4_
 - SSH protocol using _Apache SSHD_
-- Web interface using _term.js_ and _SockJS_
+- Web interface using _term.js_ and _SockJS_/_Websocket_
 - Event based design
    - read events
    - window size
    - tty signals
 - Readline implementation
    - extensible with plugable functions
-   - multiline support
+   - multi-line support
+   - multi-byte char support
+   - multi-cell char support
 - Unicode support
 - Terminfo capabilities
+
+### What is not Termd
+
+- not a shell
+- not an arg parser
+- not a command framework
 
 ### Todo
 
