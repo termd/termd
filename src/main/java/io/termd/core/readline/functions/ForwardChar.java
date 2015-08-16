@@ -31,6 +31,6 @@ public class ForwardChar implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.prompt().moveCursor(1);
+    interaction.buffer().moveCursor(1);
   }
 }

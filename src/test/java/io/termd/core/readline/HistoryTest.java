@@ -44,15 +44,21 @@ public class HistoryTest extends TestBase {
     term.assertScreen("% abc");
     term.assertAt(0, 5);
     term.read(Keys.DOWN.sequence);
-    term.assertScreen("%    ");
+    term.assertScreen("% ");
     term.assertAt(0, 2);
     term.read(Keys.DOWN.sequence);
-    term.assertScreen("%    ");
+    term.assertScreen("% ");
     term.assertAt(0, 2);
   }
 
   @Test
   public void testMultiline() {
-    // throw new UnsupportedOperationException("Implement me");
+    TestTerm term = new TestTerm(this);
+    term.readline.getHistory().add(Helper.toCodePoints("abc\ndef\nghi"));
+    term.readlineComplete();
+    term.read(Keys.UP.sequence);
+    term.assertScreen("% abc", "def", "ghi");
+    term.read(Keys.DOWN.sequence);
+    term.assertScreen("% ", "", "");
   }
 }

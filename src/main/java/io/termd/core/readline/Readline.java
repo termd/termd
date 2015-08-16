@@ -16,8 +16,11 @@
 
 package io.termd.core.readline;
 
+import io.termd.core.term.Device;
+import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Dimension;
+import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -36,6 +39,7 @@ import java.util.function.Consumer;
 public class Readline {
 
   private final Keymap keymap;
+  private final Device device;
   private final Map<String, Function> functions = new HashMap<>();
   private final KeyDecoder decoder;
   private TtyConnection conn;
@@ -48,6 +52,7 @@ public class Readline {
   private List<int[]> history;
 
   public Readline(Keymap keymap) {
+    this.device = TermInfo.defaultInfo().getDevice("xterm"); // For now use xterm
     this.keymap = keymap;
     this.decoder = new KeyDecoder(keymap);
     this.history = new ArrayList<>();
@@ -98,6 +103,10 @@ public class Readline {
       deliver();
     });
     this.conn.setSizeHandler(dim -> {
+      if (interaction != null && size != null) {
+        // Not supported for now
+        // interaction.resize(size.width(), dim.width());
+      }
       size = dim;
       if (defaultSizeHandler != null) {
         defaultSizeHandler.accept(dim);
@@ -181,13 +190,16 @@ public class Readline {
 
   public class Interaction {
 
+    private final Consumer<String> requestHandler;
+    private final Consumer<Completion> completionHandler;
     private final Map<String, Object> data;
     private final Map<IntBuffer, Runnable> handlers;
     private boolean completing;
     private final LinkedList<int[]> lines = new LinkedList<>();
-    private final LineBuffer prompt = new LineBuffer();
+    private final LineBuffer buffer = new LineBuffer();
     private final ParsedBuffer parsed = new ParsedBuffer();
     private int historyIndex = -1;
+    private String prompt;
 
     public Interaction(
         String prompt,
@@ -195,261 +207,281 @@ public class Readline {
         Consumer<Completion> completionHandler) {
       this.handlers = new HashMap<>();
       this.data = new HashMap<>();
+      this.prompt = prompt;
+      this.requestHandler = requestHandler;
+      this.completionHandler = completionHandler;
+      handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), this::doEnter);
+      handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), this::doComplete);
+    }
 
-      handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), () -> {
-        for (int j : this.prompt) {
-          parsed.accept(j);
+    private void doEnter() {
+      for (int j : this.buffer) {
+        parsed.accept(j);
+      }
+      this.buffer.setSize(0);
+      if (parsed.escaped) {
+        parsed.accept((int) '\r'); // Correct status
+        prompt = "> ";
+        conn.write("\n> ");
+      } else {
+        int[] l = new int[parsed.buffer.size()];
+        for (int index = 0;index < l.length;index++) {
+          l[index] = parsed.buffer.get(index);
         }
-        this.prompt.setSize(0);
-        if (parsed.escaped) {
-          parsed.accept((int) '\r'); // Correct status
+        parsed.buffer.clear();
+        lines.add(l);
+        if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
           conn.write("\n> ");
+          prompt = "> ";
         } else {
-          int[] l = new int[parsed.buffer.size()];
-          for (int index = 0;index < l.length;index++) {
-            l[index] = parsed.buffer.get(index);
+          final StringBuilder raw = new StringBuilder();
+          ArrayList<Integer> hist = new ArrayList<>();
+          for (int index = 0;index < lines.size();index++) {
+            int[] a = lines.get(index);
+            if (index > 0) {
+              raw.append('\n'); // Use \n for processing
+              hist.add((int) '\n');
+            }
+            for (int b : a) {
+              raw.appendCodePoint(b);
+              hist.add(b);
+            }
           }
+          lines.clear();
+          history.add(hist.stream().mapToInt(Integer::intValue).toArray());
           parsed.buffer.clear();
-          lines.add(l);
-          if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
-            conn.write("\n> ");
-          } else {
-            final StringBuilder raw = new StringBuilder();
-            ArrayList<Integer> hist = new ArrayList<>();
-            for (int index = 0;index < lines.size();index++) {
-              int[] a = lines.get(index);
-              if (index > 0) {
-                raw.append('\n'); // Use \n for processing
-                hist.add((int) '\n');
-              }
-              for (int b : a) {
-                raw.appendCodePoint(b);
-                hist.add(b);
-              }
-            }
-            lines.clear();
-            history.add(hist.stream().mapToInt(Integer::intValue).toArray());
-            parsed.buffer.clear();
-            conn.write("\n");
-            interaction = null;
-            requestHandler.accept(raw.toString());
-          }
+          conn.write("\n");
+          interaction = null;
+          requestHandler.accept(raw.toString());
         }
-      });
+      }
+    }
 
-      handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), () -> {
-        if (completionHandler != null) {
-          Dimension dim = size; // Copy ref
-          int index = this.prompt.getCursor();
+    private void doComplete() {
+      if (completionHandler != null) {
+        Dimension dim = size; // Copy ref
+        int index = this.buffer.getCursor();
 
-          //
-          while (index > 0 && this.prompt.getAt(index - 1) != ' ') {
-            index--;
+        //
+        while (index > 0 && this.buffer.getAt(index - 1) != ' ') {
+          index--;
+        }
+
+        // Compute line : need to test full line :-)
+        int linePos = this.buffer.getCursor();
+        ParsedBuffer line_ = new ParsedBuffer();
+        for (int[] l : lines) {
+          for (int j : l) {
+            line_.accept(j);
+          }
+          line_.accept('\n');
+        }
+        for (int i : parsed.buffer) {
+          line_.accept(i);
+        }
+        for (int i : this.buffer) {
+          line_.accept(i);
+        }
+        int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
+
+        // Compute prefix
+        ParsedBuffer a = new ParsedBuffer();
+        for (int i = index; i < this.buffer.getCursor();i++) {
+          a.accept(this.buffer.getAt(i));
+        }
+
+        completing = true;
+        LineBuffer copy = new LineBuffer(this.buffer);
+        final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
+        completionHandler.accept(new Completion() {
+
+          @Override
+          public int[] line() {
+            return line;
           }
 
-          // Compute line : need to test full line :-)
-          int linePos = this.prompt.getCursor();
-          ParsedBuffer line_ = new ParsedBuffer();
-          for (int[] l : lines) {
-            for (int j : l) {
-              line_.accept(j);
-            }
-            line_.accept('\n');
-          }
-          for (int i : parsed.buffer) {
-            line_.accept(i);
-          }
-          for (int i : this.prompt) {
-            line_.accept(i);
-          }
-          int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
-
-          // Compute prefix
-          ParsedBuffer a = new ParsedBuffer();
-          for (int i = index; i < this.prompt.getCursor();i++) {
-            a.accept(this.prompt.getAt(i));
+          @Override
+          public int[] prefix() {
+            return a.buffer.stream().mapToInt(i -> i).toArray();
           }
 
-          completing = true;
-          LineBuffer copy = new LineBuffer(this.prompt);
-          final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
-          completionHandler.accept(new Completion() {
+          @Override
+          public Dimension size() {
+            return dim;
+          }
 
-            @Override
-            public int[] line() {
-              return line;
-            }
-
-            @Override
-            public int[] prefix() {
-              return a.buffer.stream().mapToInt(i -> i).toArray();
-            }
-
-            @Override
-            public Dimension size() {
-              return dim;
-            }
-
-            @Override
-            public void end() {
-              while (true) {
-                CompletionStatus current = status.get();
-                if (current != CompletionStatus.COMPLETED) {
-                  if (status.compareAndSet(current, CompletionStatus.COMPLETED)) {
-                    switch (current) {
-                      case COMPLETING:
-                        // Redraw last line with correct prompt
-                        if (lines.size() == 0 && parsed.buffer.size() == 0) {
-                          conn.write(prompt);
-                        } else {
-                          conn.write("> ");
-                        }
-                        conn.stdoutHandler().accept(new LineBuffer().compute(Interaction.this.prompt));
-                        break;
-                    }
-                    // Update status
-                    completing = false;
-                    // Schedule a delivery of pending data
-                    schedulePending();
-                    break;
+          @Override
+          public void end() {
+            while (true) {
+              CompletionStatus current = status.get();
+              if (current != CompletionStatus.COMPLETED) {
+                if (status.compareAndSet(current, CompletionStatus.COMPLETED)) {
+                  switch (current) {
+                    case COMPLETING:
+                      // Redraw last line with correct prompt
+                      if (lines.size() == 0 && parsed.buffer.size() == 0) {
+                        conn.write(prompt);
+                      } else {
+                        conn.write("> ");
+                      }
+                      conn.stdoutHandler().accept(new LineBuffer().compute(Interaction.this.buffer));
+                      break;
                   }
-                  // Try again
-                } else {
-                  throw new IllegalStateException();
+                  // Update status
+                  completing = false;
+                  // Schedule a delivery of pending data
+                  schedulePending();
+                  break;
                 }
-              }
-            }
-
-            @Override
-            public Completion complete(int[] text, boolean terminal) {
-              if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-                if (text.length > 0 || terminal) {
-                  for (int z : text) {
-                    if (z < 32) {
-                      // Todo support \n with $'\n'
-                      throw new UnsupportedOperationException("todo");
-                    }
-                    switch (a.quoting) {
-                      case WEAK:
-                        switch (z) {
-                          case '\\':
-                          case '"':
-                            if (!a.escaped) {
-                              Interaction.this.prompt.insert('\\');
-                              a.accept('\\');
-                            }
-                            Interaction.this.prompt.insert(z);
-                            a.accept(z);
-                            break;
-                          default:
-                            if (a.escaped) {
-                              // Should beep
-                            } else {
-                              Interaction.this.prompt.insert(z);
-                              a.accept(z);
-                            }
-                            break;
-                        }
-                        break;
-                      case STRONG:
-                        switch (z) {
-                          case '\'':
-                            Interaction.this.prompt.insert('\'', '\\', z, '\'');
-                            a.accept('\'');
-                            a.accept('\\');
-                            a.accept(z);
-                            a.accept('\'');
-                            break;
-                          default:
-                            Interaction.this.prompt.insert(z);
-                            a.accept(z);
-                            break;
-                        }
-                        break;
-                      case NONE:
-                        if (a.escaped) {
-                          Interaction.this.prompt.insert(z);
-                          a.accept(z);
-                        } else {
-                          switch (z) {
-                            case ' ':
-                            case '"':
-                            case '\'':
-                            case '\\':
-                              Interaction.this.prompt.insert('\\', z);
-                              a.accept('\\');
-                              a.accept(z);
-                              break;
-                            default:
-                              Interaction.this.prompt.insert(z);
-                              a.accept(z);
-                              break;
-                          }
-                        }
-                        break;
-                      default:
-                        throw new UnsupportedOperationException("Todo " + a.quoting);
-                    }
-                  }
-                  if (terminal) {
-                    switch (a.quoting) {
-                      case WEAK:
-                        if (a.escaped) {
-                          // Do nothing emit bell
-                        } else {
-                          Interaction.this.prompt.insert('"', ' ');
-                          a.accept('"');
-                          a.accept(' ');
-                        }
-                        break;
-                      case STRONG:
-                        Interaction.this.prompt.insert('\'', ' ');
-                        a.accept('\'');
-                        a.accept(' ');
-                        break;
-                      case NONE:
-                        if (a.escaped) {
-                          // Do nothing emit bell
-                        } else {
-                          Interaction.this.prompt.insert(' ');
-                          a.accept(' ');
-                        }
-                        break;
-                    }
-                  }
-                  conn.stdoutHandler().accept(copy.compute(Interaction.this.prompt));
-                }
+                // Try again
               } else {
                 throw new IllegalStateException();
               }
-              return this;
             }
+          }
 
-            @Override
-            public Completion suggest(int[] text) {
-              while (true) {
-                CompletionStatus current = status.get();
-                if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
-                  if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
-                    if (current == CompletionStatus.PENDING) {
-                      conn.write("\n");
-                    }
-                    conn.stdoutHandler().accept(text);
-                    return this;
+          @Override
+          public Completion complete(int[] text, boolean terminal) {
+            if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
+              if (text.length > 0 || terminal) {
+                for (int z : text) {
+                  if (z < 32) {
+                    // Todo support \n with $'\n'
+                    throw new UnsupportedOperationException("todo");
                   }
-                  // Try again
-                } else {
-                  throw new IllegalStateException();
+                  switch (a.quoting) {
+                    case WEAK:
+                      switch (z) {
+                        case '\\':
+                        case '"':
+                          if (!a.escaped) {
+                            Interaction.this.buffer.insert('\\');
+                            a.accept('\\');
+                          }
+                          Interaction.this.buffer.insert(z);
+                          a.accept(z);
+                          break;
+                        default:
+                          if (a.escaped) {
+                            // Should beep
+                          } else {
+                            Interaction.this.buffer.insert(z);
+                            a.accept(z);
+                          }
+                          break;
+                      }
+                      break;
+                    case STRONG:
+                      switch (z) {
+                        case '\'':
+                          Interaction.this.buffer.insert('\'', '\\', z, '\'');
+                          a.accept('\'');
+                          a.accept('\\');
+                          a.accept(z);
+                          a.accept('\'');
+                          break;
+                        default:
+                          Interaction.this.buffer.insert(z);
+                          a.accept(z);
+                          break;
+                      }
+                      break;
+                    case NONE:
+                      if (a.escaped) {
+                        Interaction.this.buffer.insert(z);
+                        a.accept(z);
+                      } else {
+                        switch (z) {
+                          case ' ':
+                          case '"':
+                          case '\'':
+                          case '\\':
+                            Interaction.this.buffer.insert('\\', z);
+                            a.accept('\\');
+                            a.accept(z);
+                            break;
+                          default:
+                            Interaction.this.buffer.insert(z);
+                            a.accept(z);
+                            break;
+                        }
+                      }
+                      break;
+                    default:
+                      throw new UnsupportedOperationException("Todo " + a.quoting);
+                  }
                 }
+                if (terminal) {
+                  switch (a.quoting) {
+                    case WEAK:
+                      if (a.escaped) {
+                        // Do nothing emit bell
+                      } else {
+                        Interaction.this.buffer.insert('"', ' ');
+                        a.accept('"');
+                        a.accept(' ');
+                      }
+                      break;
+                    case STRONG:
+                      Interaction.this.buffer.insert('\'', ' ');
+                      a.accept('\'');
+                      a.accept(' ');
+                      break;
+                    case NONE:
+                      if (a.escaped) {
+                        // Do nothing emit bell
+                      } else {
+                        Interaction.this.buffer.insert(' ');
+                        a.accept(' ');
+                      }
+                      break;
+                  }
+                }
+                conn.stdoutHandler().accept(copy.compute(Interaction.this.buffer));
+              }
+            } else {
+              throw new IllegalStateException();
+            }
+            return this;
+          }
+
+          @Override
+          public Completion suggest(int[] text) {
+            while (true) {
+              CompletionStatus current = status.get();
+              if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
+                if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
+                  if (current == CompletionStatus.PENDING) {
+                    conn.write("\n");
+                  }
+                  conn.stdoutHandler().accept(text);
+                  return this;
+                }
+                // Try again
+              } else {
+                throw new IllegalStateException();
               }
             }
-          });
-        }
-      });
+          }
+        });
+      }
+    }
+
+    private void update(LineBuffer copy, int width) {
+      LineBuffer copy3 = new LineBuffer();
+      copy3.insert(Helper.toCodePoints(prompt));
+      copy3.insert(copy.toArray());
+      copy3.setCursor(prompt.length() + copy.getCursor());
+      LineBuffer copy2 = new LineBuffer();
+      copy2.insert(Helper.toCodePoints(prompt));
+      copy2.insert(buffer.toArray());
+      copy2.setCursor(prompt.length() + buffer.getCursor());
+      copy3.update(copy2, conn.stdoutHandler(), width);
     }
 
     private void handle(Event event) {
-      LineBuffer copy = new LineBuffer(prompt);
+      int width = conn.size().width();
+      LineBuffer copy = new LineBuffer(buffer);
       if (event instanceof KeyEvent) {
         KeyEvent key = (KeyEvent) event;
         Runnable handler = handlers.get(key.buffer());
@@ -458,9 +490,9 @@ public class Readline {
         } else {
           for (int i = 0;i < key.length();i++) {
             int codePoint = key.getAt(i);
-            prompt.insert(codePoint);
+            buffer.insert(codePoint);
           }
-          conn.stdoutHandler().accept(copy.compute(prompt));
+          update(copy, width);
         }
       } else {
         FunctionEvent fname = (FunctionEvent) event;
@@ -470,8 +502,51 @@ public class Readline {
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
-        conn.stdoutHandler().accept(copy.compute(prompt));
+        update(copy, width);
       }
+    }
+
+    void resize(int oldWith, int newWidth) {
+
+      // Erase screen
+      LineBuffer abc = new LineBuffer();
+      abc.insert(prompt);
+      abc.insert(buffer.toArray());
+      abc.setCursor(prompt.length() + buffer.getCursor());
+
+      // Recompute new cursor
+      Dimension pos = abc.getCursorPosition(newWidth);
+      int curWidth = pos.width();
+      int curHeight = pos.height();
+
+      // Recompute new end
+      Dimension end = abc.getPosition(abc.getSize(), oldWith);
+      int endHeight = end.height() + end.width() / newWidth;
+
+      // Position at the bottom / right
+      Consumer<int[]> out = conn.stdoutHandler();
+      out.accept(new int[]{'\r'});
+      while (curHeight != endHeight) {
+        if (curHeight > endHeight) {
+          out.accept(new int[]{'\033','[','1','A'});
+          curHeight--;
+        } else {
+          out.accept(new int[]{'\n'});
+          curHeight++;
+        }
+      }
+
+      // Now erase and redraw
+      while (curHeight > 0) {
+        out.accept(new int[]{'\033','[','1','K'});
+        out.accept(new int[]{'\033','[','1','A'});
+        curHeight--;
+      }
+      out.accept(new int[]{'\033','[','1','K'});
+
+      // Now redraw
+      out.accept(Helper.toCodePoints(prompt));
+      update(new LineBuffer(), newWidth);
     }
 
     public Map<String, Object> data() {
@@ -490,8 +565,8 @@ public class Readline {
       this.historyIndex = historyIndex;
     }
 
-    public LineBuffer prompt() {
-      return prompt;
+    public LineBuffer buffer() {
+      return buffer;
     }
   }
 }

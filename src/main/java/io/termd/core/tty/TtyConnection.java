@@ -28,6 +28,8 @@ import java.util.function.Consumer;
  */
 public interface TtyConnection {
 
+  Dimension size();
+
   Consumer<String> getTermHandler();
 
   void setTermHandler(Consumer<String> handler);
@@ -65,9 +67,10 @@ public interface TtyConnection {
    *
    * @param s the string to write
    */
-  default void write(String s) {
+  default TtyConnection write(String s) {
     int[] codePoints = Helper.toCodePoints(s);
     stdoutHandler().accept(codePoints);
+    return this;
   }
 
   /**

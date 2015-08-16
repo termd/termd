@@ -92,6 +92,11 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
+  public Dimension size() {
+    return size;
+  }
+
+  @Override
   public Consumer<Dimension> getSizeHandler() {
     return sizeHandler;
   }

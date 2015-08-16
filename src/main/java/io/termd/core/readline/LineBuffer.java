@@ -16,10 +16,15 @@
 
 package io.termd.core.readline;
 
+import io.termd.core.util.Dimension;
+import io.termd.core.util.Helper;
+import io.termd.core.util.Wcwidth;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -73,22 +78,32 @@ public class LineBuffer implements Iterable<Integer> {
     };
   }
 
-  public void insert(int codePoint) {
+  public LineBuffer insert(String s) {
+    return insert(Helper.toCodePoints(s));
+  }
+
+  public LineBuffer insert(int cp) {
+    int w = Wcwidth.of(cp);
+    if (w == -1) {
+      if (cp != '\n') {
+        throw new IllegalArgumentException("LineBuffer can only contain \n control char");
+      }
+    } else if (w != 1) {
+      throw new IllegalArgumentException("LineBuffer cannot contain chars of width!=1 for the moment");
+    }
     if (cursor < size) {
       System.arraycopy(data, cursor, data, cursor + 1, size - cursor);
     }
-    data[cursor++] = codePoint;
+    data[cursor++] = cp;
     size++;
+    return this;
   }
 
-  public void insert(int... codePoints) {
-    int len = codePoints.length;
-    if (cursor < size) {
-      System.arraycopy(data, cursor, data, cursor + len, size - cursor);
+  public LineBuffer insert(int... codePoints) {
+    for (int cp : codePoints) {
+      insert(cp);
     }
-    System.arraycopy(codePoints, 0, data, cursor, len);
-    cursor+= len;
-    size += len;
+    return this;
   }
 
   public int deleteAt(int delta) {
@@ -198,5 +213,262 @@ public class LineBuffer implements Iterable<Integer> {
 
     //
     return ret.stream().mapToInt(i->i).toArray();
+  }
+
+  /**
+   * Compute the current cursor position of this line buffer given a {@literal width} and a relative {@literal origin}
+   * position.
+   *
+   * @param width the screen width
+   * @return the height
+   */
+  public Dimension getCursorPosition(int width) {
+    return getPosition(cursor, width);
+  }
+
+  /**
+   * Compute the position of the char at the specified {@literal offset} of this line buffer given a
+   * {@literal width} and a relative {@literal start} position.
+   *
+   * @param width the screen width
+   * @return the height
+   */
+  public Dimension getPosition(int offset, int width) {
+    if (offset > size) {
+      throw new IndexOutOfBoundsException("Offset cannot bebe greater than the buffer size");
+    }
+    return Helper.computePosition(data, new Dimension(0, 0), offset, width);
+  }
+
+  private int findEndOfLine(int offset) {
+    while (offset < size) {
+      int c = data[offset];
+      int w = Wcwidth.of(c);
+      if (w == -1) {
+        if (c == '\n') {
+          break; // ?? unsure
+        } else {
+          throw new UnsupportedOperationException();
+        }
+      }
+      offset++;
+    }
+    return offset;
+  }
+
+  public void update(LineBuffer dst, Consumer<int[]> out, int width) {
+    new Update(out, width).perform(dst);
+  }
+
+  // The update algorithm encapsulated in an inner class
+  // todo : use term capabilities instead of hardcoded ansi programming
+  // todo : support other control chars
+  // todo : support codepoint of with != 1 (like combining chars, etc...)
+  // todo : issue existing chars for moving right instead of cursor left movement
+  private class Update {
+
+    private final Consumer<int[]> out;
+    private final int width;
+    private int scrCol, scrRow; // The current screen cursor position
+    private int srcIdx, srcCol, srcRow; // The source state
+    private int dstIdx, dstCol, dstRow; // The destination state
+
+    public Update(Consumer<int[]> out, int width) {
+      this.out = out;
+      this.width = width;
+      this.scrCol = getCursorPosition(width).width();
+      this.scrRow = getCursorPosition(width).height();
+    }
+
+    public void perform(LineBuffer dst) {
+
+      while (dstIdx < dst.size) {
+
+        int eol = dst.findEndOfLine(dstIdx);
+        boolean needGlitchCorrection = dstIdx < eol;
+
+        // Handle one dest line at a time
+        while (dstIdx < eol) {
+          int c = dst.data[dstIdx];
+          int w = Wcwidth.of(c);
+          if (w != 1) {
+            throw new UnsupportedOperationException();
+          }
+          if (srcIdx < size && new Dimension(srcCol, srcRow).equals(new Dimension(dstCol, dstRow))) {
+            if (data[srcIdx] == dst.data[dstIdx]) {
+              dstCol += w;
+              if (dstCol == width) {
+                dstCol = 0;
+                dstRow++;
+              }
+            } else {
+              moveCursor(dstCol, dstRow);
+              out.accept(new int[]{c});
+              dstCol += w;
+              if (dstCol == width) {
+                dstCol = 0;
+                dstRow++;
+              }
+              scrCol = dstCol;
+              scrRow = dstRow;
+            }
+            dstIdx++;
+          } else {
+            moveCursor(dstCol, dstRow);
+            dstIdx++;
+            out.accept(new int[]{c});
+            dstCol += w;
+            if (dstCol == width) {
+              dstCol = 0;
+              dstRow++;
+            }
+            scrCol = dstCol;
+            scrRow = dstRow;
+          }
+          ensure(dstCol, dstRow);
+        }
+
+        // Glitch correction if needed
+        if (needGlitchCorrection && dstCol == 0) {
+          out.accept(new int[]{' ','\r'});
+        }
+
+        // Remove extra chars if needed
+        if (dstIdx < dst.size) {
+          dstIdx++;
+          dstCol = 0;
+          ++dstRow;
+          int _col = srcCol, _row = srcRow;
+          if (ensure(dstCol, dstRow)) {
+            moveCursor(_col, _row);
+            out.accept(new int[]{'\033','[', 'K'});
+          }
+        }
+
+        // We may need to issue some \n after we are done
+        while (scrRow < dstRow) {
+          out.accept(new int[]{'\n'});
+          scrRow++;
+          scrCol = 0;
+        }
+      }
+
+      // Erase extra remaining chars
+      if (srcIdx < size) {
+        int _col = srcCol;
+        int _row = srcRow;
+        int count = 0;
+        while (srcIdx < size) {
+          int c = data[srcIdx++];
+          if (c == '\n') {
+            if (count > 0) {
+              moveCursor(_col, _row);
+              out.accept(new int[]{'\033', '[', 'K'});
+              count = 0;
+            }
+            _col = srcCol = 0;
+            _row = ++srcRow;
+          } else {
+            int w = Wcwidth.of(c);
+            if (w != 1) {
+              throw new UnsupportedOperationException();
+            }
+            srcCol++;
+            if (srcCol == width) {
+              if (count > 0) {
+                moveCursor(_col, _row);
+                out.accept(new int[]{'\033', '[', 'K'});
+                count = 0;
+                _col = srcCol;
+                _row = srcRow;
+              }
+              srcCol = 0;
+              srcRow++;
+            } else {
+              count++;
+            }
+          }
+        }
+        if (count > 0) {
+          moveCursor(_col, _row);
+          out.accept(new int[]{'\033', '[', 'K'});
+        }
+      }
+
+      // Move cursor to initial position
+      moveCursor(dst.getCursorPosition(width).width(), dst.getCursorPosition(width).height());
+
+      // Update internal state
+      data = dst.data.clone();
+      cursor = dst.cursor;
+      size = dst.size;
+    }
+
+    /**
+     * Ensure the source pointers are at least matching the specified column and row
+     *
+     * @param col the column
+     * @param row the row
+     * @return true if we skipped some source chars when moving the source pointers
+     */
+    private boolean ensure(int col, int row) {
+      boolean ret = false;
+      while (srcIdx < size) {
+        if (srcRow > row || (srcRow == row && srcCol >= col)) {
+          break;
+        }
+        int c = data[srcIdx];
+        int w = Wcwidth.of(c);
+        if (w == 1) {
+          ret = true;
+          srcCol++;
+          if (srcCol == width) {
+            srcRow++;
+            srcCol = 0;
+          }
+        } else if (c == '\n') {
+          srcCol = 0;
+          srcRow++;
+        } else {
+          throw new UnsupportedOperationException();
+        }
+        srcIdx++;
+      }
+      return ret;
+    }
+
+    /**
+     * Move the cursor to the specified coordinates, this updates the internal physical cursor.
+     *
+     * @param col the column
+     * @param row the row
+     */
+    private void moveCursor(int col, int row) {
+      if (scrCol != col) {
+        if (col == 0) {
+          out.accept(new int[]{'\r'});
+          scrCol = 0;
+        } else {
+          while (scrCol != col) {
+            if (scrCol < col) {
+              scrCol++;
+              out.accept(new int[]{'\033','[','1','C'});
+            } else {
+              scrCol--;
+              out.accept(new int[]{'\b'});
+            }
+          }
+        }
+      }
+      while (scrRow != row) {
+        if (row < scrRow) {
+          scrRow--;
+          out.accept(new int[]{27,'[','1','A'});
+        } else {
+          scrRow++;
+          out.accept(new int[]{27,'[','1','B'});
+        }
+      }
+    }
   }
 }

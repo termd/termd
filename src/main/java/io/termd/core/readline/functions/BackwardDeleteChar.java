@@ -31,6 +31,6 @@ public class BackwardDeleteChar implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.prompt().deleteAt(-1);
+    interaction.buffer().deleteAt(-1);
   }
 }

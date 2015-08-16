@@ -41,11 +41,11 @@ public class PreviousHistory implements Function {
       int next = curr + 1;
       if (next < history.size()) {
         if (curr == -1) {
-          int[] tmp = interaction.prompt().toArray();
+          int[] tmp = interaction.buffer().toArray();
           interaction.data().put("abc", tmp);
         }
         int[] line = history.get(next);
-        LineBuffer buffer = interaction.prompt();
+        LineBuffer buffer = interaction.buffer();
         buffer.clear();
         buffer.insert(line);
         interaction.setHistoryIndex(next);

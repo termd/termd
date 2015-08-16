@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -44,6 +45,8 @@ class TestTerm {
   private int[][] buffer = new int[10][];
   private int row;
   private int cursor;
+  private int status = 0;
+  private int acc = -1;
   Consumer<int[]> writeHandler = new Consumer<int[]>() {
     @Override
     public void accept(int[] event) {
@@ -51,26 +54,96 @@ class TestTerm {
         if (buffer[row] == null) {
           buffer[row] = new int[100];
         }
-        if (i >= 32) {
-          buffer[row][cursor++] = i;
-        } else {
-          switch (i) {
-            case '\r':
-              cursor = 0;
-              break;
-            case '\n':
-              row++;
-              break;
-            case '\b':
-              if (cursor > 0) {
-                cursor--;
-              } else {
-                throw new UnsupportedOperationException();
+        switch (status) {
+          case 0:
+            if (i >= 32) {
+              buffer[row][cursor++] = i;
+            } else {
+              switch (i) {
+                case '\r':
+                  cursor = 0;
+                  break;
+                case '\n':
+                  row++;
+                  break;
+                case 27:
+                  status = 1;
+                  break;
+                case '\b':
+                  backward();
+                  break;
               }
-              break;
-          }
+            }
+            break;
+          case 1:
+            if (i == '[') {
+              status = 2;
+            } else {
+              throw new UnsupportedOperationException();
+            }
+            break;
+          case 2:
+            if (i >= '0' && i <= '9') {
+              if (acc == -1) {
+                acc = i - '0';
+              } else {
+                acc = acc * 10 + (i - '0');
+              }
+            } else {
+              switch (i) {
+                case 'A':
+                  while (acc-- > 0 && row > 0) {
+                    row--;
+                  }
+                  break;
+                case 'B':
+                  while (acc-- > 0 && row < buffer.length) {
+                    row++;
+                  }
+                  break;
+                case 'C':
+                  while (acc-- > 0) {
+                    forward();
+                  }
+                  break;
+                case 'D':
+                  while (acc-- > 0) {
+                    backward();
+                  }
+                  break;
+                case 'K': {
+                  if (acc != -1) {
+                    throw new UnsupportedOperationException("Not yet implemented");
+                  } else {
+                    for (int j = cursor;j < buffer[row].length;j++) {
+                      buffer[row][j] = 0;
+                    }
+                  }
+                  break;
+                }
+                default:
+                  throw new UnsupportedOperationException("Implement escape sequence " + i);
+              }
+              acc = -1;
+              status = 0;
+            }
+            break;
+          default:
+            throw new UnsupportedOperationException("Unsupported cp=" + i + " with status=" + status);
         }
       }
+    }
+
+    private void backward() {
+      if (cursor > 0) {
+        cursor--;
+      } else {
+        throw new UnsupportedOperationException();
+      }
+    }
+
+    private void forward() {
+      cursor++;
     }
   };
   final Consumer<int[]> stdout = new TtyOutputMode(writeHandler);
@@ -81,6 +154,11 @@ class TestTerm {
   private LinkedList<Runnable> tasks = new LinkedList<>();
 
   TtyConnection conn = new TtyConnection() {
+
+    @Override
+    public Dimension size() {
+      return new Dimension(40, 20);
+    }
 
     @Override
     public Consumer<String> getTermHandler() {

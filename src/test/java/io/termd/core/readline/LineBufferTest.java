@@ -1,5 +1,6 @@
 package io.termd.core.readline;
 
+import io.termd.core.util.Dimension;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -143,5 +144,167 @@ public class LineBufferTest {
     assertEquals(2, buffer.getSize());
     assertEquals(0, buffer.getCursor());
     assertEquals("cd", buffer.toString());
+  }
+
+  @Test
+  public void testCursorPosition() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b', 'c');
+    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(2));
+    assertEquals(new Dimension(0, 3), buffer.getCursorPosition(1));
+  }
+
+  @Test
+  public void testCursorPositionWithNewLine() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b', '\n', 'c');
+    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(1, 2), buffer.getCursorPosition(2));
+    assertEquals(new Dimension(0, 4), buffer.getCursorPosition(1));
+  }
+
+  // @Test
+  public void testCursorPositionWithCR() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', '\r', 'b', 'c');
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Dimension(0, 3), buffer.getCursorPosition(1));
+  }
+
+  // @Test
+  public void testCursorControlChar() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', '\t', 'c');
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(1));
+  }
+
+  // @Test
+  public void testCursorInvisibleChar() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', '\0', 'c');
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(1));
+  }
+
+  // @Test
+  public void testCursorPositionWithMultiCell1() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('한', 'b');
+    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(2));
+    try {
+      buffer.getCursorPosition(1);
+      fail();
+    } catch (UnsupportedOperationException ignore) {
+    }
+  }
+
+  // @Test
+  public void testCursorPositionWithMultiCell2() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', '한');
+    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(2));
+    try {
+      buffer.getCursorPosition(1);
+      fail();
+    } catch (UnsupportedOperationException ignore) {
+    }
+  }
+
+  @Test
+  public void testUpdate1() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a');
+    LineBuffer to = new LineBuffer();
+    to.insert('a');
+    buffer.update(to, screen, 40);
+    screen.assertEmpty();
+  }
+
+  @Test
+  public void testUpdate2() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a');
+    LineBuffer to = new LineBuffer();
+    to.insert('b');
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("\rb").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate3() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b');
+    LineBuffer to = new LineBuffer();
+    to.insert('a', 'c');
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("\bc").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate4() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    LineBuffer to = new LineBuffer();
+    to.insert('a');
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("a").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate5() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a');
+    LineBuffer to = new LineBuffer();
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("\r\033[K").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate6() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    LineBuffer to = new LineBuffer();
+    to.insert('a', '\n', 'b');
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("a\nb").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate7() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', '\n', 'b');
+    LineBuffer to = new LineBuffer();
+    to.insert('d');
+    buffer.update(to, screen, 40);
+    screen.assertCodePoints("\r\033[1Ad\r\033[1B\033[K\033[1C\033[1A").assertEmpty();
+  }
+
+  @Test
+  public void testUpdate8() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer buffer = new LineBuffer();
+    LineBuffer to = new LineBuffer();
+    to.insert('a', 'b', 'c', 'd', 'e');
+    buffer.update(to, screen, 2);
+    screen.assertCodePoints("abcde").assertEmpty();
   }
 }

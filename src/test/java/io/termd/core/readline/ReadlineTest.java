@@ -92,7 +92,7 @@ public class ReadlineTest extends TestBase {
     term.readlineFail();
     term.read('A');
     term.read(BACKWARD_DELETE_CHAR);
-    term.assertScreen("%  ");
+    term.assertScreen("% ");
     term.assertAt(0, 2);
   }
 
@@ -115,7 +115,7 @@ public class ReadlineTest extends TestBase {
     term.read('B');
     term.read(8);
     term.assertScreen(
-        "% A "
+        "% A"
     );
     term.assertAt(0, 3);
   }
@@ -129,7 +129,7 @@ public class ReadlineTest extends TestBase {
     term.read(BACKWARD_CHAR);
     term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
-        "% B "
+        "% B"
     );
     term.assertAt(0, 2);
   }
@@ -142,7 +142,7 @@ public class ReadlineTest extends TestBase {
     term.assertScreen("% \\");
     term.read(BACKWARD_DELETE_CHAR);
     term.assertScreen(
-        "%  "
+        "% "
     );
     term.assertAt(0, 2);
   }

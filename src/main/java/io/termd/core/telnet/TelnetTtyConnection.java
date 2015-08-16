@@ -103,6 +103,11 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
+  public Dimension size() {
+    return size;
+  }
+
+  @Override
   protected void onSize(int width, int height) {
     this.size = new Dimension(width, height);
     if (sizeHandler != null) {

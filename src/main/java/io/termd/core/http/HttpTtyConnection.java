@@ -44,7 +44,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   private static Logger log = LoggerFactory.getLogger(HttpTtyConnection.class);
 
-  private Dimension size = null;
+  private Dimension size = new Dimension(80, 24); // For now hardcoded
   private Consumer<Dimension> sizeHandler;
   private final ReadBuffer readBuffer;
   private final TtyEventDecoder onCharSignalDecoder;
@@ -80,6 +80,11 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   public void setTermHandler(Consumer<String> handler) {
       //TODO
+  }
+
+  @Override
+  public Dimension size() {
+    return size;
   }
 
   public Consumer<Dimension> getSizeHandler() {

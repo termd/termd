@@ -110,13 +110,13 @@ public class ReadlineBootstrap {
         TermInfo info = TermInfo.defaultInfo();
         Device device = info.getDevice(term.toLowerCase());
         Integer maxColors = device.getFeature(Capability.max_colors);
-        StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\n");
-        for (Feature<?> feature : device.getFeatures()) {
-          Capability<?> capability = feature.capability();
-          msg.append(capability.name).append(" (").append(capability.description).
-              append(")").append("\n");
-        }
-        conn.write(msg.toString());
+//        StringBuilder msg = new StringBuilder("Your term is " + term + " and we found a description for it:\n");
+//        for (Feature<?> feature : device.getFeatures()) {
+//          Capability<?> capability = feature.capability();
+//          msg.append(capability.name).append(" (").append(capability.description).
+//              append(")").append("\n");
+//        }
+//        conn.write(msg.toString());
       });
       conn.write("Welcome sir\n\n");
       read(conn, readline);
