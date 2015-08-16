@@ -505,10 +505,11 @@ public class TermInfoTest {
       OpCode.PushParam opcode = new OpCode.PushParam(1 + i);
       String[] parameters = new String[1 + i];
       parameters[i] = "10";
-      EvalContext context = new EvalContext(parameters);
+      StringBuilder result = new StringBuilder();
+      EvalContext context = new EvalContext(parameters, result);
       opcode.eval(context);
       assertEquals(Arrays.asList("10"), context.stack);
-      assertEquals("", context.result.toString());
+      assertEquals("", result.toString());
     }
   }
 
@@ -525,68 +526,71 @@ public class TermInfoTest {
 
   @Test
   public void testEvalPushParamNoParam() throws Exception {
-    EvalContext context = new EvalContext();
+    StringBuilder result = new StringBuilder();
+    EvalContext context = new EvalContext(new String[0], result);
     OpCode.PushParam opcode = new OpCode.PushParam(1);
     try {
       opcode.eval(context);
       fail();
     } catch (IllegalArgumentException ignore) {
       assertEquals(Arrays.<String>asList(), context.stack);
-      assertEquals("", context.result.toString());
+      assertEquals("", result.toString());
     }
   }
 
   @Test
   public void testEvalPushConstant() throws Exception {
     OpCode.PushConstant opcode = new OpCode.PushConstant(65, false);
-    EvalContext context = new EvalContext();
+    StringBuilder result = new StringBuilder();
+    EvalContext context = new EvalContext(new String[0], result);
     opcode.eval(context);
     assertEquals(Arrays.asList("A"), context.stack);
-    assertEquals("", context.result.toString());
+    assertEquals("", result.toString());
   }
 
   @Test
   public void testEvalLiteral() throws Exception {
     for (String test : Arrays.asList("a", "\r\n", "\033")) {
       OpCode.Literal opcode = new OpCode.Literal(test);
-      EvalContext context = new EvalContext();
+      StringBuilder result = new StringBuilder();
+      EvalContext context = new EvalContext(new String[0], result);
       opcode.eval(context);
       assertEquals(Arrays.<String>asList(), context.stack);
-      assertEquals(test, context.result.toString());
+      assertEquals(test, result.toString());
     }
   }
 
   @Test
   public void testEvalArithmeticPlus() {
-    EvalContext context = new EvalContext().push("0").push("0");
+    EvalContext context = new EvalContext(new String[0], cp -> {}).push("0").push("0");
     OpCode.Arithmetic.PLUS.eval(context);
     assertEquals("0", context.pop());
-    context = new EvalContext().push("0").push("10");
+    context = new EvalContext(new String[0], cp -> {}).push("0").push("10");
     OpCode.Arithmetic.PLUS.eval(context);
     assertEquals("10", context.pop());
-    context = new EvalContext().push("10").push("0");
+    context = new EvalContext(new String[0], cp -> {}).push("10").push("0");
     OpCode.Arithmetic.PLUS.eval(context);
     assertEquals("10", context.pop());
-    context = new EvalContext().push("10").push("5");
+    context = new EvalContext(new String[0], cp -> {}).push("10").push("5");
     OpCode.Arithmetic.PLUS.eval(context);
     assertEquals("15", context.pop());
   }
 
   @Test
   public void testEvalLogicalEq() {
-    EvalContext context = new EvalContext().push("0").push("0");
+    EvalContext context = new EvalContext(new String[0], cp -> {}).push("0").push("0");
     OpCode.Logical.EQ.eval(context);
     assertEquals("1", context.pop());
-    context = new EvalContext().push("0").push("1");
+    context = new EvalContext(new String[0], cp -> {}).push("0").push("1");
     OpCode.Logical.EQ.eval(context);
     assertEquals("0", context.pop());
-    context = new EvalContext().push("1").push("1");
+    context = new EvalContext(new String[0], cp -> {}).push("1").push("1");
     OpCode.Logical.EQ.eval(context);
     assertEquals("1", context.pop());
-    context = new EvalContext().push("150").push("150");
+    context = new EvalContext(new String[0], cp -> {}).push("150").push("150");
     OpCode.Logical.EQ.eval(context);
     assertEquals("1", context.pop());
-    context = new EvalContext().push("150").push("4");
+    context = new EvalContext(new String[0], cp -> {}).push("150").push("4");
     OpCode.Logical.EQ.eval(context);
     assertEquals("0", context.pop());
   }
@@ -617,15 +621,17 @@ public class TermInfoTest {
 
   @Test
   public void testEvalPrintChar() throws Exception {
-    EvalContext context = new EvalContext().push("65");
+    StringBuilder result = new StringBuilder();
+    EvalContext context = new EvalContext(new String[0], result).push("65");
     OpCode.PrintChar.INSTANCE.eval(context);
-    assertEquals("A", context.result.toString());
+    assertEquals("A", result.toString());
   }
 
   @Test
   public void testEvalPrintf() throws Exception {
-    EvalContext context = new EvalContext().push("hello");
+    StringBuilder result = new StringBuilder();
+    EvalContext context = new EvalContext(new String[0], result).push("hello");
     new OpCode.Printf(null, null, null, 's').eval(context);
-    assertEquals("hello", context.result.toString());
+    assertEquals("hello", result.toString());
   }
 }

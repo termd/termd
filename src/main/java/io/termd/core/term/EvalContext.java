@@ -16,7 +16,10 @@
 
 package io.termd.core.term;
 
+import io.termd.core.util.Helper;
+
 import java.util.LinkedList;
+import java.util.function.Consumer;
 
 /**
  * Encapsulate evalutation state + operations.
@@ -27,16 +30,16 @@ public class EvalContext {
 
   final LinkedList<String> stack = new LinkedList<>();
   final String[] parameters;
-  final StringBuilder result;
+  private final Consumer<int[]> result;
 
-  public EvalContext(String[] parameters, StringBuilder result) {
+  public EvalContext(String[] parameters, Consumer<int[]> result) {
     this.parameters = parameters;
     this.result = result;
   }
 
-  public EvalContext(String... parameters) {
+  public EvalContext(String[] parameters, StringBuilder result) {
     this.parameters = parameters;
-    this.result = new StringBuilder();
+    this.result = codePoint -> Helper.appendTo(codePoint, result);
   }
 
   public int getParametersLength() {
@@ -61,14 +64,14 @@ public class EvalContext {
   }
 
   public void writeString(String s) {
-    result.append(s);
+    result.accept(s.codePoints().toArray());
   }
 
   public void writeNumber(int number) {
-    result.append(number);
+    writeString(Integer.toString(number));
   }
 
   public void writeCodePoint(int codePoint) {
-    result.appendCodePoint(codePoint);
+    result.accept(new int[]{codePoint});
   }
 }

@@ -18,8 +18,8 @@ package io.termd.core.term;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -47,6 +47,10 @@ public class Sequence implements Iterable<OpCode> {
   }
 
   public void eval(String[] parameters, StringBuilder result) {
+    eval(new EvalContext(parameters, result));
+  }
+
+  public void eval(String[] parameters, Consumer<int[]> result) {
     eval(new EvalContext(parameters, result));
   }
 
