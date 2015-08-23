@@ -33,5 +33,6 @@ public class WcwidthTest {
     assertEquals(0, Wcwidth.of('\0'));
     assertEquals(-1, Wcwidth.of('\t'));
     assertEquals(0, Wcwidth.of('\u0301'));
+    assertEquals(1, Wcwidth.of('\u09C0'));
   }
 }
