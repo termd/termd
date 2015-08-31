@@ -1,6 +1,7 @@
 package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 import org.junit.Test;
@@ -350,6 +351,32 @@ public class ReadlineTest extends TestBase {
     term.assertAt(0, 6);
     term.assertScreen("% abcd");
     term.assertAt(0, 6);
+  }
+
+  @Test
+  public void testResetDuringInteraction1() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.read('a', 'b', 'c', 'd');
+    term.eventHandler.accept(TtyEvent.INTR);
+    term.read('e');
+    term.assertScreen("% abcd", "% e");
+    term.assertAt(1, 3);
+    term.read('\r');
+    assertEquals("e", line.get());
+  }
+
+  @Test
+  public void testResetDuringInteraction2() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.read('a', 'b', 'c', 'd', '\\', '\r');
+    term.eventHandler.accept(TtyEvent.INTR);
+    term.read('e');
+    term.assertScreen("% abcd\\", "> ", "% e");
+    term.assertAt(2, 3);
+    term.read('\r');
+    assertEquals("e", line.get());
   }
 
 /*

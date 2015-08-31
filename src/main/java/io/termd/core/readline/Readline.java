@@ -19,6 +19,7 @@ package io.termd.core.readline;
 import io.termd.core.term.Device;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
@@ -45,8 +46,10 @@ public class Readline {
   private TtyConnection conn;
   private Consumer<int[]> prevReadHandler;
   private Consumer<Vector> prevSizeHandler;
+  private Consumer<TtyEvent> prevEventHandler;
   private Consumer<int[]> defaultReadHandler;
   private Consumer<Vector> defaultSizeHandler;
+  private Consumer<TtyEvent> defaultEventHandler;
   private Vector size;
   private Interaction interaction;
   private List<int[]> history;
@@ -97,6 +100,7 @@ public class Readline {
   public Readline install(TtyConnection conn) {
     this.prevReadHandler = conn.getStdinHandler();
     this.prevSizeHandler = conn.getSizeHandler();
+    this.prevEventHandler = conn.getEventHandler();
     this.conn = conn;
     this.conn.setStdinHandler(data -> {
       decoder.append(data);
@@ -110,6 +114,17 @@ public class Readline {
       size = dim;
       if (defaultSizeHandler != null) {
         defaultSizeHandler.accept(dim);
+      }
+    });
+    this.conn.setEventHandler(event -> {
+      if (interaction != null && event == TtyEvent.INTR) {
+        if (!interaction.completing) {
+          interaction = new Interaction(interaction.prompt, interaction.requestHandler, interaction.completionHandler);
+          conn.stdoutHandler().accept(new int[]{'\n'});
+          conn.write(interaction.prompt);
+        }
+      } else if (defaultEventHandler != null) {
+        defaultEventHandler.accept(event);
       }
     });
     return this;
@@ -136,6 +151,7 @@ public class Readline {
   public void uninstall() {
     conn.setStdinHandler(prevReadHandler);
     conn.setSizeHandler(prevSizeHandler);
+    conn.setEventHandler(prevEventHandler);
     conn = null;
   }
 
@@ -190,6 +206,7 @@ public class Readline {
 
   public class Interaction {
 
+    private final String prompt;
     private final Consumer<String> requestHandler;
     private final Consumer<Completion> completionHandler;
     private final Map<String, Object> data;
@@ -199,15 +216,16 @@ public class Readline {
     private final LineBuffer buffer = new LineBuffer();
     private final ParsedBuffer parsed = new ParsedBuffer();
     private int historyIndex = -1;
-    private String prompt;
+    private String currentPrompt;
 
     public Interaction(
         String prompt,
         Consumer<String> requestHandler,
         Consumer<Completion> completionHandler) {
+      this.prompt = prompt;
       this.handlers = new HashMap<>();
       this.data = new HashMap<>();
-      this.prompt = prompt;
+      this.currentPrompt = prompt;
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), this::doEnter);
@@ -221,7 +239,7 @@ public class Readline {
       this.buffer.setSize(0);
       if (parsed.escaped) {
         parsed.accept((int) '\r'); // Correct status
-        prompt = "> ";
+        currentPrompt = "> ";
         conn.write("\n> ");
       } else {
         int[] l = new int[parsed.buffer.size()];
@@ -232,7 +250,7 @@ public class Readline {
         lines.add(l);
         if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
           conn.write("\n> ");
-          prompt = "> ";
+          currentPrompt = "> ";
         } else {
           final StringBuilder raw = new StringBuilder();
           ArrayList<Integer> hist = new ArrayList<>();
@@ -320,7 +338,7 @@ public class Readline {
                     case COMPLETING:
                       // Redraw last line with correct prompt
                       if (lines.size() == 0 && parsed.buffer.size() == 0) {
-                        conn.write(prompt);
+                        conn.write(currentPrompt);
                       } else {
                         conn.write("> ");
                       }
@@ -469,13 +487,13 @@ public class Readline {
 
     private void update(LineBuffer copy, int width) {
       LineBuffer copy3 = new LineBuffer();
-      copy3.insert(Helper.toCodePoints(prompt));
+      copy3.insert(Helper.toCodePoints(currentPrompt));
       copy3.insert(copy.toArray());
-      copy3.setCursor(prompt.length() + copy.getCursor());
+      copy3.setCursor(currentPrompt.length() + copy.getCursor());
       LineBuffer copy2 = new LineBuffer();
-      copy2.insert(Helper.toCodePoints(prompt));
+      copy2.insert(Helper.toCodePoints(currentPrompt));
       copy2.insert(buffer.toArray());
-      copy2.setCursor(prompt.length() + buffer.getCursor());
+      copy2.setCursor(currentPrompt.length() + buffer.getCursor());
       copy3.update(copy2, conn.stdoutHandler(), width);
     }
 
@@ -510,9 +528,9 @@ public class Readline {
 
       // Erase screen
       LineBuffer abc = new LineBuffer();
-      abc.insert(prompt);
+      abc.insert(currentPrompt);
       abc.insert(buffer.toArray());
-      abc.setCursor(prompt.length() + buffer.getCursor());
+      abc.setCursor(currentPrompt.length() + buffer.getCursor());
 
       // Recompute new cursor
       Vector pos = abc.getCursorPosition(newWidth);
@@ -545,7 +563,7 @@ public class Readline {
       out.accept(new int[]{'\033','[','1','K'});
 
       // Now redraw
-      out.accept(Helper.toCodePoints(prompt));
+      out.accept(Helper.toCodePoints(currentPrompt));
       update(new LineBuffer(), newWidth);
     }
 

@@ -152,6 +152,7 @@ class TestTerm {
 
   Consumer<int[]> readHandler;
   Consumer<Vector> sizeHandler;
+  Consumer<TtyEvent> eventHandler;
   private LinkedList<Runnable> tasks = new LinkedList<>();
 
   TtyConnection conn = new TtyConnection() {
@@ -186,12 +187,12 @@ class TestTerm {
 
     @Override
     public Consumer<TtyEvent> getEventHandler() {
-      throw new UnsupportedOperationException();
+      return eventHandler;
     }
 
     @Override
     public void setEventHandler(Consumer<TtyEvent> handler) {
-      throw new UnsupportedOperationException();
+      eventHandler = handler;
     }
 
     @Override
