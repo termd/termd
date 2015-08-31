@@ -321,6 +321,37 @@ public class ReadlineTest extends TestBase {
     term.assertScreen("% 0", "% 1", "% 2", "% 3");
   }
 
+  @Test
+  public void testEndOfLine() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('a', 'b', 'c', 'd');
+    term.read(CTRL_A);
+    term.assertScreen("% abcd");
+    term.assertAt(0, 2);
+    term.read(CTRL_A);
+    term.assertScreen("% abcd");
+    term.assertAt(0, 2);
+  }
+
+  @Test
+  public void testBeginningOfLine() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('a', 'b', 'c', 'd');
+    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_CHAR);
+    term.assertScreen("% abcd");
+    term.assertAt(0, 2);
+    term.read(CTRL_E);
+    term.assertScreen("% abcd");
+    term.assertAt(0, 6);
+    term.assertScreen("% abcd");
+    term.assertAt(0, 6);
+  }
+
 /*
 
   @Test

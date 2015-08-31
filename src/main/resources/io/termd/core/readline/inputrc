@@ -6,3 +6,5 @@
 "\C-h":backward-delete-char
 "\C-X\C-U":undo
 "\eb":backward-word
+"\C-e":end-of-line
+"\C-a":beginning-of-line
