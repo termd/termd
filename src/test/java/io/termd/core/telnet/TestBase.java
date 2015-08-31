@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestBase {
 
+  protected static final int[] UP_CHAR = { 27, '[', 'A' };
+  protected static final int[] DOWN_CHAR = { 27, '[', 'B' };
   protected static final int[] FORWARD_CHAR = { 27, '[', 'C' };
   protected static final int[] BACKWARD_CHAR = { 27, '[', 'D' };
   protected static final int[] BACKWARD_DELETE_CHAR = { 8 };

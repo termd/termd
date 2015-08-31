@@ -284,6 +284,43 @@ public class ReadlineTest extends TestBase {
     await();
   }
 
+  @Test
+  public void testHistory() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('0', '\r');
+    term.readlineComplete();
+    term.read('1', '\r');
+    term.readlineComplete();
+    term.read('2', '\r');
+    term.assertScreen("% 0", "% 1", "% 2");
+    term.readlineComplete();
+    term.read('3');
+    term.assertScreen("% 0", "% 1", "% 2", "% 3");
+    term.read(UP_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 2");
+    term.read(UP_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 1");
+    term.read(UP_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 0");
+    term.read(UP_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 0");
+    term.read(DOWN_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 1");
+    term.read('_');
+    term.assertScreen("% 0", "% 1", "% 2", "% 1_");
+    term.read(DOWN_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 2");
+    term.read(UP_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 1");
+    term.read(DOWN_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 2");
+    term.read(DOWN_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 3");
+    term.read(DOWN_CHAR);
+    term.assertScreen("% 0", "% 1", "% 2", "% 3");
+  }
+
 /*
 
   @Test

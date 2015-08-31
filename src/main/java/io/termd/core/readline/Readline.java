@@ -248,7 +248,7 @@ public class Readline {
             }
           }
           lines.clear();
-          history.add(hist.stream().mapToInt(Integer::intValue).toArray());
+          history.add(0, hist.stream().mapToInt(Integer::intValue).toArray());
           parsed.buffer.clear();
           conn.write("\n");
           interaction = null;
