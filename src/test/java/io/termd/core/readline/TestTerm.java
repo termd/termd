@@ -27,7 +27,7 @@ import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyOutputMode;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -152,14 +151,14 @@ class TestTerm {
   final Readline readline;
 
   Consumer<int[]> readHandler;
-  Consumer<Dimension> sizeHandler;
+  Consumer<Vector> sizeHandler;
   private LinkedList<Runnable> tasks = new LinkedList<>();
 
   TtyConnection conn = new TtyConnection() {
 
     @Override
-    public Dimension size() {
-      return new Dimension(40, 20);
+    public Vector size() {
+      return new Vector(40, 20);
     }
 
     @Override
@@ -173,15 +172,15 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<Dimension> getSizeHandler() {
+    public Consumer<Vector> getSizeHandler() {
       return sizeHandler;
     }
 
     @Override
-    public void setSizeHandler(Consumer<Dimension> handler) {
+    public void setSizeHandler(Consumer<Vector> handler) {
       sizeHandler = handler;
       if (handler != null) {
-        handler.accept(new Dimension(40, 20));
+        handler.accept(new Vector(40, 20));
       }
     }
 

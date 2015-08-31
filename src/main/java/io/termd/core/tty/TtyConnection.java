@@ -16,7 +16,7 @@
 
 package io.termd.core.tty;
 
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
 import java.util.function.Consumer;
@@ -28,15 +28,15 @@ import java.util.function.Consumer;
  */
 public interface TtyConnection {
 
-  Dimension size();
+  Vector size();
 
   Consumer<String> getTermHandler();
 
   void setTermHandler(Consumer<String> handler);
 
-  Consumer<Dimension> getSizeHandler();
+  Consumer<Vector> getSizeHandler();
 
-  void setSizeHandler(Consumer<Dimension> handler);
+  void setSizeHandler(Consumer<Vector> handler);
 
   Consumer<TtyEvent> getEventHandler();
 

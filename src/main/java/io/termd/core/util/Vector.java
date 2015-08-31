@@ -17,24 +17,26 @@
 package io.termd.core.util;
 
 /**
+ * A two dimensional vector object, used for dimension, position, etc...
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class Dimension {
+public final class Vector {
 
-  private final int width;
-  private final int height;
+  private final int x;
+  private final int y;
 
-  public Dimension(int width, int height) {
-    this.width = width;
-    this.height = height;
+  public Vector(int x, int y) {
+    this.x = x;
+    this.y = y;
   }
 
-  public int width() {
-    return width;
+  public int x() {
+    return x;
   }
 
-  public int height() {
-    return height;
+  public int y() {
+    return y;
   }
 
   @Override
@@ -42,15 +44,15 @@ public final class Dimension {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof Dimension) {
-      Dimension that = (Dimension) obj;
-      return width == that.width && height == that.height;
+    if (obj instanceof Vector) {
+      Vector that = (Vector) obj;
+      return x == that.x && y == that.y;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return "Dimension[width=" + width + ",height=" + height + "]";
+    return "Vector[x=" + x + ",y=" + y + "]";
   }
 }

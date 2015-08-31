@@ -19,7 +19,7 @@ package io.termd.core.readline;
 import io.termd.core.term.Device;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
 import java.nio.IntBuffer;
@@ -44,10 +44,10 @@ public class Readline {
   private final KeyDecoder decoder;
   private TtyConnection conn;
   private Consumer<int[]> prevReadHandler;
-  private Consumer<Dimension> prevSizeHandler;
+  private Consumer<Vector> prevSizeHandler;
   private Consumer<int[]> defaultReadHandler;
-  private Consumer<Dimension> defaultSizeHandler;
-  private Dimension size;
+  private Consumer<Vector> defaultSizeHandler;
+  private Vector size;
   private Interaction interaction;
   private List<int[]> history;
 
@@ -85,7 +85,7 @@ public class Readline {
   /**
    * @return the last known size
    */
-  public Dimension size() {
+  public Vector size() {
     return size;
   }
 
@@ -148,11 +148,11 @@ public class Readline {
     return this;
   }
 
-  public Consumer<Dimension> sizeHandler() {
+  public Consumer<Vector> sizeHandler() {
     return defaultSizeHandler;
   }
 
-  public Readline setSizeHandler(Consumer<Dimension> sizeHandler) {
+  public Readline setSizeHandler(Consumer<Vector> sizeHandler) {
     defaultSizeHandler = sizeHandler;
     return this;
   }
@@ -259,7 +259,7 @@ public class Readline {
 
     private void doComplete() {
       if (completionHandler != null) {
-        Dimension dim = size; // Copy ref
+        Vector dim = size; // Copy ref
         int index = this.buffer.getCursor();
 
         //
@@ -306,7 +306,7 @@ public class Readline {
           }
 
           @Override
-          public Dimension size() {
+          public Vector size() {
             return dim;
           }
 
@@ -480,7 +480,7 @@ public class Readline {
     }
 
     private void handle(Event event) {
-      int width = conn.size().width();
+      int width = conn.size().x();
       LineBuffer copy = new LineBuffer(buffer);
       if (event instanceof KeyEvent) {
         KeyEvent key = (KeyEvent) event;
@@ -515,13 +515,13 @@ public class Readline {
       abc.setCursor(prompt.length() + buffer.getCursor());
 
       // Recompute new cursor
-      Dimension pos = abc.getCursorPosition(newWidth);
-      int curWidth = pos.width();
-      int curHeight = pos.height();
+      Vector pos = abc.getCursorPosition(newWidth);
+      int curWidth = pos.x();
+      int curHeight = pos.y();
 
       // Recompute new end
-      Dimension end = abc.getPosition(abc.getSize(), oldWith);
-      int endHeight = end.height() + end.width() / newWidth;
+      Vector end = abc.getPosition(abc.getSize(), oldWith);
+      int endHeight = end.y() + end.x() / newWidth;
 
       // Position at the bottom / right
       Consumer<int[]> out = conn.stdoutHandler();

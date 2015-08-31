@@ -23,7 +23,7 @@ import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import org.apache.sshd.common.PtyMode;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
@@ -58,8 +58,8 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   private BinaryDecoder decoder;
   private Consumer<int[]> stdout;
   private Consumer<byte[]> out;
-  private Dimension size = null;
-  private Consumer<Dimension> sizeHandler;
+  private Vector size = null;
+  private Consumer<Vector> sizeHandler;
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   private ChannelSession session;
@@ -92,17 +92,17 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Dimension size() {
+  public Vector size() {
     return size;
   }
 
   @Override
-  public Consumer<Dimension> getSizeHandler() {
+  public Consumer<Vector> getSizeHandler() {
     return sizeHandler;
   }
 
   @Override
-  public void setSizeHandler(Consumer<Dimension> handler) {
+  public void setSizeHandler(Consumer<Vector> handler) {
     sizeHandler = handler;
     if (handler != null && size != null) {
       handler.accept(size);
@@ -222,11 +222,11 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
     String columns = env.getEnv().get(Environment.ENV_COLUMNS);
     String lines = env.getEnv().get(Environment.ENV_LINES);
     if (lines != null && columns != null) {
-      Dimension size;
+      Vector size;
       try {
         int width = Integer.parseInt(columns);
         int height = Integer.parseInt(lines);
-        size = new Dimension(width, height);
+        size = new Vector(width, height);
       }
       catch (Exception ignore) {
         size = null;

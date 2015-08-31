@@ -1,6 +1,6 @@
 package io.termd.core.readline;
 
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -150,59 +150,59 @@ public class LineBufferTest {
   public void testCursorPosition() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', 'b', 'c');
-    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(2));
-    assertEquals(new Dimension(0, 3), buffer.getCursorPosition(1));
+    assertEquals(new Vector(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Vector(1, 1), buffer.getCursorPosition(2));
+    assertEquals(new Vector(0, 3), buffer.getCursorPosition(1));
   }
 
   @Test
   public void testCursorPositionWithNewLine() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', 'b', '\n', 'c');
-    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(1, 2), buffer.getCursorPosition(2));
-    assertEquals(new Dimension(0, 4), buffer.getCursorPosition(1));
+    assertEquals(new Vector(1, 1), buffer.getCursorPosition(4));
+    assertEquals(new Vector(1, 1), buffer.getCursorPosition(3));
+    assertEquals(new Vector(1, 2), buffer.getCursorPosition(2));
+    assertEquals(new Vector(0, 4), buffer.getCursorPosition(1));
   }
 
   // @Test
   public void testCursorPositionWithCR() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', '\r', 'b', 'c');
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
-    assertEquals(new Dimension(0, 3), buffer.getCursorPosition(1));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Vector(0, 3), buffer.getCursorPosition(1));
   }
 
   // @Test
   public void testCursorControlChar() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', '\t', 'c');
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
-    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(1));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Vector(0, 2), buffer.getCursorPosition(1));
   }
 
   // @Test
   public void testCursorInvisibleChar() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', '\0', 'c');
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(2, 0), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(2));
-    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(1));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(2, 0), buffer.getCursorPosition(3));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(2));
+    assertEquals(new Vector(0, 2), buffer.getCursorPosition(1));
   }
 
   // @Test
   public void testCursorPositionWithMultiCell1() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('한', 'b');
-    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(1, 1), buffer.getCursorPosition(2));
+    assertEquals(new Vector(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Vector(1, 1), buffer.getCursorPosition(2));
     try {
       buffer.getCursorPosition(1);
       fail();
@@ -214,9 +214,9 @@ public class LineBufferTest {
   public void testCursorPositionWithMultiCell2() {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', '한');
-    assertEquals(new Dimension(3, 0), buffer.getCursorPosition(4));
-    assertEquals(new Dimension(0, 1), buffer.getCursorPosition(3));
-    assertEquals(new Dimension(0, 2), buffer.getCursorPosition(2));
+    assertEquals(new Vector(3, 0), buffer.getCursorPosition(4));
+    assertEquals(new Vector(0, 1), buffer.getCursorPosition(3));
+    assertEquals(new Vector(0, 2), buffer.getCursorPosition(2));
     try {
       buffer.getCursorPosition(1);
       fail();

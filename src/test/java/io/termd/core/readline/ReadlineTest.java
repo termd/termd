@@ -1,7 +1,7 @@
 package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
@@ -276,11 +276,11 @@ public class ReadlineTest extends TestBase {
   public void testResize() {
     TestTerm term = new TestTerm(this);
     term.readline.setSizeHandler(dim -> {
-      assertEquals(new Dimension(3, 4), term.readline.size());
-      assertEquals(new Dimension(3, 4), dim);
+      assertEquals(new Vector(3, 4), term.readline.size());
+      assertEquals(new Vector(3, 4), dim);
       testComplete();
     });
-    term.sizeHandler.accept(new Dimension(3, 4));
+    term.sizeHandler.accept(new Vector(3, 4));
     await();
   }
 

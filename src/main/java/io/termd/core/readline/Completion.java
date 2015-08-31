@@ -16,7 +16,7 @@
 
 package io.termd.core.readline;
 
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public interface Completion {
   /**
    * @return the current screen dimension at the moment the completion was initiated
    */
-  Dimension size();
+  Vector size();
 
   /**
    * Insert an inline completion with {@code terminate} arg set to false.

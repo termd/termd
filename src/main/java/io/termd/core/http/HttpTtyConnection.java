@@ -25,7 +25,7 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyOutputMode;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +45,8 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   private static Logger log = LoggerFactory.getLogger(HttpTtyConnection.class);
 
-  private Dimension size = new Dimension(80, 24); // For now hardcoded
-  private Consumer<Dimension> sizeHandler;
+  private Vector size = new Vector(80, 24); // For now hardcoded
+  private Consumer<Vector> sizeHandler;
   private final ReadBuffer readBuffer;
   private final TtyEventDecoder onCharSignalDecoder;
   private final BinaryDecoder decoder;
@@ -96,15 +96,15 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   @Override
-  public Dimension size() {
+  public Vector size() {
     return size;
   }
 
-  public Consumer<Dimension> getSizeHandler() {
+  public Consumer<Vector> getSizeHandler() {
     return sizeHandler;
   }
 
-  public void setSizeHandler(Consumer<Dimension> handler) {
+  public void setSizeHandler(Consumer<Vector> handler) {
     this.sizeHandler = handler;
     if (handler != null && size != null) {
       handler.accept(size);

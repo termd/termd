@@ -150,7 +150,7 @@ public class Helper {
     return Arrays.copyOf(entries.get(0), len);
   }
 
-  public static int[] computeBlock(Dimension size, List<int[]> completions) {
+  public static int[] computeBlock(Vector size, List<int[]> completions) {
 
     StringBuilder sb = new StringBuilder();
 
@@ -158,7 +158,7 @@ public class Helper {
     int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
 
     //
-    int row = size.width() / (max + 1);
+    int row = size.x() / (max + 1);
 
     int count = 0;
     for (int[] completion : completions) {
@@ -189,15 +189,15 @@ public class Helper {
    * @param width the screen width
    * @return the height
    */
-  public static Dimension computePosition(int[] codePoints, Dimension origin, int offset, int width) {
+  public static Vector computePosition(int[] codePoints, Vector origin, int offset, int width) {
     if (offset < 0) {
       throw new IndexOutOfBoundsException("Offset cannot be negative");
     }
     if (offset > codePoints.length) {
       throw new IndexOutOfBoundsException("Offset cannot bebe greater than the length");
     }
-    int col = origin.width();
-    int row = origin.height();
+    int col = origin.x();
+    int row = origin.y();
     for (int i = 0;i < offset;i++) {
       int cp = codePoints[i];
       int w = Wcwidth.of(cp);
@@ -223,6 +223,6 @@ public class Helper {
         }
       }
     }
-    return new Dimension(col, row);
+    return new Vector(col, row);
   }
 }

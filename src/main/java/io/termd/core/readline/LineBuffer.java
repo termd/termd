@@ -16,7 +16,7 @@
 
 package io.termd.core.readline;
 
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 import io.termd.core.util.Wcwidth;
 
@@ -222,7 +222,7 @@ public class LineBuffer implements Iterable<Integer> {
    * @param width the screen width
    * @return the height
    */
-  public Dimension getCursorPosition(int width) {
+  public Vector getCursorPosition(int width) {
     return getPosition(cursor, width);
   }
 
@@ -233,11 +233,11 @@ public class LineBuffer implements Iterable<Integer> {
    * @param width the screen width
    * @return the height
    */
-  public Dimension getPosition(int offset, int width) {
+  public Vector getPosition(int offset, int width) {
     if (offset > size) {
       throw new IndexOutOfBoundsException("Offset cannot bebe greater than the buffer size");
     }
-    return Helper.computePosition(data, new Dimension(0, 0), offset, width);
+    return Helper.computePosition(data, new Vector(0, 0), offset, width);
   }
 
   private int findEndOfLine(int offset) {
@@ -276,8 +276,8 @@ public class LineBuffer implements Iterable<Integer> {
     public Update(Consumer<int[]> out, int width) {
       this.out = out;
       this.width = width;
-      this.scrCol = getCursorPosition(width).width();
-      this.scrRow = getCursorPosition(width).height();
+      this.scrCol = getCursorPosition(width).x();
+      this.scrRow = getCursorPosition(width).y();
     }
 
     public void perform(LineBuffer dst) {
@@ -294,7 +294,7 @@ public class LineBuffer implements Iterable<Integer> {
           if (w != 1) {
             throw new UnsupportedOperationException();
           }
-          if (srcIdx < size && new Dimension(srcCol, srcRow).equals(new Dimension(dstCol, dstRow))) {
+          if (srcIdx < size && new Vector(srcCol, srcRow).equals(new Vector(dstCol, dstRow))) {
             if (data[srcIdx] == dst.data[dstIdx]) {
               dstCol += w;
               if (dstCol == width) {
@@ -396,7 +396,7 @@ public class LineBuffer implements Iterable<Integer> {
       }
 
       // Move cursor to initial position
-      moveCursor(dst.getCursorPosition(width).width(), dst.getCursorPosition(width).height());
+      moveCursor(dst.getCursorPosition(width).x(), dst.getCursorPosition(width).y());
 
       // Update internal state
       data = dst.data.clone();

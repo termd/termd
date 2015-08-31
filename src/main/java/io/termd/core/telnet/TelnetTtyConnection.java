@@ -20,7 +20,7 @@ import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
-import io.termd.core.util.Dimension;
+import io.termd.core.util.Vector;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
@@ -36,9 +36,9 @@ import java.util.function.Consumer;
  */
 public class TelnetTtyConnection extends TelnetHandler implements TtyConnection {
 
-  private Dimension size;
+  private Vector size;
   private String terminalType;
-  private Consumer<Dimension> sizeHandler;
+  private Consumer<Vector> sizeHandler;
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
@@ -103,25 +103,25 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Dimension size() {
+  public Vector size() {
     return size;
   }
 
   @Override
   protected void onSize(int width, int height) {
-    this.size = new Dimension(width, height);
+    this.size = new Vector(width, height);
     if (sizeHandler != null) {
       sizeHandler.accept(size);
     }
   }
 
   @Override
-  public Consumer<Dimension> getSizeHandler() {
+  public Consumer<Vector> getSizeHandler() {
     return sizeHandler;
   }
 
   @Override
-  public void setSizeHandler(Consumer<Dimension> handler) {
+  public void setSizeHandler(Consumer<Vector> handler) {
     this.sizeHandler = handler;
     if (handler != null && size != null) {
       handler.accept(size);
