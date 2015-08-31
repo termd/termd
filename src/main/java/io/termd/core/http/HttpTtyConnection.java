@@ -16,6 +16,7 @@
 
 package io.termd.core.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
@@ -27,10 +28,10 @@ import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Dimension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonObject;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -64,13 +65,25 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   protected abstract void write(byte[] buffer);
 
-  public void writeToDecoder(String msg) throws DecodeException {
-    JsonObject obj = new JsonObject(msg.toString());
-    switch (obj.getString("action")) {
-      case "read":
-        String data = obj.getString("data");
-        decoder.write(data.getBytes()); //write back echo
-        break;
+  public void writeToDecoder(String msg) {
+    ObjectMapper mapper = new ObjectMapper();
+    Map<String, String> obj = null;
+    String action;
+
+    try {
+      obj = mapper.readValue(msg, Map.class);
+      action = obj.get("action");
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot deserialize object from json", e);
+    }
+
+    if (obj != null) {
+      switch (action) {
+        case "read":
+          String data = obj.get("data");
+          decoder.write(data.getBytes()); //write back echo
+          break;
+      }
     }
   }
 
