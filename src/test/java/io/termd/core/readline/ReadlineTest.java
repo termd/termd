@@ -379,6 +379,16 @@ public class ReadlineTest extends TestBase {
     assertEquals("e", line.get());
   }
 
+  @Test
+  public void testIllegalChar() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    assertEquals(0, term.getBellCount());
+    term.read('a', 6, 'b', '\r');
+    assertEquals(1, term.getBellCount());
+    assertEquals("ab", line.get());
+  }
+
 /*
 
   @Test

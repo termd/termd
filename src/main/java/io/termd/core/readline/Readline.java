@@ -508,7 +508,11 @@ public class Readline {
         } else {
           for (int i = 0;i < key.length();i++) {
             int codePoint = key.getAt(i);
-            buffer.insert(codePoint);
+            try {
+              buffer.insert(codePoint);
+            } catch (IllegalArgumentException e) {
+              conn.stdoutHandler().accept(new int[]{'\007'});
+            }
           }
           update(copy, width);
         }

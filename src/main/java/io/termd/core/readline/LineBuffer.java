@@ -78,10 +78,22 @@ public class LineBuffer implements Iterable<Integer> {
     };
   }
 
+  /**
+   * Insert a string in the buffer at the current cursor position.
+   *
+   * @see {@link #insert(int)}
+   */
   public LineBuffer insert(String s) {
     return insert(Helper.toCodePoints(s));
   }
 
+  /**
+   * Insert a codepoint in the buffer at the current cursor position.
+   *
+   * @param cp the codepoint to insert
+   * @return this object
+   * @throws IllegalArgumentException when an illegal character is inserted
+   */
   public LineBuffer insert(int cp) {
     int w = Wcwidth.of(cp);
     if (w == -1) {
@@ -99,6 +111,9 @@ public class LineBuffer implements Iterable<Integer> {
     return this;
   }
 
+  /**
+   * Insert an array of code points in the buffer at the current cursor position.
+   */
   public LineBuffer insert(int... codePoints) {
     for (int cp : codePoints) {
       insert(cp);

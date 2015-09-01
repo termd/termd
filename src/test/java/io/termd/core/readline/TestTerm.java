@@ -48,6 +48,7 @@ class TestTerm {
   private int cursor;
   private int status = 0;
   private int acc = -1;
+  private int bell;
   Consumer<int[]> writeHandler = new Consumer<int[]>() {
     @Override
     public void accept(int[] event) {
@@ -61,6 +62,9 @@ class TestTerm {
               buffer[row][cursor++] = i;
             } else {
               switch (i) {
+                case 7:
+                  bell++;
+                  break;
                 case '\r':
                   cursor = 0;
                   break;
@@ -274,6 +278,14 @@ class TestTerm {
       Runnable task = tasks.removeFirst();
       task.run();
     }
+  }
+
+  public int getBellCount() {
+    return bell;
+  }
+
+  public void resetBellCount() {
+    bell = 0;
   }
 
   private List<String> render() {
