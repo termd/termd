@@ -384,8 +384,6 @@ public class ReadlineTest extends TestBase {
     assertEquals(Collections.emptyList(), events);
     term.eventHandler.accept(TtyEvent.EOT);
     assertEquals(Collections.singletonList(TtyEvent.EOT), events);
-    term.readline.uninstall();
-    assertEquals(handler, term.eventHandler);
   }
 
 /*
