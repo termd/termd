@@ -155,7 +155,15 @@ public class Readline {
     conn = null;
   }
 
-  public Consumer<int[]> readHandler() {
+  public Consumer<TtyEvent> getEventHandler() {
+    return defaultEventHandler;
+  }
+
+  public void setEventHandler(Consumer<TtyEvent> eventHandler) {
+    this.defaultEventHandler = eventHandler;
+  }
+
+  public Consumer<int[]> getReadHandler() {
     return defaultReadHandler;
   }
 
@@ -164,7 +172,7 @@ public class Readline {
     return this;
   }
 
-  public Consumer<Vector> sizeHandler() {
+  public Consumer<Vector> getSizeHandler() {
     return defaultSizeHandler;
   }
 

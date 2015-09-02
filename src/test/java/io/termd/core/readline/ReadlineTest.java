@@ -6,7 +6,9 @@ import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -367,6 +369,23 @@ public class ReadlineTest extends TestBase {
     term.read('a', 6, 'b', '\r');
     assertEquals(1, term.getBellCount());
     assertEquals("ab", line.get());
+  }
+
+  @Test
+  public void testEventHandler() {
+    TestTerm term = new TestTerm(this);
+    LinkedList<TtyEvent> events = new LinkedList<>();
+    Consumer<TtyEvent> handler = events::add;
+    term.readline.setEventHandler(handler);
+    Supplier<String> line = term.readlineComplete();
+    term.eventHandler.accept(TtyEvent.INTR);
+    term.read('\r');
+    assertEquals("", line.get());
+    assertEquals(Collections.emptyList(), events);
+    term.eventHandler.accept(TtyEvent.EOT);
+    assertEquals(Collections.singletonList(TtyEvent.EOT), events);
+    term.readline.uninstall();
+    assertEquals(handler, term.eventHandler);
   }
 
 /*
