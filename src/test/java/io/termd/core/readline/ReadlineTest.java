@@ -14,26 +14,6 @@ import java.util.function.Supplier;
  */
 public class ReadlineTest extends TestBase {
 
-  static class EventContextImpl implements EventContext {
-
-    int endCount = 0;
-    final Event event;
-
-    public EventContextImpl(Event event) {
-      this.event = event;
-    }
-
-    @Override
-    public Event event() {
-      return event;
-    }
-
-    @Override
-    public void end() {
-      endCount++;
-    }
-  }
-
   /*
   @Test
   public void testPrompt() {
