@@ -87,7 +87,7 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
   }
 
   public boolean isOpen() {
-    return webSocketChannel.isOpen();
+    return webSocketChannel != null && webSocketChannel.isOpen();
   }
 
   public void setWebSocketChannel(WebSocketChannel webSocketChannel) {
@@ -100,5 +100,9 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
 
   public void removeReadonlyChannel(WebSocketChannel webSocketChannel) {
     readonlyChannels.remove(webSocketChannel);
+  }
+
+  public void removeWebSocketChannel() {
+    webSocketChannel = null;
   }
 }

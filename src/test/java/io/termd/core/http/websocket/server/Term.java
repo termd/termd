@@ -42,6 +42,7 @@ class Term {
   final String context;
   final Set<Consumer<TaskStatusUpdateEvent>> statusUpdateListeners = new HashSet<>();
   private WebSocketTtyConnection webSocketTtyConnection;
+  private boolean activeCommand;
 
   public Term(TermServer termServer, String context) {
     this.termServer = termServer;
@@ -67,9 +68,21 @@ class Term {
   }
 
   void notifyStatusUpdated(TaskStatusUpdateEvent event) {
+    if (event.getNewStatus().isFinal()) {
+      activeCommand = false;
+      destroyIfInactiveAndDisconnected();
+    } else {
+      activeCommand = true;
+    }
     for (Consumer<TaskStatusUpdateEvent> statusUpdateListener : statusUpdateListeners) {
       termServer.log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, event.getTaskId(), event.getNewStatus());
       statusUpdateListener.accept(event);
+    }
+  }
+
+  private void destroyIfInactiveAndDisconnected() {
+    if (!activeCommand && !webSocketTtyConnection.isOpen()) {
+      termServer.terms.remove(context);
     }
   }
 
@@ -77,6 +90,7 @@ class Term {
     WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
       if (webSocketTtyConnection == null) {
         webSocketTtyConnection = new WebSocketTtyConnection(webSocketChannel, termServer.executor);
+        webSocketChannel.addCloseTask((task) -> {webSocketTtyConnection.removeWebSocketChannel(); destroyIfInactiveAndDisconnected();});
         TtyBridge ttyBridge = new TtyBridge(webSocketTtyConnection);
         ttyBridge
             .setProcessListener(onTaskCreated())
@@ -84,9 +98,10 @@ class Term {
       } else {
         if (webSocketTtyConnection.isOpen()) {
           webSocketTtyConnection.addReadonlyChannel(webSocketChannel);
-          webSocketChannel.addCloseTask((task) -> webSocketTtyConnection.removeReadonlyChannel(webSocketChannel));
+          webSocketChannel.addCloseTask((task) -> {webSocketTtyConnection.removeReadonlyChannel(webSocketChannel); destroyIfInactiveAndDisconnected();});
         } else {
           webSocketTtyConnection.setWebSocketChannel(webSocketChannel);
+          webSocketChannel.addCloseTask((task) -> {webSocketTtyConnection.removeWebSocketChannel(); destroyIfInactiveAndDisconnected();});
         }
       }
     };

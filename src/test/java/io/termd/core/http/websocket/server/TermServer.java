@@ -37,7 +37,7 @@ public class TermServer {
   private UndertowBootstrap undertowBootstrap;
   private int port;
   final Executor executor = Executors.newFixedThreadPool(1);
-  final ConcurrentHashMap<String, Term> terms = new ConcurrentHashMap<>(); //TODO Should evict from this map somehow :-)
+  final ConcurrentHashMap<String, Term> terms = new ConcurrentHashMap<>();
 
   /**
    * Method returns once server is started.

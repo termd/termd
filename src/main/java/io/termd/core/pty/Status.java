@@ -20,9 +20,20 @@ package io.termd.core.pty;
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public enum Status {
-  NEW,
-  RUNNING,
-  COMPLETED,
-  FAILED,
-  INTERRUPTED;
+  NEW (false),
+  RUNNING (false),
+  COMPLETED (true),
+  FAILED (true),
+  INTERRUPTED (true);
+
+  private boolean finalFlag;
+
+  Status(boolean finalFlag) {
+    this.finalFlag = finalFlag;
+  }
+
+  public boolean isFinal() {
+    return finalFlag;
+  }
+
 }
