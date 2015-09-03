@@ -26,22 +26,22 @@ import io.undertow.websockets.WebSocketProtocolHandshakeHandler;
 import io.undertow.websockets.core.CloseMessage;
 import io.undertow.websockets.core.WebSockets;
 
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+* @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
 */
 class Term {
 
   private TermServer termServer;
   final String context;
   final Set<Consumer<TaskStatusUpdateEvent>> statusUpdateListeners = new HashSet<>();
+  private WebSocketTtyConnection webSocketTtyConnection;
 
   public Term(TermServer termServer, String context) {
     this.termServer = termServer;
@@ -58,7 +58,6 @@ class Term {
 
   public Consumer<PtyMaster> onTaskCreated() {
     return (ptyMaster) -> {
-      Optional<FileOutputStream> fileOutputStream = Optional.empty();
       ptyMaster.setChangeHandler((prev, next) -> {
         notifyStatusUpdated(
             new TaskStatusUpdateEvent("" + ptyMaster.getId(), prev, next, context)
@@ -74,10 +73,22 @@ class Term {
     }
   }
 
-  HttpHandler getWebSocketHandler(String invokerContext) {
+  synchronized HttpHandler getWebSocketHandler() {
     WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
-      WebSocketTtyConnection conn = new WebSocketTtyConnection(webSocketChannel, termServer.executor);
-      new TtyBridge(conn).setProcessListener(onTaskCreated()).readline();
+      if (webSocketTtyConnection == null) {
+        webSocketTtyConnection = new WebSocketTtyConnection(webSocketChannel, termServer.executor);
+        TtyBridge ttyBridge = new TtyBridge(webSocketTtyConnection);
+        ttyBridge
+            .setProcessListener(onTaskCreated())
+            .readline();
+      } else {
+        if (webSocketTtyConnection.isOpen()) {
+          webSocketTtyConnection.addReadonlyChannel(webSocketChannel);
+          webSocketChannel.addCloseTask((task) -> webSocketTtyConnection.removeReadonlyChannel(webSocketChannel));
+        } else {
+          webSocketTtyConnection.setWebSocketChannel(webSocketChannel);
+        }
+      }
     };
     return new WebSocketProtocolHandshakeHandler(onWebSocketConnected);
   }

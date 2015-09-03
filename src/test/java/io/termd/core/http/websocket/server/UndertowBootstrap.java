@@ -58,13 +58,18 @@ public class UndertowBootstrap {
     String requestPath = exchange.getRequestPath();
     if (requestPath.startsWith(Configurations.TERM_PATH)) {
       String invokerContext = requestPath.replace(Configurations.TERM_PATH + "/", "");
-      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
-      term.getWebSocketHandler(invokerContext).handleRequest(exchange);
+      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> createNewTerm(invokerContext));
+      term.getWebSocketHandler().handleRequest(exchange);
     } else  if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
       String invokerContext = requestPath.replace(Configurations.PROCESS_UPDATES_PATH + "/", "");
-      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
+      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> createNewTerm(invokerContext));
       term.webSocketStatusUpdateHandler().handleRequest(exchange);
     }
+  }
+
+  private Term createNewTerm(String invokerContext) {
+    log.debug("Creating new term for context [{}].", invokerContext);
+    return new Term(termServer, invokerContext);
   }
 
   public void stop() {

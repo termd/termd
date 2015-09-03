@@ -68,20 +68,70 @@ public class UndertowServerTest {
     doRemoteCommandShouldBeExecutedAndResponsesReceived("/the_context");
   }
 
+  @Test
+  public void clientShouldBeAbleToReConnectToARunningSession() throws Exception {
+    String context = "/my-context";
+    String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() +  Configurations.TERM_PATH + context;
+    StringBuilder responseData = new StringBuilder();
+    Consumer<String> responseConsumer = (data) -> {
+      responseData.append(data);
+    };
+    Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer));
+    Client.executeRemoteCommand(client, TEST_COMMAND);
+
+    Wait.forCondition(() -> responseData.toString().contains(MockProcess.WELCOME_MESSAGE), 60, ChronoUnit.SECONDS);
+
+    client.close();
+
+    StringBuilder reConnectingResponseData = new StringBuilder();
+    Consumer<String> reConnectingResponseConsumer = (data) -> {
+      reConnectingResponseData.append(data);
+    };
+    Client reConnectingClient = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(reConnectingResponseConsumer));
+
+    Wait.forCondition(() -> reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE), 60, ChronoUnit.SECONDS);
+    Assert.assertTrue("Missing response data.", reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE));
+    Assert.assertTrue("Missing response data.", reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE));
+  }
+
+  @Test
+  public void clientShouldBeAbleToConnectToARunningSession() throws Exception {
+    String context = "/my-multi-client-context";
+    String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() +  Configurations.TERM_PATH + context;
+    StringBuilder responseData = new StringBuilder();
+    Consumer<String> responseConsumer = (data) -> {
+      responseData.append(data);
+    };
+    Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer));
+    Client.executeRemoteCommand(client, TEST_COMMAND);
+
+    Wait.forCondition(() -> responseData.toString().contains(MockProcess.WELCOME_MESSAGE), 60, ChronoUnit.SECONDS);
+
+    StringBuilder reConnectingResponseData = new StringBuilder();
+    Consumer<String> reConnectingResponseConsumer = (data) -> {
+      reConnectingResponseData.append(data);
+    };
+    Client reConnectingClient = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(reConnectingResponseConsumer));
+
+    Wait.forCondition(() -> reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE), 60, ChronoUnit.SECONDS);
+    Assert.assertTrue("Missing response data.", reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE));
+    Assert.assertTrue("Missing response data.", reConnectingResponseData.toString().contains(MockProcess.FINAL_MESSAGE));
+  }
+
   private void doRemoteCommandShouldBeExecutedAndResponsesReceived(String context) throws Exception {
     String updatesSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() + Configurations.PROCESS_UPDATES_PATH + context;
     List<Status> receivedEventUpdates = new ArrayList<>();
     Consumer<TaskStatusUpdateEvent> onStatusUpdate = (statusUpdateEvent) -> {
       receivedEventUpdates.add(statusUpdateEvent.getNewStatus());
     };
-    Client.connectStatusListenerClient(updatesSocketUrl, onStatusUpdate, "");
+    Client.connectStatusListenerClient(updatesSocketUrl, onStatusUpdate);
 
     String processSocketUrl = "http://" + Configurations.HOST + ":" + termServer.getPort() +  Configurations.TERM_PATH + context;
     StringBuilder responseData = new StringBuilder();
     Consumer<String> responseConsumer = (data) -> {
       responseData.append(data);
     };
-    Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer), "");
+    Client client = Client.connectCommandExecutingClient(processSocketUrl, Optional.of(responseConsumer));
 
     Client.executeRemoteCommand(client, TEST_COMMAND);
 

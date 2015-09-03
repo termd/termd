@@ -159,7 +159,7 @@ public class Client {
   }
 
 
-  public static Client connectStatusListenerClient(String webSocketUrl, Consumer<TaskStatusUpdateEvent> onStatusUpdate, String context) {
+  public static Client connectStatusListenerClient(String webSocketUrl, Consumer<TaskStatusUpdateEvent> onStatusUpdate) {
     Client client = Client.initializeDefault();
     Consumer<String> responseConsumer = (text) -> {
       log.trace("Decoding response: {}", text);
@@ -184,14 +184,14 @@ public class Client {
     });
 
     try {
-      client.connect(webSocketUrl + "/" + context);
+      client.connect(webSocketUrl + "/");
     } catch (Exception e) {
       throw new AssertionError("Failed to connect to remote client.", e);
     }
     return client;
   }
 
-  public static Client connectCommandExecutingClient(String webSocketUrl, Optional<Consumer<String>> responseDataConsumer, String context) throws InterruptedException, TimeoutException {
+  public static Client connectCommandExecutingClient(String webSocketUrl, Optional<Consumer<String>> responseDataConsumer) throws InterruptedException, TimeoutException {
     ObjectWrapper<Boolean> connected = new ObjectWrapper<>(false);
 
     Client client = Client.initializeDefault();
@@ -210,7 +210,7 @@ public class Client {
     });
 
     try {
-      client.connect(webSocketUrl + "/" + context);
+      client.connect(webSocketUrl + "/");
     } catch (Exception e) {
       throw new AssertionError("Failed to connect to remote client.", e);
     }

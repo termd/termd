@@ -28,6 +28,8 @@ import org.xnio.Pooled;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -36,11 +38,17 @@ import java.util.concurrent.Executor;
 public class WebSocketTtyConnection extends HttpTtyConnection {
 
   private static Logger log = LoggerFactory.getLogger(WebSocketTtyConnection.class);
-  private final WebSocketChannel webSocketChannel;
+  private WebSocketChannel webSocketChannel;
   private final Executor executor;
+  private Set<WebSocketChannel> readonlyChannels = new HashSet<>();
 
   @Override
   protected void write(byte[] buffer) {
+    sendBinary(buffer, webSocketChannel);
+    readonlyChannels.forEach((wsChannel) -> sendBinary(buffer, wsChannel));
+  }
+
+  private void sendBinary(byte[] buffer, WebSocketChannel webSocketChannel) {
     WebSockets.sendBinary(ByteBuffer.wrap(buffer), webSocketChannel, null);
   }
 
@@ -76,5 +84,21 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
       }
     };
     webSocketChannel.getReceiveSetter().set(listener);
+  }
+
+  public boolean isOpen() {
+    return webSocketChannel.isOpen();
+  }
+
+  public void setWebSocketChannel(WebSocketChannel webSocketChannel) {
+    this.webSocketChannel = webSocketChannel;
+  }
+
+  public void addReadonlyChannel(WebSocketChannel webSocketChannel) {
+    readonlyChannels.add(webSocketChannel);
+  }
+
+  public void removeReadonlyChannel(WebSocketChannel webSocketChannel) {
+    readonlyChannels.remove(webSocketChannel);
   }
 }
