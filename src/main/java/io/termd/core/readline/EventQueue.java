@@ -39,6 +39,11 @@ public class EventQueue {
     return this;
   }
 
+  public EventQueue append(KeyEvent event) {
+    events.add(event);
+    return this;
+  }
+
   public boolean hasNext() {
     return peek() != null;
   }

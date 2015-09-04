@@ -247,7 +247,6 @@ class TestTerm {
     readline.addFunction(new NextHistory());
     readline.addFunction(new BeginningOfLine());
     readline.addFunction(new EndOfLine());
-    readline.install(conn);
   }
 
   public void readlineFail() {
@@ -271,7 +270,7 @@ class TestTerm {
   }
 
   public void readline(Consumer<String> readlineHandler, Consumer<Completion> completionHandler) {
-    readline.readline("% ", readlineHandler, completionHandler);
+    readline.readline(conn, "% ", readlineHandler, completionHandler);
   }
 
   public void executeTasks() {

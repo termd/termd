@@ -73,7 +73,6 @@ public class TtyBridge {
     InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
     Keymap keymap = new Keymap(inputrc);
     Readline readline = new Readline(keymap);
-    readline.install(conn);
     for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
       log.trace("Server is adding function to readline: {}", function);
 
@@ -88,7 +87,7 @@ public class TtyBridge {
   }
 
   void read(final TtyConnection conn, final Readline readline) {
-    readline.readline("% ", line -> {
+    readline.readline(conn, "% ", line -> {
       if (processStdinListener != null) {
         processStdinListener.accept(line);
       }

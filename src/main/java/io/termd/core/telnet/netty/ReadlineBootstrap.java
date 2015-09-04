@@ -101,7 +101,6 @@ public class ReadlineBootstrap {
       InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
       Keymap keymap = new Keymap(inputrc);
       Readline readline = new Readline(keymap);
-      readline.install(conn);
       for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
         readline.addFunction(function);
       }
@@ -163,7 +162,7 @@ public class ReadlineBootstrap {
     }
 
     public void read(final TtyConnection conn, final Readline readline) {
-      readline.readline("% ", line -> {
+      readline.readline(conn, "% ", line -> {
         Task task = new Task(conn, readline, line);
         task.start();
       }, completion -> {

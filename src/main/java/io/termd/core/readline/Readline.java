@@ -44,13 +44,9 @@ public class Readline {
   private final Device device;
   private final Map<String, Function> functions = new HashMap<>();
   private final EventQueue decoder;
-  private TtyConnection conn;
   private Consumer<int[]> prevReadHandler;
   private Consumer<Vector> prevSizeHandler;
   private BiConsumer<TtyEvent, Integer> prevEventHandler;
-  private Consumer<int[]> defaultReadHandler;
-  private Consumer<Vector> defaultSizeHandler;
-  private Consumer<TtyEvent> defaultEventHandler;
   private Vector size;
   private Interaction interaction;
   private List<int[]> history;
@@ -98,88 +94,10 @@ public class Readline {
     return this;
   }
 
-  public Readline install(TtyConnection conn) {
-    this.prevReadHandler = conn.getStdinHandler();
-    this.prevSizeHandler = conn.getSizeHandler();
-    this.prevEventHandler = conn.getEventHandler();
-    this.conn = conn;
-    this.conn.setStdinHandler(data -> {
-      decoder.append(data);
-      deliver();
-    });
-    this.conn.setSizeHandler(dim -> {
-      if (interaction != null && size != null) {
-        // Not supported for now
-        // interaction.resize(size.width(), dim.width());
-      }
-      size = dim;
-      if (defaultSizeHandler != null) {
-        defaultSizeHandler.accept(dim);
-      }
-    });
-    this.conn.setEventHandler((event,cp) -> {
-      if (interaction != null && event == TtyEvent.INTR) {
-        if (!interaction.completing) {
-          interaction = new Interaction(interaction.prompt, interaction.requestHandler, interaction.completionHandler);
-          conn.stdoutHandler().accept(new int[]{'\n'});
-          conn.write(interaction.prompt);
-        }
-      } else if (defaultEventHandler != null) {
-        defaultEventHandler.accept(event);
-      }
-    });
-    return this;
-  }
-
   private void deliver() {
-    while (decoder.hasNext()) {
-      if (interaction != null){
-        if (!interaction.completing) {
-          interaction.handle(decoder.next());
-        } else {
-          return;
-        }
-      } else {
-        if (defaultReadHandler != null) {
-          defaultReadHandler.accept(decoder.clear());
-        } else {
-          return;
-        }
-      }
+    while (decoder.hasNext() && interaction != null && ! interaction.completing) {
+      interaction.handle(decoder.next());
     }
-  }
-
-  public void uninstall() {
-    conn.setStdinHandler(prevReadHandler);
-    conn.setSizeHandler(prevSizeHandler);
-    conn.setEventHandler(prevEventHandler);
-    conn = null;
-  }
-
-  public Consumer<TtyEvent> getEventHandler() {
-    return defaultEventHandler;
-  }
-
-  public void setEventHandler(Consumer<TtyEvent> eventHandler) {
-    this.defaultEventHandler = eventHandler;
-  }
-
-  public Consumer<int[]> getReadHandler() {
-    return defaultReadHandler;
-  }
-
-  public Readline setReadHandler(Consumer<int[]> readHandler) {
-    this.defaultReadHandler = readHandler;
-    return this;
-  }
-
-  public Consumer<Vector> getSizeHandler() {
-    return defaultSizeHandler;
-  }
-
-  public Readline setSizeHandler(Consumer<Vector> sizeHandler) {
-    defaultSizeHandler = sizeHandler;
-    return this;
   }
 
   /**
@@ -187,16 +105,19 @@ public class Readline {
    *
    * @param requestHandler the requestHandler
    */
-  public void readline(String prompt, Consumer<String> requestHandler) {
-    readline(prompt, requestHandler, null);
+  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler) {
+    readline(conn, prompt, requestHandler, null);
   }
 
   /**
    * Schedule delivery of pending data in the buffer.
    */
   public void schedulePending() {
+    if (interaction == null) {
+      throw new IllegalStateException("No interaction!");
+    }
     if (decoder.hasNext()) {
-      conn.schedule(Readline.this::deliver);
+      interaction.conn.schedule(Readline.this::deliver);
     }
   }
 
@@ -205,16 +126,37 @@ public class Readline {
    *
    * @param requestHandler the requestHandler
    */
-  public void readline(String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
+  public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
     if (interaction != null) {
       throw new IllegalStateException("Already reading a line");
     }
-    interaction = new Interaction(prompt, requestHandler, completionHandler);
+    interaction = new Interaction(conn, prompt, requestHandler, completionHandler);
+    interaction.install();
     conn.write(prompt);
+    schedulePending();
+  }
+
+  public Readline queueEvent(TtyEvent event, int codePoint) {
+    decoder.append(new FunctionEvent(event.name(), new int[]{codePoint}));
+    return this;
+  }
+
+  public Readline queueCodePoints(int[] codePoints) {
+    decoder.append(codePoints);
+    return this;
+  }
+
+  public boolean hasCodePoints() {
+    return decoder.hasNext();
+  }
+
+  public int[] nextCodePoints() {
+    return decoder.next().buffer().array();
   }
 
   public class Interaction {
 
+    private final TtyConnection conn;
     private final String prompt;
     private final Consumer<String> requestHandler;
     private final Consumer<Completion> completionHandler;
@@ -228,9 +170,11 @@ public class Readline {
     private String currentPrompt;
 
     public Interaction(
+        TtyConnection conn,
         String prompt,
         Consumer<String> requestHandler,
         Consumer<Completion> completionHandler) {
+      this.conn = conn;
       this.prompt = prompt;
       this.handlers = new HashMap<>();
       this.data = new HashMap<>();
@@ -278,6 +222,9 @@ public class Readline {
           history.add(0, hist.stream().mapToInt(Integer::intValue).toArray());
           parsed.buffer.clear();
           conn.write("\n");
+          conn.setStdinHandler(prevReadHandler);
+          conn.setSizeHandler(prevSizeHandler);
+          conn.setEventHandler(prevEventHandler);
           interaction = null;
           requestHandler.accept(raw.toString());
         }
@@ -511,13 +458,20 @@ public class Readline {
       LineBuffer copy = new LineBuffer(buffer);
       if (event instanceof FunctionEvent) {
         FunctionEvent fname = (FunctionEvent) event;
-        Function function = functions.get(fname.name());
-        if (function != null) {
-          function.apply(this);
+        // Todo : bind ^D to exit shell somehow ?
+        if (fname.name().equals(TtyEvent.INTR.name())) {
+          interaction = new Interaction(conn, interaction.prompt, interaction.requestHandler, interaction.completionHandler);
+          conn.stdoutHandler().accept(new int[]{'\n'});
+          conn.write(interaction.prompt);
         } else {
-          System.out.println("Unimplemented function " + fname.name());
+          Function function = functions.get(fname.name());
+          if (function != null) {
+            function.apply(this);
+          } else {
+            System.out.println("Unimplemented function " + fname.name());
+          }
+          update(copy, width);
         }
-        update(copy, width);
       } else {
         Runnable handler = handlers.get(event.buffer());
         if (handler != null) {
@@ -597,6 +551,27 @@ public class Readline {
 
     public LineBuffer buffer() {
       return buffer;
+    }
+
+    private void install() {
+      prevReadHandler = conn.getStdinHandler();
+      prevSizeHandler = conn.getSizeHandler();
+      prevEventHandler = conn.getEventHandler();
+      conn.setStdinHandler(data -> {
+        decoder.append(data);
+        deliver();
+      });
+      conn.setSizeHandler(dim -> {
+        if (size != null) {
+          // Not supported for now
+          // interaction.resize(size.width(), dim.width());
+        }
+        size = dim;
+      });
+      conn.setEventHandler((event,cp) -> {
+        decoder.append(new FunctionEvent(event.name(), new int[]{cp}));
+        deliver();
+      });
     }
   }
 }

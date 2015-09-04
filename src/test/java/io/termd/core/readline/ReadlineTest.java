@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -216,55 +217,18 @@ public class ReadlineTest extends TestBase {
 */
 
   @Test
-  public void testBuffering1() {
-    LinkedList<int[]> data = new LinkedList<>();
-    TestTerm term = new TestTerm(this);
-    term.readline.setReadHandler(data::add);
-    term.read('h', 'e', 'l', 'l', 'o');
-    assertEquals(1, data.size());
-    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
-    term.assertScreen();
-    term.assertAt(0, 0);
-  }
-
-  @Test
-  public void testBuffering2() {
-    LinkedList<int[]> data = new LinkedList<>();
+  public void testBuffering() {
     TestTerm term = new TestTerm(this);
     Supplier<String> line = term.readlineComplete();
-    term.readline.setReadHandler(data::add);
-    term.read('A', '\r', 'h', 'e', 'l', 'l', 'o');
-    assertEquals(1, data.size());
-    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
-    assertEquals("A", line.get());
-  }
-
-  @Test
-  public void testBuffering3() {
-    LinkedList<int[]> data = new LinkedList<>();
-    TestTerm term = new TestTerm(this);
-    term.read('A', '\r', 'h', 'e', 'l', 'l', 'o');
-    term.assertScreen();
-    term.assertAt(0, 0);
-    Supplier<String> line = term.readlineComplete();
-    term.readline.setReadHandler(data::add);
-    term.readline.schedulePending();
+    term.read('h', 'e', 'l', 'l', 'o', '\r', 'b', 'y', 'e', '\r');
+    assertEquals("hello", line.get());
+    term.assertScreen("% hello");
+    term.assertAt(1, 0);
+    line = term.readlineComplete();
     term.executeTasks();
-    assertEquals(1, data.size());
-    assertEquals("hello", Helper.fromCodePoints(data.get(0)));
-    assertEquals("A", line.get());
-  }
-
-  @Test
-  public void testResize() {
-    TestTerm term = new TestTerm(this);
-    term.readline.setSizeHandler(dim -> {
-      assertEquals(new Vector(3, 4), term.readline.size());
-      assertEquals(new Vector(3, 4), dim);
-      testComplete();
-    });
-    term.sizeHandler.accept(new Vector(3, 4));
-    await();
+    assertEquals("bye", line.get());
+    term.assertScreen("% hello", "% bye");
+    term.assertAt(2, 0);
   }
 
   @Test
@@ -375,8 +339,8 @@ public class ReadlineTest extends TestBase {
   public void testEventHandler() {
     TestTerm term = new TestTerm(this);
     LinkedList<TtyEvent> events = new LinkedList<>();
-    Consumer<TtyEvent> handler = events::add;
-    term.readline.setEventHandler(handler);
+    BiConsumer<TtyEvent, Integer> handler = (event,cp) -> events.add(event);
+    term.eventHandler = handler;
     Supplier<String> line = term.readlineComplete();
     term.eventHandler.accept(TtyEvent.INTR, 3);
     term.read('\r');
