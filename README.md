@@ -41,10 +41,10 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 
 ### Todo
 
+- dynamic prompt
 - see to use IntStream or not
 - handle % stuff in parser
-- ^X
+- ^D EOT handling
 - foobar@ for any foobar, not only boolean and treat it as a removal
 
-Control flow.
 Try to use the maven install plugin to install artifacts with specific dependencies.
