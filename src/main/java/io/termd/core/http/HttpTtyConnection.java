@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -112,12 +113,12 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   @Override
-  public Consumer<TtyEvent> getEventHandler() {
+  public BiConsumer<TtyEvent, Integer> getEventHandler() {
     return onCharSignalDecoder.getEventHandler();
   }
 
   @Override
-  public void setEventHandler(Consumer<TtyEvent> handler) {
+  public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
     onCharSignalDecoder.setEventHandler(handler);
   }
 

@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -110,12 +111,12 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public Consumer<TtyEvent> getEventHandler() {
+  public BiConsumer<TtyEvent, Integer> getEventHandler() {
     return eventDecoder.getEventHandler();
   }
 
   @Override
-  public void setEventHandler(Consumer<TtyEvent> handler) {
+  public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
     eventDecoder.setEventHandler(handler);
   }
 

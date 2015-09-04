@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -46,7 +47,7 @@ public class Readline {
   private TtyConnection conn;
   private Consumer<int[]> prevReadHandler;
   private Consumer<Vector> prevSizeHandler;
-  private Consumer<TtyEvent> prevEventHandler;
+  private BiConsumer<TtyEvent, Integer> prevEventHandler;
   private Consumer<int[]> defaultReadHandler;
   private Consumer<Vector> defaultSizeHandler;
   private Consumer<TtyEvent> defaultEventHandler;
@@ -116,7 +117,7 @@ public class Readline {
         defaultSizeHandler.accept(dim);
       }
     });
-    this.conn.setEventHandler(event -> {
+    this.conn.setEventHandler((event,cp) -> {
       if (interaction != null && event == TtyEvent.INTR) {
         if (!interaction.completing) {
           interaction = new Interaction(interaction.prompt, interaction.requestHandler, interaction.completionHandler);

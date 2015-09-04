@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -156,7 +157,7 @@ class TestTerm {
 
   Consumer<int[]> readHandler;
   Consumer<Vector> sizeHandler;
-  Consumer<TtyEvent> eventHandler;
+  BiConsumer<TtyEvent, Integer> eventHandler;
   private LinkedList<Runnable> tasks = new LinkedList<>();
 
   TtyConnection conn = new TtyConnection() {
@@ -190,12 +191,12 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<TtyEvent> getEventHandler() {
+    public BiConsumer<TtyEvent, Integer> getEventHandler() {
       return eventHandler;
     }
 
     @Override
-    public void setEventHandler(Consumer<TtyEvent> handler) {
+    public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
       eventHandler = handler;
     }
 

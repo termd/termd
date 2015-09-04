@@ -32,6 +32,7 @@ import io.termd.core.telnet.TelnetHandler;
 
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -122,7 +123,7 @@ public class ReadlineBootstrap {
       read(conn, readline);
     }
 
-    class Task extends Thread implements Consumer<TtyEvent> {
+    class Task extends Thread implements BiConsumer<TtyEvent, Integer> {
 
       final TtyConnection conn;
       final Readline readline;
@@ -136,7 +137,7 @@ public class ReadlineBootstrap {
       }
 
       @Override
-      public void accept(TtyEvent event) {
+      public void accept(TtyEvent event, Integer cp) {
         System.out.println("event = " + event);
         switch (event) {
           case INTR:

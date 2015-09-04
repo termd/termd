@@ -16,6 +16,7 @@
 
 package io.termd.core.tty;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
 public class TtyEventDecoder implements Consumer<int[]> {
 
   private Consumer<int[]> readHandler;
-  private Consumer<TtyEvent> eventHandler;
+  private BiConsumer<TtyEvent, Integer> eventHandler;
   private final int vintr;
   private final int veof;
   private final int vsusp;
@@ -44,11 +45,11 @@ public class TtyEventDecoder implements Consumer<int[]> {
     return this;
   }
 
-  public Consumer<TtyEvent> getEventHandler() {
+  public BiConsumer<TtyEvent, Integer> getEventHandler() {
     return eventHandler;
   }
 
-  public TtyEventDecoder setEventHandler(Consumer<TtyEvent> eventHandler) {
+  public TtyEventDecoder setEventHandler(BiConsumer<TtyEvent, Integer> eventHandler) {
     this.eventHandler = eventHandler;
     return this;
   }
@@ -76,7 +77,7 @@ public class TtyEventDecoder implements Consumer<int[]> {
                 readHandler.accept(a);
               }
             }
-            eventHandler.accept(event);
+            eventHandler.accept(event, val);
             int[] a = new int[data.length - index - 1];
             System.arraycopy(data, index + 1, a, 0, a.length);
             data = a;

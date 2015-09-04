@@ -27,6 +27,7 @@ import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
 import java.nio.charset.StandardCharsets;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -142,12 +143,12 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   }
 
   @Override
-  public Consumer<TtyEvent> getEventHandler() {
+  public BiConsumer<TtyEvent, Integer> getEventHandler() {
     return eventDecoder.getEventHandler();
   }
 
   @Override
-  public void setEventHandler(Consumer<TtyEvent> handler) {
+  public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
     eventDecoder.setEventHandler(handler);
   }
 

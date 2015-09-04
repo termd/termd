@@ -106,7 +106,7 @@ public class TtyBridge {
         conn.setEventHandler(null);
         conn.schedule(() -> read(conn, readline));
       });
-      conn.setEventHandler(event -> {
+      conn.setEventHandler((event,cp) -> {
         if (event == TtyEvent.INTR) {
           task.interruptProcess();
         }

@@ -17,6 +17,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -119,7 +120,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
             setStdinHandler(event -> Helper.appendTo(event, buffer));
-            setEventHandler(event -> {
+            setEventHandler((event,cp) -> {
               if (event == TtyEvent.INTR) {
                 switch (count) {
                   case 0:
@@ -158,7 +159,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
             setStdinHandler(event -> Helper.appendTo(event, buffer));
-            setEventHandler(event -> {
+            setEventHandler((event,cp) -> {
               switch (count) {
                 case 0:
                   assertEquals(TtyEvent.INTR, event);
@@ -232,27 +233,24 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
           @Override
           protected void onOpen(TelnetConnection conn) {
             super.onOpen(conn);
-            setEventHandler(new Consumer<TtyEvent>() {
-              StringBuilder buffer = new StringBuilder();
+            setEventHandler(new BiConsumer<TtyEvent, Integer>() {
+
               AtomicInteger count = new AtomicInteger();
 
               @Override
-              public void accept(TtyEvent event) {
-                setStdinHandler(new Consumer<int[]>() {
-                  @Override
-                  public void accept(int[] event) {
-                    switch (count.getAndIncrement()) {
-                      case 0:
-                        assertEquals("hello", Helper.fromCodePoints(event));
-                        latch.countDown();
-                        break;
-                      case 1:
-                        assertEquals("bye", Helper.fromCodePoints(event));
-                        testComplete();
-                        break;
-                      default:
-                        fail("Too many requests");
-                    }
+              public void accept(TtyEvent event, Integer cp) {
+                setStdinHandler(codePoints -> {
+                  switch (count.getAndIncrement()) {
+                    case 0:
+                      assertEquals("hello", Helper.fromCodePoints(codePoints));
+                      latch.countDown();
+                      break;
+                    case 1:
+                      assertEquals("bye", Helper.fromCodePoints(codePoints));
+                      testComplete();
+                      break;
+                    default:
+                      fail("Too many requests");
                   }
                 });
               }

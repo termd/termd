@@ -340,7 +340,7 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     Supplier<String> line = term.readlineComplete();
     term.read('a', 'b', 'c', 'd');
-    term.eventHandler.accept(TtyEvent.INTR);
+    term.eventHandler.accept(TtyEvent.INTR, 3);
     term.read('e');
     term.assertScreen("% abcd", "% e");
     term.assertAt(1, 3);
@@ -353,7 +353,7 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     Supplier<String> line = term.readlineComplete();
     term.read('a', 'b', 'c', 'd', '\\', '\r');
-    term.eventHandler.accept(TtyEvent.INTR);
+    term.eventHandler.accept(TtyEvent.INTR, 3);
     term.read('e');
     term.assertScreen("% abcd\\", "> ", "% e");
     term.assertAt(2, 3);
@@ -378,11 +378,11 @@ public class ReadlineTest extends TestBase {
     Consumer<TtyEvent> handler = events::add;
     term.readline.setEventHandler(handler);
     Supplier<String> line = term.readlineComplete();
-    term.eventHandler.accept(TtyEvent.INTR);
+    term.eventHandler.accept(TtyEvent.INTR, 3);
     term.read('\r');
     assertEquals("", line.get());
     assertEquals(Collections.emptyList(), events);
-    term.eventHandler.accept(TtyEvent.EOT);
+    term.eventHandler.accept(TtyEvent.EOT, 4);
     assertEquals(Collections.singletonList(TtyEvent.EOT), events);
   }
 

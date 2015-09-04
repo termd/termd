@@ -19,6 +19,7 @@ package io.termd.core.tty;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -38,9 +39,9 @@ public interface TtyConnection {
 
   void setSizeHandler(Consumer<Vector> handler);
 
-  Consumer<TtyEvent> getEventHandler();
+  BiConsumer<TtyEvent, Integer> getEventHandler();
 
-  void setEventHandler(Consumer<TtyEvent> handler);
+  void setEventHandler(BiConsumer<TtyEvent, Integer> handler);
 
   Consumer<int[]> getStdinHandler();
 
