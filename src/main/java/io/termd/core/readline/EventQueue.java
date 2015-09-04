@@ -13,57 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.termd.core.readline;
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
-import java.util.NoSuchElementException;
+import java.util.LinkedList;
 
 /**
- * The event queue is a state machine that consumes chars and produces events.
- *
- * todo : use a Trie for the mapping instead of using a lookup
- *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class KeyDecoder {
+public class EventQueue {
 
   private final Keymap keymap;
-  private State state;
+  private final LinkedList<KeyEvent> events = new LinkedList<>();
+  private int[] pending = new int[0];
 
-  public KeyDecoder(Keymap keymap) {
+  public EventQueue(Keymap keymap) {
     this.keymap = keymap;
-    this.state = new State(new int[0]);
   }
 
-  public KeyDecoder append(int... chars) {
-    for (int c : chars) {
-      state = state.append(c);
-    }
+  public EventQueue append(int... codePoints) {
+    pending = Arrays.copyOf(pending, pending.length + codePoints.length);
+    System.arraycopy(codePoints, 0 , pending, pending.length - codePoints.length, codePoints.length);
     return this;
   }
 
   public boolean hasNext() {
-    return state.head != null;
+    return peek() != null;
   }
 
-  public Event peek() {
-    return state.head;
-  }
-
-  public Event next() {
-    if (state.head != null) {
-      Event next = state.head;
-      state = state.next();
-      return next;
+  public KeyEvent peek() {
+    if (events.isEmpty()) {
+      return match(pending);
     } else {
-      throw new NoSuchElementException();
+      return events.peekFirst();
     }
   }
 
+  public KeyEvent next() {
+    if (events.isEmpty()) {
+      KeyEvent next = match(pending);
+      if (next != null) {
+        events.add(next);
+        pending = Arrays.copyOfRange(pending, next.length(), pending.length);
+      }
+    }
+    return events.removeFirst();
+  }
+
   public int[] clear() {
-    int[] buffer = state.buffer;
-    state = new State(new int[0]);
+    events.clear();
+    int[] buffer = pending;
+    pending = new int[0];
     return buffer;
   }
 
@@ -71,50 +73,10 @@ public class KeyDecoder {
    * @return the buffer chars as a read-only int buffer
    */
   public IntBuffer getBuffer() {
-    return IntBuffer.wrap(state.buffer).asReadOnlyBuffer();
+    return IntBuffer.wrap(pending).asReadOnlyBuffer();
   }
 
-  private class State {
-
-    private final Event head;
-    private final int length;
-    private final int[] buffer;
-
-    private State(int[] buffer) {
-
-      Match match = reduce(buffer);
-
-      //
-      this.head = match != null ? match.event : null;
-      this.length = match != null ? match.size : 0;
-      this.buffer = buffer;
-    }
-
-    State next() {
-      if (head != null) {
-        return new State(Arrays.copyOfRange(buffer, length, buffer.length));
-      } else {
-        return this;
-      }
-    }
-
-    State append(int c) {
-      int[] buffer2 = Arrays.copyOf(buffer, buffer.length + 1);
-      buffer2[buffer.length] = c;
-      return new State(buffer2);
-    }
-  }
-
-  static class Match {
-    final Event event;
-    final int size;
-    public Match(Event event, int size) {
-      this.event = event;
-      this.size = size;
-    }
-  }
-
-  private Match reduce(int[] buffer) {
+  private KeyEvent match(int[] buffer) {
     if (buffer.length > 0) {
       Keymap.Binding candidate = null;
       int prefixes = 0;
@@ -144,7 +106,7 @@ public class KeyDecoder {
       if (candidate == null) {
         if (prefixes == 0) {
           final int c = buffer[0];
-          return new Match(new KeyEvent() {
+          return new KeyEvent() {
             @Override
             public int getAt(int index) throws IndexOutOfBoundsException {
               if (index != 0) {
@@ -160,10 +122,10 @@ public class KeyDecoder {
             public String toString() {
               return "key:" + c;
             }
-          }, 1);
+          };
         }
       } else {
-        return new Match(candidate.event, candidate.seq.length);
+        return candidate.event;
       }
     }
     return null;

@@ -43,7 +43,7 @@ public class Readline {
   private final Keymap keymap;
   private final Device device;
   private final Map<String, Function> functions = new HashMap<>();
-  private final KeyDecoder decoder;
+  private final EventQueue decoder;
   private TtyConnection conn;
   private Consumer<int[]> prevReadHandler;
   private Consumer<Vector> prevSizeHandler;
@@ -58,7 +58,7 @@ public class Readline {
   public Readline(Keymap keymap) {
     this.device = TermInfo.defaultInfo().getDevice("xterm"); // For now use xterm
     this.keymap = keymap;
-    this.decoder = new KeyDecoder(keymap);
+    this.decoder = new EventQueue(keymap);
     this.history = new ArrayList<>();
   }
 
@@ -506,26 +506,10 @@ public class Readline {
       copy3.update(copy2, conn.stdoutHandler(), width);
     }
 
-    private void handle(Event event) {
+    private void handle(KeyEvent event) {
       int width = conn.size().x();
       LineBuffer copy = new LineBuffer(buffer);
-      if (event instanceof KeyEvent) {
-        KeyEvent key = (KeyEvent) event;
-        Runnable handler = handlers.get(key.buffer());
-        if (handler != null) {
-          handler.run();
-        } else {
-          for (int i = 0;i < key.length();i++) {
-            int codePoint = key.getAt(i);
-            try {
-              buffer.insert(codePoint);
-            } catch (IllegalArgumentException e) {
-              conn.stdoutHandler().accept(new int[]{'\007'});
-            }
-          }
-          update(copy, width);
-        }
-      } else {
+      if (event instanceof FunctionEvent) {
         FunctionEvent fname = (FunctionEvent) event;
         Function function = functions.get(fname.name());
         if (function != null) {
@@ -534,6 +518,21 @@ public class Readline {
           System.out.println("Unimplemented function " + fname.name());
         }
         update(copy, width);
+      } else {
+        Runnable handler = handlers.get(event.buffer());
+        if (handler != null) {
+          handler.run();
+        } else {
+          for (int i = 0;i < event.length();i++) {
+            int codePoint = event.getAt(i);
+            try {
+              buffer.insert(codePoint);
+            } catch (IllegalArgumentException e) {
+              conn.stdoutHandler().accept(new int[]{'\007'});
+            }
+          }
+          update(copy, width);
+        }
       }
     }
 

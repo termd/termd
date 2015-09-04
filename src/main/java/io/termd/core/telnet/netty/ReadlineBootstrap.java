@@ -15,12 +15,10 @@
  */
 package io.termd.core.telnet.netty;
 
-import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.term.Capability;
 import io.termd.core.term.Device;
-import io.termd.core.term.Feature;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyConnection;
@@ -100,7 +98,7 @@ public class ReadlineBootstrap {
   public static final Consumer<TtyConnection> READLINE = new Consumer<TtyConnection>() {
     @Override
     public void accept(final TtyConnection conn) {
-      InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
+      InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
       Keymap keymap = new Keymap(inputrc);
       Readline readline = new Readline(keymap);
       readline.install(conn);

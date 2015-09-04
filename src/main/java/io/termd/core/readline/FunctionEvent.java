@@ -21,12 +21,14 @@ package io.termd.core.readline;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class FunctionEvent implements Event {
+class FunctionEvent implements KeyEvent {
 
   private final String name;
+  private final int[] seq;
 
-  public FunctionEvent(String name) {
+  public FunctionEvent(String name, int[] seq) {
     this.name = name;
+    this.seq = seq;
   }
 
   /**
@@ -34,5 +36,18 @@ class FunctionEvent implements Event {
    */
   String name() {
     return name;
+  }
+
+  @Override
+  public int getAt(int index) throws IndexOutOfBoundsException {
+    if (index < 0 || index > seq.length) {
+      throw new IndexOutOfBoundsException("Wrong index: " + index);
+    }
+    return seq[index];
+  }
+
+  @Override
+  public int length() {
+    return seq.length;
   }
 }

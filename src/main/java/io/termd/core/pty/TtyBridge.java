@@ -16,7 +16,6 @@
 
 package io.termd.core.pty;
 
-import io.termd.core.readline.KeyDecoder;
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
 import io.termd.core.tty.TtyConnection;
@@ -71,7 +70,7 @@ public class TtyBridge {
   }
 
   public void readline() {
-    InputStream inputrc = KeyDecoder.class.getResourceAsStream("inputrc");
+    InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
     Keymap keymap = new Keymap(inputrc);
     Readline readline = new Readline(keymap);
     readline.install(conn);

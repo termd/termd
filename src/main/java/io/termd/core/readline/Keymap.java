@@ -47,7 +47,7 @@ public class Keymap {
     InputrcParser handler = new InputrcParser() {
       @Override
       public void bindFunction(final int[] keySequence, final String functionName) {
-        actions.add(new Binding(keySequence, new FunctionEvent(functionName)));
+        actions.add(new Binding(keySequence, new FunctionEvent(functionName, keySequence)));
       }
     };
     InputrcParser.parse(inputrc, handler);
@@ -56,7 +56,7 @@ public class Keymap {
 
   static class Binding {
     final int[] seq;
-    final Event event;
+    final KeyEvent event;
     public Binding(KeyEvent event) {
       this.seq = new int[event.length()];
       for (int i = 0;i < seq.length;i++) {
@@ -64,7 +64,7 @@ public class Keymap {
       }
       this.event = event;
     }
-    public Binding(int[] seq, Event event) {
+    public Binding(int[] seq, KeyEvent event) {
       this.seq = seq;
       this.event = event;
     }

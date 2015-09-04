@@ -19,9 +19,11 @@ package io.termd.core.readline;
 import java.nio.IntBuffer;
 
 /**
+ * An event.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface KeyEvent extends Event {
+interface KeyEvent {
 
   default IntBuffer buffer() {
     int length = length();
@@ -36,5 +38,4 @@ interface KeyEvent extends Event {
   int getAt(int index) throws IndexOutOfBoundsException;
 
   int length();
-
 }
