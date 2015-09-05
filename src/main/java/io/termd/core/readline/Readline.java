@@ -110,18 +110,6 @@ public class Readline {
   }
 
   /**
-   * Schedule delivery of pending data in the buffer.
-   */
-  public void schedulePending() {
-    if (interaction == null) {
-      throw new IllegalStateException("No interaction!");
-    }
-    if (decoder.hasNext()) {
-      interaction.conn.schedule(Readline.this::deliver);
-    }
-  }
-
-  /**
    * Read a line until a request can be processed.
    *
    * @param requestHandler the requestHandler
@@ -133,25 +121,44 @@ public class Readline {
     interaction = new Interaction(conn, prompt, requestHandler, completionHandler);
     interaction.install();
     conn.write(prompt);
-    schedulePending();
+    schedulePendingEvent();
   }
 
+  /**
+   * Schedule delivery of pending events in the event queue.
+   */
+  public void schedulePendingEvent() {
+    if (interaction == null) {
+      throw new IllegalStateException("No interaction!");
+    }
+    if (decoder.hasNext()) {
+      interaction.conn.schedule(Readline.this::deliver);
+    }
+  }
+
+  /**
+   * Queue a {@link TtyEvent}.
+   *
+   * @param event the event
+   * @param codePoint the code point that triggered this event
+   * @return this object
+   */
   public Readline queueEvent(TtyEvent event, int codePoint) {
     decoder.append(new FunctionEvent(event.name(), new int[]{codePoint}));
     return this;
   }
 
-  public Readline queueCodePoints(int[] codePoints) {
+  public Readline queueEvent(int[] codePoints) {
     decoder.append(codePoints);
     return this;
   }
 
-  public boolean hasCodePoints() {
+  public boolean hasEvent() {
     return decoder.hasNext();
   }
 
-  public int[] nextCodePoints() {
-    return decoder.next().buffer().array();
+  public KeyEvent nextEvent() {
+    return decoder.next();
   }
 
   public class Interaction {
@@ -304,7 +311,7 @@ public class Readline {
                   // Update status
                   completing = false;
                   // Schedule a delivery of pending data
-                  schedulePending();
+                  schedulePendingEvent();
                   break;
                 }
                 // Try again
@@ -478,7 +485,7 @@ public class Readline {
           handler.run();
         } else {
           for (int i = 0;i < event.length();i++) {
-            int codePoint = event.getAt(i);
+            int codePoint = event.getCodePointAt(i);
             try {
               buffer.insert(codePoint);
             } catch (IllegalArgumentException e) {

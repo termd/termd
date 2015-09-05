@@ -60,7 +60,7 @@ public class Keymap {
     public Binding(KeyEvent event) {
       this.seq = new int[event.length()];
       for (int i = 0;i < seq.length;i++) {
-        seq[i] = event.getAt(i);
+        seq[i] = event.getCodePointAt(i);
       }
       this.event = event;
     }

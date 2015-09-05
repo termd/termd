@@ -113,7 +113,7 @@ public class EventQueue {
           final int c = buffer[0];
           return new KeyEvent() {
             @Override
-            public int getAt(int index) throws IndexOutOfBoundsException {
+            public int getCodePointAt(int index) throws IndexOutOfBoundsException {
               if (index != 0) {
                 throw new IndexOutOfBoundsException("Wrong index " + index);
               }

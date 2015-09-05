@@ -77,7 +77,7 @@ enum Keys implements KeyEvent {
 
 
   @Override
-  public int getAt(int index) {
+  public int getCodePointAt(int index) {
     return sequence[index];
   }
 

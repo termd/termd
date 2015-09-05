@@ -42,7 +42,7 @@ public class EventQueueTest {
     assertTrue(queue.hasNext());
     KeyEvent key = (KeyEvent) queue.next();
     assertEquals(1, key.length());
-    assertEquals('c', key.getAt(0));
+    assertEquals('c', key.getCodePointAt(0));
     assertFalse(queue.hasNext());
   }
 
@@ -53,11 +53,11 @@ public class EventQueueTest {
     assertTrue(queue.append('c').hasNext());
     KeyEvent key = (KeyEvent) queue.next();
     assertEquals(1, key.length());
-    assertEquals('a', key.getAt(0));
+    assertEquals('a', key.getCodePointAt(0));
     assertTrue(queue.hasNext());
     key = (KeyEvent) queue.next();
     assertEquals(1, key.length());
-    assertEquals('c', key.getAt(0));
+    assertEquals('c', key.getCodePointAt(0));
     assertFalse(queue.hasNext());
   }
 
@@ -67,7 +67,7 @@ public class EventQueueTest {
     queue.append(27, 91);
     assertTrue(queue.hasNext());
     assertEquals(1, ((KeyEvent) queue.peek()).length());
-    assertEquals(27, ((KeyEvent) queue.peek()).getAt(0));
+    assertEquals(27, ((KeyEvent) queue.peek()).getCodePointAt(0));
     queue.append(65);
     assertTrue(queue.hasNext());
     assertEquals(Keys.UP, queue.next());
@@ -78,7 +78,7 @@ public class EventQueueTest {
     EventQueue queue = new EventQueue(new Keymap());
     queue.append(27, 91);
     assertEquals(1, ((KeyEvent) queue.peek()).length());
-    assertEquals(27, ((KeyEvent)queue.peek()).getAt(0));
+    assertEquals(27, ((KeyEvent)queue.peek()).getCodePointAt(0));
     assertTrue(queue.hasNext());
     queue.append(66);
     assertTrue(queue.hasNext());
@@ -92,7 +92,7 @@ public class EventQueueTest {
     assertTrue(queue.hasNext());
     KeyEvent key = (KeyEvent) queue.next();
     assertEquals(1, key.length());
-    assertEquals('a', key.getAt(0));
+    assertEquals('a', key.getCodePointAt(0));
   }
 
   @Test

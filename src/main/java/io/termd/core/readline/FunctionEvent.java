@@ -39,7 +39,7 @@ class FunctionEvent implements KeyEvent {
   }
 
   @Override
-  public int getAt(int index) throws IndexOutOfBoundsException {
+  public int getCodePointAt(int index) throws IndexOutOfBoundsException {
     if (index < 0 || index > seq.length) {
       throw new IndexOutOfBoundsException("Wrong index: " + index);
     }
