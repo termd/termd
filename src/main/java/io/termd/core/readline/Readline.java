@@ -176,7 +176,7 @@ public class Readline {
     private int historyIndex = -1;
     private String currentPrompt;
 
-    public Interaction(
+    private Interaction(
         TtyConnection conn,
         String prompt,
         Consumer<String> requestHandler,
