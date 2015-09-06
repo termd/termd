@@ -72,7 +72,7 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
-    term.read(BACKWARD_DELETE_CHAR);
+    term.read(BACKWARD_DELETE_KEY);
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -81,7 +81,7 @@ public class ReadlineTest extends TestBase {
   public void testBackwardDelete() {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
-    term.read(BACKWARD_DELETE_CHAR);
+    term.read(BACKWARD_DELETE_KEY);
     term.assertScreen(
         "% "
     );
@@ -107,8 +107,8 @@ public class ReadlineTest extends TestBase {
     term.readlineFail();
     term.read('A');
     term.read('B');
-    term.read(BACKWARD_CHAR);
-    term.read(BACKWARD_DELETE_CHAR);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_DELETE_KEY);
     term.assertScreen(
         "% B"
     );
@@ -121,7 +121,7 @@ public class ReadlineTest extends TestBase {
     term.readlineFail();
     term.read('\\');
     term.assertScreen("% \\");
-    term.read(BACKWARD_DELETE_CHAR);
+    term.read(BACKWARD_DELETE_KEY);
     term.assertScreen(
         "% "
     );
@@ -132,7 +132,7 @@ public class ReadlineTest extends TestBase {
   public void testBackwardChar() {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -142,7 +142,7 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% A");
     term.assertAt(0, 2);
   }
@@ -151,7 +151,7 @@ public class ReadlineTest extends TestBase {
   public void testForwardChar() {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
-    term.read(FORWARD_CHAR);
+    term.read(FORWARD_KEY);
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
@@ -161,8 +161,8 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readlineFail();
     term.read('A');
-    term.read(BACKWARD_CHAR);
-    term.read(FORWARD_CHAR);
+    term.read(BACKWARD_KEY);
+    term.read(FORWARD_KEY);
     term.assertScreen("% A");
     term.assertAt(0, 3);
   }
@@ -241,27 +241,27 @@ public class ReadlineTest extends TestBase {
     term.readlineComplete();
     term.read('3');
     term.assertScreen("% 0", "% 1", "% 2", "% 3");
-    term.read(UP_CHAR);
+    term.read(UP_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 2");
-    term.read(UP_CHAR);
+    term.read(UP_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 1");
-    term.read(UP_CHAR);
+    term.read(UP_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 0");
-    term.read(UP_CHAR);
+    term.read(UP_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 0");
-    term.read(DOWN_CHAR);
+    term.read(DOWN_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 1");
     term.read('_');
     term.assertScreen("% 0", "% 1", "% 2", "% 1_");
-    term.read(DOWN_CHAR);
+    term.read(DOWN_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 2");
-    term.read(UP_CHAR);
+    term.read(UP_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 1");
-    term.read(DOWN_CHAR);
+    term.read(DOWN_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 2");
-    term.read(DOWN_CHAR);
+    term.read(DOWN_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 3");
-    term.read(DOWN_CHAR);
+    term.read(DOWN_KEY);
     term.assertScreen("% 0", "% 1", "% 2", "% 3");
   }
 
@@ -270,10 +270,10 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readlineComplete();
     term.read('a', 'b', 'c', 'd');
-    term.read(CTRL_A);
+    term.read(CTRL_A_KEY);
     term.assertScreen("% abcd");
     term.assertAt(0, 2);
-    term.read(CTRL_A);
+    term.read(CTRL_A_KEY);
     term.assertScreen("% abcd");
     term.assertAt(0, 2);
   }
@@ -283,13 +283,13 @@ public class ReadlineTest extends TestBase {
     TestTerm term = new TestTerm(this);
     term.readlineComplete();
     term.read('a', 'b', 'c', 'd');
-    term.read(BACKWARD_CHAR);
-    term.read(BACKWARD_CHAR);
-    term.read(BACKWARD_CHAR);
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% abcd");
     term.assertAt(0, 2);
-    term.read(CTRL_E);
+    term.read(CTRL_E_KEY);
     term.assertScreen("% abcd");
     term.assertAt(0, 6);
     term.assertScreen("% abcd");
@@ -354,6 +354,23 @@ public class ReadlineTest extends TestBase {
     term.readline(lines::add);
     term.read(TtyEvent.EOF.codePoint());
     assertEquals(Collections.singletonList(null), lines);
+  }
+
+  @Test
+  public void testDeleteChar() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.read('a', 'b', 'c');
+    term.read(CTRL_D_KEY);
+    term.assertScreen("% abc");
+    term.assertAt(0, 5);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.read(CTRL_D_KEY);
+    term.assertScreen("% ac");
+    term.assertAt(0, 3);
+    term.read('\r');
+    assertEquals("ac", line.get());
   }
 
 /*

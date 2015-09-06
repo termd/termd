@@ -21,7 +21,6 @@ import io.termd.core.util.Helper;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -239,7 +238,7 @@ public class CompletionTest extends TestBase {
       completed.set(true);
     });
     term.read('a', 'b');
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% ab");
     term.assertAt(0, 3);
     term.read('\t');
@@ -264,7 +263,7 @@ public class CompletionTest extends TestBase {
       completed.set(true);
     });
     term.read('a', '\\', '\r', 'b', 'c');
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% a\\", "> bc");
     term.assertAt(1, 3);
     term.read('\t');
@@ -289,7 +288,7 @@ public class CompletionTest extends TestBase {
       completed.set(true);
     });
     term.read('a', '"', '\r', 'b', 'c');
-    term.read(BACKWARD_CHAR);
+    term.read(BACKWARD_KEY);
     term.assertScreen("% a\"", "> bc");
     term.assertAt(1, 3);
     term.read('\t');

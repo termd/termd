@@ -118,7 +118,7 @@ public class LineBufferTest {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', 'b', 'c', 'd');
     buffer.setCursor(2);
-    assertEquals(-1, buffer.deleteAt(-1));
+    assertEquals(1, buffer.delete(-1));
     assertEquals(3, buffer.getSize());
     assertEquals(1, buffer.getCursor());
     assertEquals("acd", buffer.toString());
@@ -129,7 +129,7 @@ public class LineBufferTest {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', 'b', 'c', 'd');
     buffer.setCursor(2);
-    assertEquals(-2, buffer.deleteAt(-2));
+    assertEquals(2, buffer.delete(-2));
     assertEquals(2, buffer.getSize());
     assertEquals(0, buffer.getCursor());
     assertEquals("cd", buffer.toString());
@@ -140,10 +140,43 @@ public class LineBufferTest {
     LineBuffer buffer = new LineBuffer();
     buffer.insert('a', 'b', 'c', 'd');
     buffer.setCursor(2);
-    assertEquals(-2, buffer.deleteAt(-3));
+    assertEquals(2, buffer.delete(-3));
     assertEquals(2, buffer.getSize());
     assertEquals(0, buffer.getCursor());
     assertEquals("cd", buffer.toString());
+  }
+
+  @Test
+  public void deleteAt4() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b', 'c', 'd');
+    buffer.setCursor(2);
+    assertEquals(1, buffer.delete(1));
+    assertEquals(3, buffer.getSize());
+    assertEquals(2, buffer.getCursor());
+    assertEquals("abd", buffer.toString());
+  }
+
+  @Test
+  public void deleteAt5() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b', 'c', 'd');
+    buffer.setCursor(2);
+    assertEquals(2, buffer.delete(2));
+    assertEquals(2, buffer.getSize());
+    assertEquals(2, buffer.getCursor());
+    assertEquals("ab", buffer.toString());
+  }
+
+  @Test
+  public void deleteAt6() {
+    LineBuffer buffer = new LineBuffer();
+    buffer.insert('a', 'b', 'c', 'd');
+    buffer.setCursor(2);
+    assertEquals(2, buffer.delete(3));
+    assertEquals(2, buffer.getSize());
+    assertEquals(2, buffer.getCursor());
+    assertEquals("ab", buffer.toString());
   }
 
   @Test

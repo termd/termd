@@ -22,15 +22,15 @@ import io.termd.core.readline.Readline;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BackwardDeleteChar implements Function {
+public class DeleteChar implements Function {
 
   @Override
   public String name() {
-    return "backward-delete-char";
+    return "delete-char";
   }
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.buffer().delete(-1);
+    interaction.buffer().delete(1);
   }
 }

@@ -19,6 +19,7 @@ package io.termd.core.readline;
 import io.termd.core.readline.functions.BackwardChar;
 import io.termd.core.readline.functions.BackwardDeleteChar;
 import io.termd.core.readline.functions.BeginningOfLine;
+import io.termd.core.readline.functions.DeleteChar;
 import io.termd.core.readline.functions.EndOfLine;
 import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.readline.functions.NextHistory;
@@ -247,6 +248,7 @@ class TestTerm {
     readline.addFunction(new NextHistory());
     readline.addFunction(new BeginningOfLine());
     readline.addFunction(new EndOfLine());
+    readline.addFunction(new DeleteChar());
   }
 
   public void readlineFail() {

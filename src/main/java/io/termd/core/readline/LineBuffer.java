@@ -121,15 +121,28 @@ public class LineBuffer implements Iterable<Integer> {
     return this;
   }
 
-  public int deleteAt(int delta) {
+  /**
+   * Delete a specified number of chars relative to the current cursor position:
+   * <ul>
+   *   <li>a positive value deletes the range {@literal [cursor,cursor + delta]}</li>
+   *   <li>a negative value deletes the range {@literal [cursor + delta - 1,cursor - 1]}</li>
+   * </ul>
+   *
+   * @param delta the number of chars to delete
+   * @return the number of delete chars
+   */
+  public int delete(int delta) {
     if (delta > 0) {
-      throw new UnsupportedOperationException();
+      delta = Math.min(delta, size - cursor);
+      System.arraycopy(data, cursor + delta, data, cursor, size - cursor + delta);
+      size -= delta;
+      return delta;
     } else if (delta < 0) {
       delta = - Math.min(- delta, cursor);
       System.arraycopy(data, cursor, data, cursor + delta, size - cursor);
       size += delta;
       cursor += delta;
-      return delta;
+      return - delta;
     } else {
       return 0;
     }

@@ -8,3 +8,4 @@
 "\eb":backward-word
 "\C-e":end-of-line
 "\C-a":beginning-of-line
+"\C-D":delete-char
