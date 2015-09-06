@@ -18,7 +18,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -166,7 +165,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
                   count = 1;
                   break;
                 case 1:
-                  assertEquals(TtyEvent.EOT, event);
+                  assertEquals(TtyEvent.EOF, event);
                   count = 2;
                   break;
                 case 2:

@@ -21,10 +21,22 @@ package io.termd.core.tty;
  */
 public enum TtyEvent {
 
-  EOT,
+  INTR('C' - 64),
 
-  INTR,
+  EOF('D' - 64),
 
-  SUSP
+  SUSP('Z' - 64);
 
+  final int codePoint;
+
+  TtyEvent(int codePoint) {
+    this.codePoint = codePoint;
+  }
+
+  /**
+   * @return the default char associated with this event
+   */
+  public int codePoint() {
+    return codePoint;
+  }
 }

@@ -2,14 +2,11 @@ package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.TtyEvent;
-import io.termd.core.util.Vector;
-import io.termd.core.util.Helper;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -346,8 +343,8 @@ public class ReadlineTest extends TestBase {
     term.read('\r');
     assertEquals("", line.get());
     assertEquals(Collections.emptyList(), events);
-    term.eventHandler.accept(TtyEvent.EOT, 4);
-    assertEquals(Collections.singletonList(TtyEvent.EOT), events);
+    term.eventHandler.accept(TtyEvent.EOF, 4);
+    assertEquals(Collections.singletonList(TtyEvent.EOF), events);
   }
 
 /*
