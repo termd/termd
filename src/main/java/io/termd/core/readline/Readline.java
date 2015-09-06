@@ -472,27 +472,28 @@ public class Readline {
     private void handle(KeyEvent event) {
       int width = conn.size().x();
       LineBuffer copy = new LineBuffer(buffer);
-      if (event.length() == 1 && event.getCodePointAt(0) == 4 && buffer.getSize() == 0) {
-        // Specific behavior for Ctrl-D with empty line
-        end(null);
-        return;
-      }
-      if (event instanceof FunctionEvent) {
-        FunctionEvent fname = (FunctionEvent) event;
-        // Todo : bind ^D to exit shell somehow ?
-        if (fname.name().equals(TtyEvent.INTR.name())) {
+      if (event.length() == 1) {
+        if (event.getCodePointAt(0) == 4 && buffer.getSize() == 0) {
+          // Specific behavior for Ctrl-D with empty line
+          end(null);
+          return;
+        } else if (event.getCodePointAt(0) == 3) {
+          // Specific behavior Ctrl-C
           interaction = new Interaction(conn, interaction.prompt, interaction.requestHandler, interaction.completionHandler);
           conn.stdoutHandler().accept(new int[]{'\n'});
           conn.write(interaction.prompt);
-        } else {
-          Function function = functions.get(fname.name());
-          if (function != null) {
-            function.apply(this);
-          } else {
-            System.out.println("Unimplemented function " + fname.name());
-          }
-          update(copy, width);
+          return;
         }
+      }
+      if (event instanceof FunctionEvent) {
+        FunctionEvent fname = (FunctionEvent) event;
+        Function function = functions.get(fname.name());
+        if (function != null) {
+          function.apply(this);
+        } else {
+          System.out.println("Unimplemented function " + fname.name());
+        }
+        update(copy, width);
       } else {
         Runnable handler = handlers.get(event.buffer());
         if (handler != null) {
@@ -589,10 +590,7 @@ public class Readline {
         }
         size = dim;
       });
-      conn.setEventHandler((event,cp) -> {
-        decoder.append(new FunctionEvent(event.name(), new int[]{cp}));
-        deliver();
-      });
+      conn.setEventHandler(null);
     }
   }
 }

@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class TestBase {
 
   protected static final int[] CTRL_A_KEY = { 1 };
+  protected static final int[] CTRL_C_KEY = { 3 };
   protected static final int[] CTRL_D_KEY = { 4 };
   protected static final int[] CTRL_E_KEY = { 5 };
   protected static final int[] UP_KEY = { 27, '[', 'A' };
