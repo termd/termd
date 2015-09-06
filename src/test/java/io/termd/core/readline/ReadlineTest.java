@@ -347,6 +347,15 @@ public class ReadlineTest extends TestBase {
     assertEquals(Collections.singletonList(TtyEvent.EOF), events);
   }
 
+  @Test
+  public void testEOF() {
+    TestTerm term = new TestTerm(this);
+    LinkedList<String> lines = new LinkedList<>();
+    term.readline(lines::add);
+    term.read(TtyEvent.EOF.codePoint());
+    assertEquals(Collections.singletonList(null), lines);
+  }
+
 /*
 
   @Test

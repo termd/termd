@@ -229,11 +229,7 @@ public class Readline {
           history.add(0, hist.stream().mapToInt(Integer::intValue).toArray());
           parsed.buffer.clear();
           conn.write("\n");
-          conn.setStdinHandler(prevReadHandler);
-          conn.setSizeHandler(prevSizeHandler);
-          conn.setEventHandler(prevEventHandler);
-          interaction = null;
-          requestHandler.accept(raw.toString());
+          end(raw.toString());
         }
       }
     }
@@ -460,9 +456,27 @@ public class Readline {
       copy3.update(copy2, conn.stdoutHandler(), width);
     }
 
+    /**
+     * End the current interaction with a callback.
+     *
+     * @param s the
+     */
+    private void end(String s) {
+      conn.setStdinHandler(prevReadHandler);
+      conn.setSizeHandler(prevSizeHandler);
+      conn.setEventHandler(prevEventHandler);
+      interaction = null;
+      requestHandler.accept(s);
+    }
+
     private void handle(KeyEvent event) {
       int width = conn.size().x();
       LineBuffer copy = new LineBuffer(buffer);
+      if (event.length() == 1 && event.getCodePointAt(0) == 4 && buffer.getSize() == 0) {
+        // Specific behavior for Ctrl-D with empty line
+        end(null);
+        return;
+      }
       if (event instanceof FunctionEvent) {
         FunctionEvent fname = (FunctionEvent) event;
         // Todo : bind ^D to exit shell somehow ?
