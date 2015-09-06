@@ -146,7 +146,8 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   @Override
   public void close() {
-    // Should we call the close handler ? there is no close handler on sockjs socket
-    //socket.close(); //TODO
+    if (closeHandler != null) {
+      closeHandler.accept(null);
+    }
   }
 }
