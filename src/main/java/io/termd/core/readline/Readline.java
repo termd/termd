@@ -136,18 +136,6 @@ public class Readline {
     }
   }
 
-  /**
-   * Queue a {@link TtyEvent}.
-   *
-   * @param event the event
-   * @param codePoint the code point that triggered this event
-   * @return this object
-   */
-  public Readline queueEvent(TtyEvent event, int codePoint) {
-    decoder.append(new FunctionEvent(event.name(), new int[]{codePoint}));
-    return this;
-  }
-
   public Readline queueEvent(int[] codePoints) {
     decoder.append(codePoints);
     return this;
