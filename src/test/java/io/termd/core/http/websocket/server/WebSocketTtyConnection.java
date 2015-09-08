@@ -44,7 +44,9 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
 
   @Override
   protected void write(byte[] buffer) {
-    sendBinary(buffer, webSocketChannel);
+    if (isOpen()) {
+      sendBinary(buffer, webSocketChannel);
+    }
     readonlyChannels.forEach((wsChannel) -> sendBinary(buffer, wsChannel));
   }
 
