@@ -25,11 +25,14 @@ import io.undertow.websockets.WebSocketConnectionCallback;
 import io.undertow.websockets.WebSocketProtocolHandshakeHandler;
 import io.undertow.websockets.core.CloseMessage;
 import io.undertow.websockets.core.WebSockets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -38,15 +41,19 @@ import java.util.function.Consumer;
 */
 class Term {
 
-  private TermServer termServer;
+  private Logger log = LoggerFactory.getLogger(Term.class);
+
   final String context;
+  private Runnable onDestroy;
   final Set<Consumer<TaskStatusUpdateEvent>> statusUpdateListeners = new HashSet<>();
   private WebSocketTtyConnection webSocketTtyConnection;
   private boolean activeCommand;
+  private Executor executor;
 
-  public Term(TermServer termServer, String context) {
-    this.termServer = termServer;
+  public Term(TermServer termServer, String context, Runnable onDestroy, Executor executor) {
     this.context = context;
+    this.onDestroy = onDestroy;
+    this.executor = executor;
   }
 
   public void addStatusUpdateListener(Consumer<TaskStatusUpdateEvent> statusUpdateListener) {
@@ -75,21 +82,21 @@ class Term {
       activeCommand = true;
     }
     for (Consumer<TaskStatusUpdateEvent> statusUpdateListener : statusUpdateListeners) {
-      termServer.log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, event.getTaskId(), event.getNewStatus());
+      log.debug("Notifying listener {} in task {} with new status {}", statusUpdateListener, event.getTaskId(), event.getNewStatus());
       statusUpdateListener.accept(event);
     }
   }
 
   private void destroyIfInactiveAndDisconnected() {
     if (!activeCommand && !webSocketTtyConnection.isOpen()) {
-      termServer.terms.remove(context);
+      onDestroy.run();
     }
   }
 
   synchronized HttpHandler getWebSocketHandler() {
     WebSocketConnectionCallback onWebSocketConnected = (exchange, webSocketChannel) -> {
       if (webSocketTtyConnection == null) {
-        webSocketTtyConnection = new WebSocketTtyConnection(webSocketChannel, termServer.executor);
+        webSocketTtyConnection = new WebSocketTtyConnection(webSocketChannel, executor);
         webSocketChannel.addCloseTask((task) -> {webSocketTtyConnection.removeWebSocketChannel(); destroyIfInactiveAndDisconnected();});
         TtyBridge ttyBridge = new TtyBridge(webSocketTtyConnection);
         ttyBridge
@@ -120,12 +127,12 @@ class Term {
           String message = objectMapper.writeValueAsString(statusUpdate);
           WebSockets.sendText(message, webSocketChannel, null);
         } catch (JsonProcessingException e) {
-          termServer.log.error("Cannot write object to JSON", e);
+          log.error("Cannot write object to JSON", e);
           String errorMessage = "Cannot write object to JSON: " + e.getMessage();
           WebSockets.sendClose(CloseMessage.UNEXPECTED_ERROR, errorMessage, webSocketChannel, null);
         }
       };
-      termServer.log.debug("Registering new status update listener {}.", statusUpdateListener);
+      log.debug("Registering new status update listener {}.", statusUpdateListener);
       addStatusUpdateListener(statusUpdateListener);
       webSocketChannel.addCloseTask((task) -> removeStatusUpdateListener(statusUpdateListener));
     };
