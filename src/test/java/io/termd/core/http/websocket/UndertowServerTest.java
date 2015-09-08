@@ -39,7 +39,7 @@ import java.util.function.Consumer;
  */
 public class UndertowServerTest {
 
-  private static final String TEST_COMMAND = "java -cp ./target/test-classes/ " + MockProcess.class.getName() + " 1 100";
+  private static final String TEST_COMMAND = "java -cp ./target/test-classes/ " + MockProcess.class.getName() + " 1 500";
 
   TermServer termServer;
 
