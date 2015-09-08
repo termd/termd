@@ -77,6 +77,7 @@ class Term {
   void notifyStatusUpdated(TaskStatusUpdateEvent event) {
     if (event.getNewStatus().isFinal()) {
       activeCommand = false;
+      log.trace("Command [context:{} taskId:{}] execution completed with status {}.", event.getContext(), event.getTaskId(), event.getNewStatus());
       destroyIfInactiveAndDisconnected();
     } else {
       activeCommand = true;
@@ -89,6 +90,7 @@ class Term {
 
   private void destroyIfInactiveAndDisconnected() {
     if (!activeCommand && !webSocketTtyConnection.isOpen()) {
+      log.debug("Destroying Term as there is no running command and no active connection.");
       onDestroy.run();
     }
   }
