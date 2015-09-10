@@ -16,8 +16,10 @@
 
 package io.termd.core.ssh;
 
-import org.apache.sshd.SshServer;
+import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+
+import java.io.File;
 
 /**
  * Readline bootstrap for SSH.
@@ -26,12 +28,13 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
  */
 public class ReadlineBootstrap {
 
-  public static void main(String[] args) throws Exception {
+  public synchronized static void main(String[] args) throws Exception {
     SshServer sshd = SshServer.setUpDefaultServer();
     sshd.setPort(5000);
-    sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
+    sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
     sshd.setPasswordAuthenticator((username, password, session) -> true);
     sshd.setShellFactory(() -> new SshTtyConnection(io.termd.core.telnet.netty.ReadlineBootstrap.READLINE));
     sshd.start();
+    ReadlineBootstrap.class.wait();
   }
 }

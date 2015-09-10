@@ -20,7 +20,6 @@ import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import io.termd.core.telnet.TelnetTtyConnection;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
 /**
@@ -30,10 +29,9 @@ import java.util.function.Supplier;
  */
 public class ReadlineBootstrap {
 
-  public static void main(String[] args) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
+  public synchronized static void main(String[] args) throws Exception {
     new ReadlineBootstrap("localhost", 4000).start();
-    latch.await();
+    ReadlineBootstrap.class.wait();
   }
 
   private final TelnetBootstrap telnet;

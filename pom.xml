@@ -32,7 +32,7 @@
   </scm>
 
   <properties>
-    <version.org.slf4j>1.7.7</version.org.slf4j>
+    <version.org.slf4j>1.7.12</version.org.slf4j>
 
     <!-- maven-compiler-plugin -->
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -76,7 +76,7 @@
     <dependency>
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-core</artifactId>
-      <version>0.11.0</version>
+      <version>1.0.0</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -86,27 +86,21 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.sshd</groupId>
-      <artifactId>sshd-pam</artifactId>
-      <version>0.11.0</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.49</version>
+      <version>1.52</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.49</version>
+      <version>1.52</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-core</artifactId>
-      <version>2.0.7</version>
+      <version>2.0.9</version>
       <optional>true</optional>
     </dependency>
 
