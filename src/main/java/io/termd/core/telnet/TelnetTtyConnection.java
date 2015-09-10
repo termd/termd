@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetTtyConnection extends TelnetHandler implements TtyConnection {
+public final class TelnetTtyConnection extends TelnetHandler implements TtyConnection {
 
   private Vector size;
   private String terminalType;
@@ -48,8 +48,10 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, data -> conn.write(data));
   private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
+  private final Consumer<TtyConnection> handler;
 
-  public TelnetTtyConnection() {
+  public TelnetTtyConnection(Consumer<TtyConnection> handler) {
+    this.handler = handler;
   }
 
   @Override
@@ -93,6 +95,9 @@ public class TelnetTtyConnection extends TelnetHandler implements TtyConnection 
 
     // Get some info about user
     conn.writeDoOption(Option.TERMINAL_TYPE);
+
+    //
+    handler.accept(this);
   }
 
   @Override

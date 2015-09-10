@@ -1,7 +1,6 @@
 package io.termd.core.tty;
 
 import io.termd.core.util.Helper;
-import io.termd.core.telnet.TelnetConnection;
 import io.termd.core.telnet.TelnetHandler;
 import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.TelnetTestBase;
@@ -17,7 +16,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -66,14 +64,10 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
       @Override
       public TelnetHandler get() {
         connectionCount.incrementAndGet();
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            requestCount.incrementAndGet();
-            stdoutHandler().accept(new int[]{'%', ' '});
-          }
-        };
+        return new TelnetTtyConnection(conn -> {
+          requestCount.incrementAndGet();
+          conn.stdoutHandler().accept(new int[]{'%', ' '});
+        });
       }
     });
     assertConnect();
@@ -88,16 +82,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     server(new Supplier<TelnetHandler>() {
       @Override
       public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            setStdinHandler(data -> {
-              queue.add(data);
-              stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
-            });
-          }
-        };
+        return new TelnetTtyConnection(conn -> {
+          conn.setStdinHandler(data -> {
+            queue.add(data);
+            conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
+          });
+        });
       }
     });
     assertConnect();
@@ -112,33 +102,29 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     server(new Supplier<TelnetHandler>() {
       @Override
       public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          StringBuilder buffer = new StringBuilder();
-          int count = 0;
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            setStdinHandler(event -> Helper.appendTo(event, buffer));
-            setEventHandler((event,cp) -> {
-              if (event == TtyEvent.INTR) {
-                switch (count) {
-                  case 0:
-                    assertEquals("hello", buffer.toString());
-                    buffer.setLength(0);
-                    count = 1;
-                    break;
-                  case 1:
-                    assertEquals("bye", buffer.toString());
-                    count = 2;
-                    testComplete();
-                    break;
-                  default:
-                    fail("Not expected");
-                }
+        StringBuilder buffer = new StringBuilder();
+        AtomicInteger count = new AtomicInteger();
+        return new TelnetTtyConnection(conn -> {
+          conn.setStdinHandler(event -> Helper.appendTo(event, buffer));
+          conn.setEventHandler((event, cp) -> {
+            if (event == TtyEvent.INTR) {
+              switch (count.get()) {
+                case 0:
+                  assertEquals("hello", buffer.toString());
+                  buffer.setLength(0);
+                  count.set(1);
+                  break;
+                case 1:
+                  assertEquals("bye", buffer.toString());
+                  count.set(2);
+                  testComplete();
+                  break;
+                default:
+                  fail("Not expected");
               }
-            });
-          }
-        };
+            }
+          });
+        });
       }
     });
     assertConnect();
@@ -151,34 +137,30 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     server(new Supplier<TelnetHandler>() {
       @Override
       public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          StringBuilder buffer = new StringBuilder();
-          int count = 0;
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            setStdinHandler(event -> Helper.appendTo(event, buffer));
-            setEventHandler((event,cp) -> {
-              switch (count) {
-                case 0:
-                  assertEquals(TtyEvent.INTR, event);
-                  count = 1;
-                  break;
-                case 1:
-                  assertEquals(TtyEvent.EOF, event);
-                  count = 2;
-                  break;
-                case 2:
-                  assertEquals(TtyEvent.SUSP, event);
-                  count = 3;
-                  testComplete();
-                  break;
-                default:
-                  fail("Not expected");
-              }
-            });
-          }
-        };
+        StringBuilder buffer = new StringBuilder();
+        AtomicInteger count = new AtomicInteger();
+        return new TelnetTtyConnection(conn -> {
+          conn.setStdinHandler(event -> Helper.appendTo(event, buffer));
+          conn.setEventHandler((event, cp) -> {
+            switch (count.get()) {
+              case 0:
+                assertEquals(TtyEvent.INTR, event);
+                count.set(1);
+                break;
+              case 1:
+                assertEquals(TtyEvent.EOF, event);
+                count.set(2);
+                break;
+              case 2:
+                assertEquals(TtyEvent.SUSP, event);
+                count.set(3);
+                testComplete();
+                break;
+              default:
+                fail("Not expected");
+            }
+          });
+        });
       }
     });
     assertConnect();
@@ -228,34 +210,23 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     server(new Supplier<TelnetHandler>() {
       @Override
       public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            setEventHandler(new BiConsumer<TtyEvent, Integer>() {
-
-              AtomicInteger count = new AtomicInteger();
-
-              @Override
-              public void accept(TtyEvent event, Integer cp) {
-                setStdinHandler(codePoints -> {
-                  switch (count.getAndIncrement()) {
-                    case 0:
-                      assertEquals("hello", Helper.fromCodePoints(codePoints));
-                      latch.countDown();
-                      break;
-                    case 1:
-                      assertEquals("bye", Helper.fromCodePoints(codePoints));
-                      testComplete();
-                      break;
-                    default:
-                      fail("Too many requests");
-                  }
-                });
-              }
-            });
-          }
-        };
+        AtomicInteger count = new AtomicInteger();
+        return new TelnetTtyConnection(conn -> {
+          conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
+            switch (count.getAndIncrement()) {
+              case 0:
+                assertEquals("hello", Helper.fromCodePoints(codePoints));
+                latch.countDown();
+                break;
+              case 1:
+                assertEquals("bye", Helper.fromCodePoints(codePoints));
+                testComplete();
+                break;
+              default:
+                fail("Too many requests");
+            }
+          }));
+        });
       }
     });
     assertConnect();
@@ -268,21 +239,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
   @Test
   public void testTerminalType() throws Exception {
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            setTermHandler(event -> {
-              assertEquals("xterm", event);
-              testComplete();
-            });
-            super.onOpen(conn);
-          }
-        };
-      }
-    });
+    server(() -> new TelnetTtyConnection(conn -> {
+      conn.setTermHandler(event -> {
+        assertEquals("xterm", event);
+        testComplete();
+      });
+    }));
     term = "xterm";
     assertConnect();
     assertWrite("bye");
@@ -291,23 +253,14 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
   @Test
   public void testConnectionClose() throws Exception {
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            setCloseHandler(v -> {
-              testComplete();
-            });
-            setStdinHandler(text -> {
-              close();
-            });
-            super.onOpen(conn);
-          }
-        };
-      }
-    });
+    server(() -> new TelnetTtyConnection(conn -> {
+      conn.setCloseHandler(v -> {
+        testComplete();
+      });
+      conn.setStdinHandler(text -> {
+        conn.close();
+      });
+    }));
     assertConnect();
     assertWrite("bye");
     await();

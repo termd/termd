@@ -171,17 +171,6 @@ public class ReadlineBootstrap {
   };
 
   public void start() {
-    telnet.start(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            READLINE.accept(this);
-          }
-        };
-      }
-    });
+    telnet.start(() -> new TelnetTtyConnection(READLINE));
   }
 }

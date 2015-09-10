@@ -22,34 +22,34 @@ public abstract class TelnetTermTest extends TelnetTestBase {
     final CountDownLatch latch2 = new CountDownLatch(1);
     server(() -> {
       final AtomicInteger count = new AtomicInteger();
-      final TelnetTtyConnection connection = new TelnetTtyConnection();
-      connection.setSizeHandler(size -> {
-        switch (count.getAndIncrement()) {
-          case 0:
-            assertEquals(20, size.x());
-            assertEquals(10, size.y());
-            latch1.countDown();
-            break;
-          case 1:
-            assertEquals(80, size.x());
-            assertEquals(24, size.y());
-            latch2.countDown();
-            break;
-          case 2:
-            assertEquals(180, size.x());
-            assertEquals(160, size.y());
-            connection.setSizeHandler(null);
-            connection.setSizeHandler(size1 -> {
-              assertEquals(180, size1.x());
-              assertEquals(160, size1.y());
-              testComplete();
-            });
-            break;
-          default:
-            fail("Was not expecting that");
-        }
+      return new TelnetTtyConnection(conn -> {
+        conn.setSizeHandler(size -> {
+          switch (count.getAndIncrement()) {
+            case 0:
+              assertEquals(20, size.x());
+              assertEquals(10, size.y());
+              latch1.countDown();
+              break;
+            case 1:
+              assertEquals(80, size.x());
+              assertEquals(24, size.y());
+              latch2.countDown();
+              break;
+            case 2:
+              assertEquals(180, size.x());
+              assertEquals(160, size.y());
+              conn.setSizeHandler(null);
+              conn.setSizeHandler(size1 -> {
+                assertEquals(180, size1.x());
+                assertEquals(160, size1.y());
+                testComplete();
+              });
+              break;
+            default:
+              fail("Was not expecting that");
+          }
+        });
       });
-      return connection;
     });
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
     final AtomicReference<OutputStream> out = new AtomicReference<>();

@@ -45,17 +45,6 @@ public class ReadlineBootstrap {
   }
 
   public void start() {
-    telnet.start(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        return new TelnetTtyConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            io.termd.core.telnet.netty.ReadlineBootstrap.READLINE.accept(this);
-          }
-        };
-      }
-    });
+    telnet.start(() -> new TelnetTtyConnection(io.termd.core.telnet.netty.ReadlineBootstrap.READLINE));
   }
 }
