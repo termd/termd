@@ -28,9 +28,16 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -39,12 +46,15 @@ import java.util.function.Supplier;
 public class NettyTelnetBootstrap extends TelnetBootstrap {
 
   public static void main(String[] args) throws Exception {
-    new NettyTelnetBootstrap("localhost", 4000).start();
+    CountDownLatch latch = new CountDownLatch(1);
+    new NettyTelnetBootstrap("localhost", 4000).start(() -> DEBUG_HANDLER).get();
+    latch.await();
   }
 
-  protected final String host;
-  protected final int port;
-  protected Channel channel;
+  private final String host;
+  private final int port;
+  private EventLoopGroup bossGroup;
+  private EventLoopGroup workerGroup;
 
   public NettyTelnetBootstrap(String host, int port) {
     this.host = host;
@@ -52,10 +62,10 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(final Supplier<TelnetHandler> factory) {
+  public void start(Supplier<TelnetHandler> factory, Consumer<Throwable> doneHandler) {
 
-    EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-    EventLoopGroup workerGroup = new NioEventLoopGroup();
+    bossGroup = new NioEventLoopGroup(1);
+    workerGroup = new NioEventLoopGroup();
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup)
@@ -71,19 +81,25 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
           }
         });
 
-    try {
-      ChannelFuture f = b.bind(port).sync();
-      f.channel().closeFuture().sync();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } finally {
-      bossGroup.shutdownGracefully();
-      bossGroup.shutdownGracefully();
-    }
+    ChannelFuture f = b.bind(port);
+    f.addListener(abc -> {
+      if (abc.isSuccess()) {
+        doneHandler.accept(null);
+      } else {
+        doneHandler.accept(abc.cause());
+      }
+    });
   }
 
   @Override
-  public void stop() {
-    throw new UnsupportedOperationException("todo");
+  public void stop(Consumer<Void> doneHandler) {
+    AtomicInteger count = new AtomicInteger(2);
+    GenericFutureListener<Future<Object>> adapter = (Future<Object> future) -> {
+      if (count.decrementAndGet() == 0) {
+        doneHandler.accept(null);
+      }
+    };
+    bossGroup.shutdownGracefully().addListener(adapter);
+    workerGroup.shutdownGracefully().addListener(adapter);
   }
 }

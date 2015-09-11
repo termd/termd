@@ -18,11 +18,14 @@ package io.termd.core.telnet.vertx;
 
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -32,7 +35,7 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
 
   public static void main(String[] args) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    new VertxTelnetBootstrap("localhost", 4000).start();
+    new VertxTelnetBootstrap("localhost", 4000).start(() -> DEBUG_HANDLER).get();
     latch.await();
   }
 
@@ -63,18 +66,24 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void start(Supplier<TelnetHandler> factory) {
+  public void start(Supplier<TelnetHandler> factory, Consumer<Throwable> doneHandler) {
     server.connectHandler(new TelnetSocketHandler(vertx, factory));
-    server.listen();
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        doneHandler.accept(null);
+      } else {
+        doneHandler.accept(ar.cause());
+      }
+    });
   }
 
   @Override
-  public void stop() {
-    if (server != null) {
-      server.close();
-    }
+  public void stop(Consumer<Void> doneHandler) {
+    Handler<AsyncResult<Void>> adapter = ar -> doneHandler.accept(null);
     if (closeVertx) {
-      vertx.close();
+      vertx.close(adapter);
+    } else {
+      server.close(adapter);
     }
   }
 }

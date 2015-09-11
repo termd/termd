@@ -23,7 +23,7 @@ import io.vertx.core.net.NetSocket;
 import java.util.function.Supplier;
 
 /**
- * Telnet server integration with Vert.x {@link org.vertx.java.core.net.NetServer}.
+ * Telnet server integration with Vert.x {@link io.vertx.core.net.NetServer}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
