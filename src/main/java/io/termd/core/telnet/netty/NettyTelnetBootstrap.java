@@ -17,6 +17,7 @@
 package io.termd.core.telnet.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -43,6 +44,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
 
   protected final String host;
   protected final int port;
+  protected Channel channel;
 
   public NettyTelnetBootstrap(String host, int port) {
     this.host = host;
@@ -54,8 +56,6 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
 
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     EventLoopGroup workerGroup = new NioEventLoopGroup();
-
-
 
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup)
@@ -80,7 +80,10 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
       bossGroup.shutdownGracefully();
       bossGroup.shutdownGracefully();
     }
+  }
 
-
+  @Override
+  public void stop() {
+    throw new UnsupportedOperationException("todo");
   }
 }

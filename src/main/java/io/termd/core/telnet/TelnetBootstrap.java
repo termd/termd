@@ -85,4 +85,6 @@ public abstract class TelnetBootstrap {
 
   public abstract void start(Supplier<TelnetHandler> factory);
 
+  public abstract void stop();
+
 }

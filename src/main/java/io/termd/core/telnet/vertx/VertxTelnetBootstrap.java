@@ -36,26 +36,47 @@ public class VertxTelnetBootstrap extends TelnetBootstrap {
     latch.await();
   }
 
+  private final boolean closeVertx;
   private final Vertx vertx;
-  private final NetServerOptions options;
+  private NetServer server;
 
-  public VertxTelnetBootstrap(Vertx vertx, NetServerOptions options) {
+  private VertxTelnetBootstrap(Vertx vertx, NetServerOptions options, boolean closeVertx) {
+    this.server = vertx.createNetServer(options);
     this.vertx = vertx;
-    this.options = options;
+    this.closeVertx = closeVertx;
   }
 
-  public VertxTelnetBootstrap(String host, int port) {
-    this(Vertx.vertx(), host, port);
+  public VertxTelnetBootstrap(Vertx vertx, NetServerOptions options) {
+    this(vertx, options, false);
   }
 
   public VertxTelnetBootstrap(Vertx vertx, String host, int port) {
     this(vertx, new NetServerOptions().setHost(host).setPort(port));
   }
 
+  public VertxTelnetBootstrap(String host, int port) {
+    this(new NetServerOptions().setHost(host).setPort(port));
+  }
+
+  public VertxTelnetBootstrap(NetServerOptions options) {
+    this(Vertx.vertx(), options, true);
+  }
+
   @Override
   public void start(Supplier<TelnetHandler> factory) {
-    NetServer server = vertx.createNetServer(options);
     server.connectHandler(new TelnetSocketHandler(vertx, factory));
     server.listen();
   }
+
+  @Override
+  public void stop() {
+    if (server != null) {
+      server.close();
+    }
+    if (closeVertx) {
+      vertx.close();
+    }
+  }
 }
+
+
