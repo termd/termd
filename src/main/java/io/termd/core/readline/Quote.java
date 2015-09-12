@@ -19,7 +19,7 @@ package io.termd.core.readline;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public enum Quote {
+enum Quote {
 
   NONE(null), STRONG((int)'\''), WEAK((int)'"');
 
@@ -28,4 +28,5 @@ public enum Quote {
   Quote(Integer ch) {
     this.ch = ch;
   }
+  
 }

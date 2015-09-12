@@ -185,7 +185,7 @@ public class Readline {
         parsed.accept(j);
       }
       this.buffer.setSize(0);
-      if (parsed.escaped) {
+      if (parsed.escaping) {
         parsed.accept((int) '\r'); // Correct status
         currentPrompt = "> ";
         conn.write("\n> ");
@@ -319,7 +319,7 @@ public class Readline {
                       switch (z) {
                         case '\\':
                         case '"':
-                          if (!a.escaped) {
+                          if (!a.escaping) {
                             Interaction.this.buffer.insert('\\');
                             a.accept('\\');
                           }
@@ -327,7 +327,7 @@ public class Readline {
                           a.accept(z);
                           break;
                         default:
-                          if (a.escaped) {
+                          if (a.escaping) {
                             // Should beep
                           } else {
                             Interaction.this.buffer.insert(z);
@@ -352,7 +352,7 @@ public class Readline {
                       }
                       break;
                     case NONE:
-                      if (a.escaped) {
+                      if (a.escaping) {
                         Interaction.this.buffer.insert(z);
                         a.accept(z);
                       } else {
@@ -379,7 +379,7 @@ public class Readline {
                 if (terminal) {
                   switch (a.quoting) {
                     case WEAK:
-                      if (a.escaped) {
+                      if (a.escaping) {
                         // Do nothing emit bell
                       } else {
                         Interaction.this.buffer.insert('"', ' ');
@@ -393,7 +393,7 @@ public class Readline {
                       a.accept(' ');
                       break;
                     case NONE:
-                      if (a.escaped) {
+                      if (a.escaping) {
                         // Do nothing emit bell
                       } else {
                         Interaction.this.buffer.insert(' ');

@@ -24,40 +24,91 @@ import java.util.function.IntConsumer;
  */
 class ParsedBuffer implements IntConsumer {
 
+
   final LinkedList<Integer> buffer = new LinkedList<>();
-  Quote quoting = Quote.NONE;
-  boolean escaped = false;
-  final Quoter filter = new Quoter();
 
   public void accept(int codePoint) {
-    switch (filter.update(codePoint)) {
-      case UPDATED:
-        Quote next = filter.getQuote();
-        if (next == Quote.NONE) {
-          if (!escaped) {
-            buffer.add(quoting.ch);
-          }
-        } else {
-          buffer.add(next.ch);
-        }
-        quoting = next;
+    switch (update(codePoint)) {
+      case TO_WEAK:
+        buffer.add((int) '"');
         break;
-      case ESC:
-        escaped = true;
+      case TO_STRONG:
+        buffer.add((int) '\'');
+        break;
+      case FROM_WEAK:
+        buffer.add((int) '"');
+        break;
+      case FROM_STRONG:
+        buffer.add((int) '\'');
+        break;
+      case TO_ESC:
         buffer.add((int)'\\');
         break;
-      case CODE_POINT:
-        if (escaped) {
-          if (codePoint != '\r') {
-            buffer.add(codePoint);
-          } else {
-            buffer.removeLast();
-          }
-          escaped = false;
-        } else {
+      case FROM_ESC:
+        if (codePoint != '\r') {
           buffer.add(codePoint);
+        } else {
+          buffer.removeLast();
         }
         break;
+      case CODE_POINT:
+        buffer.add(codePoint);
+        break;
     }
+  }
+
+  Quote quoting = Quote.NONE;
+  boolean escaping = false;
+
+  private QuoteResult update(int code) {
+    if (escaping) {
+      escaping = false;
+      return QuoteResult.FROM_ESC;
+    } else {
+      switch (quoting) {
+        case NONE:
+          switch (code) {
+            case '\'':
+              quoting = Quote.STRONG;
+              return QuoteResult.TO_STRONG;
+            case '"':
+              quoting = Quote.WEAK;
+              return QuoteResult.TO_WEAK;
+            case '\\':
+              escaping = true;
+              return QuoteResult.TO_ESC;
+            default:
+              return QuoteResult.CODE_POINT;
+          }
+        case STRONG:
+          if (code == '\'') {
+            quoting = Quote.NONE;
+            return QuoteResult.FROM_STRONG;
+          } else {
+            return QuoteResult.CODE_POINT;
+          }
+        case WEAK:
+          if (code == '"') {
+            quoting = Quote.NONE;
+            return QuoteResult.FROM_WEAK;
+          } else if (code == '\\') {
+            // Note we don't make the distinction between special chars like " or \ from other chars
+            // that are supposed to not escaped (i.e "\a" is \a and "\$" is $)
+            // this interpretation is not done by termd
+            escaping = true;
+            return QuoteResult.TO_ESC;
+          } else {
+            return QuoteResult.CODE_POINT;
+          }
+        default:
+          throw new AssertionError();
+      }
+    }
+  }
+
+  private enum QuoteResult {
+
+    TO_STRONG, TO_WEAK, FROM_STRONG, FROM_WEAK, TO_ESC, CODE_POINT, FROM_ESC;
+
   }
 }
