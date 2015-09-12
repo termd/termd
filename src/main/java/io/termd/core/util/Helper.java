@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.IntConsumer;
 
 /**
  * Various utils.
@@ -54,15 +55,13 @@ public class Helper {
     return new String(codePoints, 0, codePoints.length);
   }
 
-  public static void appendCodePoints(StringBuilder sb, int[] codePoints) {
-    for (int codePoint : codePoints) {
-      sb.appendCodePoint(codePoint);
-    }
+  public static void appendCodePoints(int[] codePoints, StringBuilder sb) {
+    consumeTo(codePoints, sb::appendCodePoint);
   }
 
-  public static void appendTo(int[] codePoints, StringBuilder sb) {
-    for (int codePoint : codePoints) {
-      sb.appendCodePoint(codePoint);
+  public static void consumeTo(int[] i, IntConsumer consumer) {
+    for (int codePoint : i) {
+      consumer.accept(codePoint);
     }
   }
 
@@ -162,7 +161,7 @@ public class Helper {
 
     int count = 0;
     for (int[] completion : completions) {
-      Helper.appendCodePoints(sb, completion);
+      Helper.appendCodePoints(completion, sb);
       for (int i = completion.length;i < max;i++) {
         sb.append(' ');
       }

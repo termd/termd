@@ -17,6 +17,7 @@
 package io.termd.core.readline.functions;
 
 import io.termd.core.readline.Function;
+import io.termd.core.readline.LineBuffer;
 import io.termd.core.readline.Readline;
 
 /**
@@ -31,6 +32,8 @@ public class BackwardDeleteChar implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.buffer().delete(-1);
+    LineBuffer buf = interaction.buffer().copy();
+    buf.delete(-1);
+    interaction.refresh(buf);
   }
 }

@@ -39,7 +39,7 @@ public class EvalContext {
 
   public EvalContext(String[] parameters, StringBuilder result) {
     this.parameters = parameters;
-    this.result = codePoint -> Helper.appendTo(codePoint, result);
+    this.result = codePoint -> Helper.appendCodePoints(codePoint, result);
   }
 
   public int getParametersLength() {

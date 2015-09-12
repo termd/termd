@@ -28,5 +28,5 @@ enum Quote {
   Quote(Integer ch) {
     this.ch = ch;
   }
-  
+
 }

@@ -24,8 +24,14 @@ import java.util.function.IntConsumer;
  */
 class ParsedBuffer implements IntConsumer {
 
+  public ParsedBuffer() {
+    buffer = new LinkedList<>();
 
-  final LinkedList<Integer> buffer = new LinkedList<>();
+  }
+
+  Quote quoting = Quote.NONE;
+  boolean escaping = false;
+  final LinkedList<Integer> buffer;
 
   public void accept(int codePoint) {
     switch (update(codePoint)) {
@@ -56,9 +62,6 @@ class ParsedBuffer implements IntConsumer {
         break;
     }
   }
-
-  Quote quoting = Quote.NONE;
-  boolean escaping = false;
 
   private QuoteResult update(int code) {
     if (escaping) {

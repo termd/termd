@@ -17,6 +17,7 @@
 package io.termd.core.readline.functions;
 
 import io.termd.core.readline.Function;
+import io.termd.core.readline.LineBuffer;
 import io.termd.core.readline.Readline;
 
 /**
@@ -31,6 +32,8 @@ public class ForwardChar implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.buffer().moveCursor(1);
+    LineBuffer buf = interaction.buffer().copy();
+    buf.moveCursor(1);
+    interaction.refresh(buf);
   }
 }

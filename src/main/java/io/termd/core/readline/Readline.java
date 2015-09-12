@@ -26,10 +26,8 @@ import io.termd.core.util.Helper;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -95,8 +93,9 @@ public class Readline {
   }
 
   private void deliver() {
-    while (decoder.hasNext() && interaction != null && ! interaction.completing) {
-      interaction.handle(decoder.next());
+    while (decoder.hasNext() && interaction != null && !interaction.paused) {
+      KeyEvent next = decoder.next();
+      interaction.handle(next);
     }
   }
 
@@ -151,18 +150,17 @@ public class Readline {
 
   public class Interaction {
 
-    private final TtyConnection conn;
+    final TtyConnection conn;
     private final String prompt;
     private final Consumer<String> requestHandler;
     private final Consumer<Completion> completionHandler;
     private final Map<String, Object> data;
     private final Map<IntBuffer, Runnable> handlers;
-    private boolean completing;
-    private final LinkedList<int[]> lines = new LinkedList<>();
+    private final LineBuffer line = new LineBuffer();
     private final LineBuffer buffer = new LineBuffer();
-    private final ParsedBuffer parsed = new ParsedBuffer();
     private int historyIndex = -1;
     private String currentPrompt;
+    private boolean paused;
 
     private Interaction(
         TtyConnection conn,
@@ -176,272 +174,44 @@ public class Readline {
       this.currentPrompt = prompt;
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
+
+      // Try to have function : for this -> make Function async
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), this::doEnter);
       handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), this::doComplete);
     }
 
     private void doEnter() {
-      for (int j : this.buffer) {
-        parsed.accept(j);
+      line.insert(buffer.toArray());
+      ParsedBuffer pb = new ParsedBuffer();
+      for (int i = 0;i < line.size();i++) {
+        pb.accept(line.getAt(i));
       }
-      this.buffer.setSize(0);
-      if (parsed.escaping) {
-        parsed.accept((int) '\r'); // Correct status
+      this.buffer.clear();
+      if (pb.escaping) {
+        line.delete(-1); // Remove \
         currentPrompt = "> ";
         conn.write("\n> ");
       } else {
-        int[] l = new int[parsed.buffer.size()];
-        for (int index = 0;index < l.length;index++) {
-          l[index] = parsed.buffer.get(index);
-        }
-        parsed.buffer.clear();
-        lines.add(l);
-        if (parsed.quoting == Quote.WEAK || parsed.quoting == Quote.STRONG) {
+        if (pb.quoting == Quote.WEAK || pb.quoting == Quote.STRONG) {
+          line.insert('\n');
           conn.write("\n> ");
           currentPrompt = "> ";
         } else {
-          final StringBuilder raw = new StringBuilder();
-          ArrayList<Integer> hist = new ArrayList<>();
-          for (int index = 0;index < lines.size();index++) {
-            int[] a = lines.get(index);
-            if (index > 0) {
-              raw.append('\n'); // Use \n for processing
-              hist.add((int) '\n');
-            }
-            for (int b : a) {
-              raw.appendCodePoint(b);
-              hist.add(b);
-            }
-          }
-          lines.clear();
-          history.add(0, hist.stream().mapToInt(Integer::intValue).toArray());
-          parsed.buffer.clear();
+          String raw = line.toString();
+          history.add(0, line.toArray());
+          line.clear();
           conn.write("\n");
-          end(raw.toString());
+          end(raw);
         }
       }
     }
 
     private void doComplete() {
       if (completionHandler != null) {
-        Vector dim = size; // Copy ref
-        int index = this.buffer.getCursor();
-
-        //
-        while (index > 0 && this.buffer.getAt(index - 1) != ' ') {
-          index--;
-        }
-
-        // Compute line : need to test full line :-)
-        int linePos = this.buffer.getCursor();
-        ParsedBuffer line_ = new ParsedBuffer();
-        for (int[] l : lines) {
-          for (int j : l) {
-            line_.accept(j);
-          }
-          line_.accept('\n');
-        }
-        for (int i : parsed.buffer) {
-          line_.accept(i);
-        }
-        for (int i : this.buffer) {
-          line_.accept(i);
-        }
-        int[] line = line_.buffer.stream().mapToInt(i -> i).toArray();
-
-        // Compute prefix
-        ParsedBuffer a = new ParsedBuffer();
-        for (int i = index; i < this.buffer.getCursor();i++) {
-          a.accept(this.buffer.getAt(i));
-        }
-
-        completing = true;
-        LineBuffer copy = new LineBuffer(this.buffer);
-        final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
-        completionHandler.accept(new Completion() {
-
-          @Override
-          public int[] line() {
-            return line;
-          }
-
-          @Override
-          public int[] prefix() {
-            return a.buffer.stream().mapToInt(i -> i).toArray();
-          }
-
-          @Override
-          public Vector size() {
-            return dim;
-          }
-
-          @Override
-          public void end() {
-            while (true) {
-              CompletionStatus current = status.get();
-              if (current != CompletionStatus.COMPLETED) {
-                if (status.compareAndSet(current, CompletionStatus.COMPLETED)) {
-                  switch (current) {
-                    case COMPLETING:
-                      // Redraw last line with correct prompt
-                      if (lines.size() == 0 && parsed.buffer.size() == 0) {
-                        conn.write(currentPrompt);
-                      } else {
-                        conn.write("> ");
-                      }
-                      conn.stdoutHandler().accept(new LineBuffer().compute(Interaction.this.buffer));
-                      break;
-                  }
-                  // Update status
-                  completing = false;
-                  // Schedule a delivery of pending data
-                  schedulePendingEvent();
-                  break;
-                }
-                // Try again
-              } else {
-                throw new IllegalStateException();
-              }
-            }
-          }
-
-          @Override
-          public Completion complete(int[] text, boolean terminal) {
-            if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-              if (text.length > 0 || terminal) {
-                for (int z : text) {
-                  if (z < 32) {
-                    // Todo support \n with $'\n'
-                    throw new UnsupportedOperationException("todo");
-                  }
-                  switch (a.quoting) {
-                    case WEAK:
-                      switch (z) {
-                        case '\\':
-                        case '"':
-                          if (!a.escaping) {
-                            Interaction.this.buffer.insert('\\');
-                            a.accept('\\');
-                          }
-                          Interaction.this.buffer.insert(z);
-                          a.accept(z);
-                          break;
-                        default:
-                          if (a.escaping) {
-                            // Should beep
-                          } else {
-                            Interaction.this.buffer.insert(z);
-                            a.accept(z);
-                          }
-                          break;
-                      }
-                      break;
-                    case STRONG:
-                      switch (z) {
-                        case '\'':
-                          Interaction.this.buffer.insert('\'', '\\', z, '\'');
-                          a.accept('\'');
-                          a.accept('\\');
-                          a.accept(z);
-                          a.accept('\'');
-                          break;
-                        default:
-                          Interaction.this.buffer.insert(z);
-                          a.accept(z);
-                          break;
-                      }
-                      break;
-                    case NONE:
-                      if (a.escaping) {
-                        Interaction.this.buffer.insert(z);
-                        a.accept(z);
-                      } else {
-                        switch (z) {
-                          case ' ':
-                          case '"':
-                          case '\'':
-                          case '\\':
-                            Interaction.this.buffer.insert('\\', z);
-                            a.accept('\\');
-                            a.accept(z);
-                            break;
-                          default:
-                            Interaction.this.buffer.insert(z);
-                            a.accept(z);
-                            break;
-                        }
-                      }
-                      break;
-                    default:
-                      throw new UnsupportedOperationException("Todo " + a.quoting);
-                  }
-                }
-                if (terminal) {
-                  switch (a.quoting) {
-                    case WEAK:
-                      if (a.escaping) {
-                        // Do nothing emit bell
-                      } else {
-                        Interaction.this.buffer.insert('"', ' ');
-                        a.accept('"');
-                        a.accept(' ');
-                      }
-                      break;
-                    case STRONG:
-                      Interaction.this.buffer.insert('\'', ' ');
-                      a.accept('\'');
-                      a.accept(' ');
-                      break;
-                    case NONE:
-                      if (a.escaping) {
-                        // Do nothing emit bell
-                      } else {
-                        Interaction.this.buffer.insert(' ');
-                        a.accept(' ');
-                      }
-                      break;
-                  }
-                }
-                conn.stdoutHandler().accept(copy.compute(Interaction.this.buffer));
-              }
-            } else {
-              throw new IllegalStateException();
-            }
-            return this;
-          }
-
-          @Override
-          public Completion suggest(int[] text) {
-            while (true) {
-              CompletionStatus current = status.get();
-              if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
-                if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
-                  if (current == CompletionStatus.PENDING) {
-                    conn.write("\n");
-                  }
-                  conn.stdoutHandler().accept(text);
-                  return this;
-                }
-                // Try again
-              } else {
-                throw new IllegalStateException();
-              }
-            }
-          }
-        });
+        // Readline.this.interaction = null;
+        paused = true;
+        completionHandler.accept(new CompletionImpl(this));
       }
-    }
-
-    private void update(LineBuffer copy, int width) {
-      LineBuffer copy3 = new LineBuffer();
-      copy3.insert(Helper.toCodePoints(currentPrompt));
-      copy3.insert(copy.toArray());
-      copy3.setCursor(currentPrompt.length() + copy.getCursor());
-      LineBuffer copy2 = new LineBuffer();
-      copy2.insert(Helper.toCodePoints(currentPrompt));
-      copy2.insert(buffer.toArray());
-      copy2.setCursor(currentPrompt.length() + buffer.getCursor());
-      copy3.update(copy2, conn.stdoutHandler(), width);
     }
 
     /**
@@ -458,10 +228,8 @@ public class Readline {
     }
 
     private void handle(KeyEvent event) {
-      int width = conn.size().x();
-      LineBuffer copy = new LineBuffer(buffer);
       if (event.length() == 1) {
-        if (event.getCodePointAt(0) == 4 && buffer.getSize() == 0) {
+        if (event.getCodePointAt(0) == 4 && buffer.size() == 0) {
           // Specific behavior for Ctrl-D with empty line
           end(null);
           return;
@@ -481,21 +249,21 @@ public class Readline {
         } else {
           System.out.println("Unimplemented function " + fname.name());
         }
-        update(copy, width);
       } else {
         Runnable handler = handlers.get(event.buffer());
         if (handler != null) {
           handler.run();
         } else {
+          LineBuffer buf = buffer.copy();
           for (int i = 0;i < event.length();i++) {
             int codePoint = event.getCodePointAt(i);
             try {
-              buffer.insert(codePoint);
+              buf.insert(codePoint);
             } catch (IllegalArgumentException e) {
               conn.stdoutHandler().accept(new int[]{'\007'});
             }
           }
-          update(copy, width);
+          refresh(buf);
         }
       }
     }
@@ -514,7 +282,7 @@ public class Readline {
       int curHeight = pos.y();
 
       // Recompute new end
-      Vector end = abc.getPosition(abc.getSize(), oldWith);
+      Vector end = abc.getPosition(abc.size(), oldWith);
       int endHeight = end.y() + end.x() / newWidth;
 
       // Position at the bottom / right
@@ -540,7 +308,7 @@ public class Readline {
 
       // Now redraw
       out.accept(Helper.toCodePoints(currentPrompt));
-      update(new LineBuffer(), newWidth);
+      refresh(new LineBuffer(), newWidth);
     }
 
     public Map<String, Object> data() {
@@ -559,8 +327,64 @@ public class Readline {
       this.historyIndex = historyIndex;
     }
 
+    public LineBuffer line() {
+      return line;
+    }
+
     public LineBuffer buffer() {
       return buffer;
+    }
+
+    public String currentPrompt() {
+      return currentPrompt;
+    }
+
+    public Vector size() {
+      return size;
+    }
+
+    /**
+     * Redraw the current line.
+     */
+    public void redraw() {
+      LineBuffer toto = new LineBuffer();
+      toto.insert(Helper.toCodePoints(currentPrompt));
+      toto.insert(buffer.toArray());
+      toto.setCursor(currentPrompt.length() + buffer.getCursor());
+      LineBuffer abc = new LineBuffer();
+      abc.update(toto, conn.stdoutHandler(), size().x());
+    }
+
+    /**
+     * Refresh the current buffer with the argument buffer.
+     *
+     * @param buffer the new buffer
+     */
+    public void refresh(LineBuffer buffer) {
+      refresh(buffer, size().x());
+    }
+
+    private void refresh(LineBuffer update, int width) {
+      LineBuffer copy3 = new LineBuffer();
+      copy3.insert(Helper.toCodePoints(currentPrompt));
+      copy3.insert(buffer().toArray());
+      copy3.setCursor(currentPrompt.length() + buffer().getCursor());
+      LineBuffer copy2 = new LineBuffer();
+      copy2.insert(Helper.toCodePoints(currentPrompt));
+      copy2.insert(update.toArray());
+      copy2.setCursor(currentPrompt.length() + update.getCursor());
+      copy3.update(copy2, conn.stdoutHandler(), width);
+      buffer.clear();
+      buffer.insert(update.toArray());
+      buffer.setCursor(update.getCursor());
+    }
+
+    void resume() {
+      if (!paused) {
+        throw new IllegalStateException();
+      }
+      paused = false;
+      schedulePendingEvent();
     }
 
     private void install() {

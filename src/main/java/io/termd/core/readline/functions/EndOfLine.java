@@ -32,7 +32,8 @@ public class EndOfLine implements Function {
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    LineBuffer buffer = interaction.buffer();
-    buffer.setCursor(buffer.getSize());
+    LineBuffer buf = interaction.buffer().copy();
+    buf.setCursor(buf.size());
+    interaction.refresh(buf);
   }
 }

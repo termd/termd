@@ -45,9 +45,7 @@ public class PreviousHistory implements Function {
           interaction.data().put("abc", tmp);
         }
         int[] line = history.get(next);
-        LineBuffer buffer = interaction.buffer();
-        buffer.clear();
-        buffer.insert(line);
+        interaction.refresh(new LineBuffer().insert(line));
         interaction.setHistoryIndex(next);
       }
     }

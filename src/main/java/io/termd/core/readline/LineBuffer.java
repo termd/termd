@@ -21,15 +21,12 @@ import io.termd.core.util.Helper;
 import io.termd.core.util.Wcwidth;
 
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class LineBuffer implements Iterable<Integer> {
+public class LineBuffer {
 
   private int[] data;
   private int cursor;
@@ -39,7 +36,7 @@ public class LineBuffer implements Iterable<Integer> {
     data = new int[1000];
   }
 
-  public LineBuffer(LineBuffer that) {
+  private LineBuffer(LineBuffer that) {
     data = that.data.clone();
     cursor = that.cursor;
     size = that.size;
@@ -56,28 +53,6 @@ public class LineBuffer implements Iterable<Integer> {
     return data[index];
   }
 
-  @Override
-  public Iterator<Integer> iterator() {
-    return new Iterator<Integer>() {
-      int index;
-      @Override
-      public boolean hasNext() {
-        return index < size;
-      }
-      @Override
-      public Integer next() {
-        if (index >= size) {
-          throw new NoSuchElementException();
-        }
-        return data[index++];
-      }
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
-    };
-  }
-
   /**
    * Insert a string in the buffer at the current cursor position.
    *
@@ -85,6 +60,16 @@ public class LineBuffer implements Iterable<Integer> {
    */
   public LineBuffer insert(String s) {
     return insert(Helper.toCodePoints(s));
+  }
+
+  /**
+   * Insert an array of code points in the buffer at the current cursor position.
+   */
+  public LineBuffer insert(int... codePoints) {
+    for (int cp : codePoints) {
+      insert(cp);
+    }
+    return this;
   }
 
   /**
@@ -111,14 +96,71 @@ public class LineBuffer implements Iterable<Integer> {
     return this;
   }
 
-  /**
-   * Insert an array of code points in the buffer at the current cursor position.
-   */
-  public LineBuffer insert(int... codePoints) {
+  public ParsedBuffer insertEscaped(int... codePoints) {
+    ParsedBuffer status = new ParsedBuffer();
+    Helper.consumeTo(toArray(), status);
+    status.buffer.clear();
     for (int cp : codePoints) {
-      insert(cp);
+      if (cp < 32) {
+        // Todo support \n with $'\n'
+        throw new UnsupportedOperationException("todo");
+      }
+      switch (status.quoting) {
+        case WEAK:
+          switch (cp) {
+            case '\\':
+            case '"':
+              if (!status.escaping) {
+                status.accept('\\');
+              }
+              status.accept(cp);
+              break;
+            default:
+              if (status.escaping) {
+                // Should beep
+              } else {
+                status.accept(cp);
+              }
+              break;
+          }
+          break;
+        case STRONG:
+          switch (cp) {
+            case '\'':
+              status.accept('\'');
+              status.accept('\\');
+              status.accept(cp);
+              status.accept('\'');
+              break;
+            default:
+              status.accept(cp);
+              break;
+          }
+          break;
+        case NONE:
+          if (status.escaping) {
+            status.accept(cp);
+          } else {
+            switch (cp) {
+              case ' ':
+              case '"':
+              case '\'':
+              case '\\':
+                status.accept('\\');
+                status.accept(cp);
+                break;
+              default:
+                status.accept(cp);
+                break;
+            }
+          }
+          break;
+        default:
+          throw new UnsupportedOperationException("Todo " + status.quoting);
+      }
     }
-    return this;
+    insert(status.buffer.stream().mapToInt(i -> i).toArray());
+    return status;
   }
 
   /**
@@ -148,7 +190,7 @@ public class LineBuffer implements Iterable<Integer> {
     }
   }
 
-  public int getSize() {
+  public int size() {
     return size;
   }
 
@@ -156,8 +198,13 @@ public class LineBuffer implements Iterable<Integer> {
     return cursor;
   }
 
-  public void setCursor(int next) {
+  public LineBuffer setCursor(int next) {
     this.cursor = next < 0 ? 0 : (next > size ? size : next);
+    return this;
+  }
+
+  public LineBuffer copy() {
+    return new LineBuffer(this);
   }
 
   public void clear() {
@@ -171,76 +218,12 @@ public class LineBuffer implements Iterable<Integer> {
     return cursor - prev;
   }
 
-  public void setSize(int size) {
-    this.size = size >= 0 ? size : 0;
-    if (cursor > size) {
-      cursor = size;
-    }
-  }
-
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < size; i++) {
       sb.appendCodePoint(data[i]);
     }
     return sb.toString();
-  }
-
-  public int[] compute(LineBuffer target) {
-
-    LinkedList<Integer> ret = new LinkedList<>();
-
-    int len = Math.min(size, target.size);
-
-    //
-    for (int i = 0;i < len;i++) {
-      if (data[i] != target.data[i]) {
-        while (cursor != i) {
-          if (cursor > i) {
-            cursor--;
-            ret.add((int)'\b');
-          } else {
-            ret.add(data[cursor++]);
-          }
-        }
-        ret.add(data[cursor] = target.data[cursor++]);
-      }
-    }
-
-    //
-    if (size > target.size) {
-      while (cursor < size) {
-        ret.add(data[cursor++]);
-      }
-      while (size > target.size) {
-        ret.add((int)'\b');
-        ret.add((int)' ');
-        ret.add((int)'\b');
-        cursor--;
-        size--;
-      }
-    } else if (size < target.size) {
-      while (size < target.size) {
-        while (cursor < size) {
-          ret.add(data[cursor++]);
-        }
-        ret.add(target.data[cursor++]);
-        size++;
-      }
-    }
-
-    //
-    while (cursor != target.cursor) {
-      if (cursor < target.cursor) {
-        ret.add(data[cursor++]);
-      } else {
-        ret.add((int)'\b');
-        cursor--;
-      }
-    }
-
-    //
-    return ret.stream().mapToInt(i->i).toArray();
   }
 
   /**

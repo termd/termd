@@ -105,7 +105,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
         StringBuilder buffer = new StringBuilder();
         AtomicInteger count = new AtomicInteger();
         return new TelnetTtyConnection(conn -> {
-          conn.setStdinHandler(event -> Helper.appendTo(event, buffer));
+          conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
           conn.setEventHandler((event, cp) -> {
             if (event == TtyEvent.INTR) {
               switch (count.get()) {
@@ -140,7 +140,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
         StringBuilder buffer = new StringBuilder();
         AtomicInteger count = new AtomicInteger();
         return new TelnetTtyConnection(conn -> {
-          conn.setStdinHandler(event -> Helper.appendTo(event, buffer));
+          conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
           conn.setEventHandler((event, cp) -> {
             switch (count.get()) {
               case 0:
