@@ -150,16 +150,13 @@ public class Helper {
   }
 
   public static int[] computeBlock(Vector size, List<int[]> completions) {
-
-    StringBuilder sb = new StringBuilder();
-
-    // Determine the longest value
+    if (completions.size() == 0) {
+      return new int[0];
+    }
     int max = completions.stream().mapToInt(comp -> comp.length).max().getAsInt();
-
-    //
     int row = size.x() / (max + 1);
-
     int count = 0;
+    StringBuilder sb = new StringBuilder();
     for (int[] completion : completions) {
       Helper.appendCodePoints(completion, sb);
       for (int i = completion.length;i < max;i++) {
@@ -172,11 +169,7 @@ public class Helper {
         count = 0;
       }
     }
-
-    //
     sb.append("\n");
-
-    //
     return Helper.toCodePoints(sb.toString());
   }
 

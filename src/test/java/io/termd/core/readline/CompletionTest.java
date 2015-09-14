@@ -21,6 +21,7 @@ import io.termd.core.util.Helper;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -207,9 +208,9 @@ public class CompletionTest extends TestBase {
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
       completion.suggest(Arrays.asList(
-          new int[]{'f','o','o','a'},
-          new int[]{'f','o','o','b'},
-          new int[]{'f','o','o','c'}
+          new int[]{'f', 'o', 'o', 'a'},
+          new int[]{'f', 'o', 'o', 'b'},
+          new int[]{'f', 'o', 'o', 'c'}
       ));
       completed.set(true);
     });
@@ -227,6 +228,31 @@ public class CompletionTest extends TestBase {
     term.assertScreen("% foo", "fooa foob fooc ", "% foog");
     term.assertAt(3, 0);
     assertEquals("foog", line.get());
+  }
+
+  @Test
+  public void testEmptyCompletionCollectionBlock() throws Exception {
+    TestTerm term = new TestTerm(this);
+    AtomicBoolean completed = new AtomicBoolean();
+    Supplier<String> line = term.readlineComplete(completion -> {
+      completion.suggest(Collections.emptyList());
+      completed.set(true);
+    });
+    term.read('a', 'b');
+    term.read(BACKWARD_KEY);
+    term.assertScreen("% ab");
+    term.assertAt(0, 3);
+    term.read('\t');
+    assertTrue(completed.get());
+    term.assertScreen("% ab", "% ab");
+    term.assertAt(1, 3);
+    term.read('c');
+    term.assertScreen("% ab", "% acb");
+    term.assertAt(1, 4);
+    term.read('\r');
+    term.assertScreen("% ab", "% acb");
+    term.assertAt(2, 0);
+    assertEquals("acb", line.get());
   }
 
   @Test
