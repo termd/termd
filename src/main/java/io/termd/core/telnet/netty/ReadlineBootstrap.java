@@ -165,7 +165,7 @@ public class ReadlineBootstrap {
         task.start();
       }, completion -> {
         System.out.println("want to complete line=" + Helper.fromCodePoints(completion.line()) + ",prefix=" + Helper.fromCodePoints(completion.prefix()));
-        completion.complete(Helper.toCodePoints("abdeef"), true).end();
+        completion.complete(Helper.toCodePoints("abdeef"), true);
       });
     }
   };

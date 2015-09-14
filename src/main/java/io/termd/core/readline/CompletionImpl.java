@@ -18,17 +18,17 @@ package io.termd.core.readline;
 
 import io.termd.core.util.Vector;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class CompletionImpl implements Completion {
 
-  private final AtomicReference<CompletionStatus> status = new AtomicReference<>(CompletionStatus.PENDING);
+  private AtomicBoolean done = new AtomicBoolean();
   private final Readline.Interaction interaction;
   private final int[] line;
-  private final int [] prefix;
+  private final int[] prefix;
 
   public CompletionImpl(Readline.Interaction interaction) {
 
@@ -67,82 +67,52 @@ public class CompletionImpl implements Completion {
   }
 
   @Override
-  public void end() {
-    while (true) {
-      CompletionStatus current = status.get();
-      if (current != CompletionStatus.COMPLETED) {
-        if (status.compareAndSet(current, CompletionStatus.COMPLETED)) {
-          switch (current) {
-            case COMPLETING:
-              interaction.redraw();
-              break;
-          }
-          interaction.resume();
-          break;
-        }
-        // Try again
-      } else {
-        throw new IllegalStateException();
-      }
-    }
-  }
-
-  @Override
-  public Completion complete(int[] text, boolean terminal) {
-    if (status.compareAndSet(CompletionStatus.PENDING, CompletionStatus.INLINING)) {
-      if (text.length > 0 || terminal) {
-        LineBuffer work = interaction.buffer().copy();
-        ParsedBuffer toto = work.insertEscaped(text); // Todo improve that
-        if (terminal) {
-          switch (toto.quoting) {
-            case WEAK:
-              if (toto.escaping) {
-                // Do nothing emit bell
-              } else {
-                work.insert('"', ' ');
-                toto.accept('"');
-                toto.accept(' ');
-              }
-              break;
-            case STRONG:
-              work.insert('\'', ' ');
-              toto.accept('\'');
-              toto.accept(' ');
-              break;
-            case NONE:
-              if (toto.escaping) {
-                // Do nothing emit bell
-              } else {
-                work.insert(' ');
-                toto.accept(' ');
-              }
-              break;
-          }
-        }
-        interaction.refresh(work);
-      }
-    } else {
+  public void complete(int[] text, boolean terminal) {
+    if (!done.compareAndSet(false, true)) {
       throw new IllegalStateException();
     }
-    return this;
+    if (text.length > 0 || terminal) {
+      LineBuffer work = interaction.buffer().copy();
+      ParsedBuffer toto = work.insertEscaped(text); // Todo improve that
+      if (terminal) {
+        switch (toto.quoting) {
+          case WEAK:
+            if (toto.escaping) {
+              // Do nothing emit bell
+            } else {
+              work.insert('"', ' ');
+              toto.accept('"');
+              toto.accept(' ');
+            }
+            break;
+          case STRONG:
+            work.insert('\'', ' ');
+            toto.accept('\'');
+            toto.accept(' ');
+            break;
+          case NONE:
+            if (toto.escaping) {
+              // Do nothing emit bell
+            } else {
+              work.insert(' ');
+              toto.accept(' ');
+            }
+            break;
+        }
+      }
+      interaction.refresh(work);
+    }
+    interaction.resume();
   }
 
   @Override
-  public Completion suggest(int[] text) {
-    while (true) {
-      CompletionStatus current = status.get();
-      if ((current == CompletionStatus.PENDING || current == CompletionStatus.COMPLETING)) {
-        if (status.compareAndSet(current, CompletionStatus.COMPLETING)) {
-          if (current == CompletionStatus.PENDING) {
-            interaction.conn.write("\n");
-          }
-          interaction.conn.stdoutHandler().accept(text);
-          return this;
-        }
-        // Try again
-      } else {
-        throw new IllegalStateException();
-      }
+  public void suggest(int[] text) {
+    if (!done.compareAndSet(false, true)) {
+      throw new IllegalStateException();
     }
+    interaction.conn.write("\n");
+    interaction.conn.stdoutHandler().accept(text);
+    interaction.redraw();
+    interaction.resume();
   }
 }

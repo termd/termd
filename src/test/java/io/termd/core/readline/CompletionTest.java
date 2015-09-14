@@ -53,7 +53,7 @@ public class CompletionTest extends TestBase {
     }, completion::set);
     term.read('a');
     term.read('\t');
-    completion.get().suggest(new int[]{'b'}).end();
+    completion.get().suggest(new int[]{'b'});
     try {
       completion.get().suggest(new int[]{'c'});
       fail("Was expecting an IllegalStateException");
@@ -109,7 +109,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(new int[]{'b','c','d','e','f'}, true).end();
+      completion.complete(new int[]{'b','c','d','e','f'}, true);
       completed.set(true);
     });
     term.read('a');
@@ -143,7 +143,7 @@ public class CompletionTest extends TestBase {
     term.read('g');
     term.assertScreen("% a");
     term.assertAt(0, 3);
-    completion.complete(new int[]{'b', 'c', 'd', 'e', 'f'}, true).end();
+    completion.complete(new int[]{'b', 'c', 'd', 'e', 'f'}, true);
     term.executeTasks();
     term.assertScreen("% abcdef g");
     term.assertAt(0, 10);
@@ -161,7 +161,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(new int[]{'b','c','d','e','f'}).end();
+      completion.complete(new int[]{'b','c','d','e','f'});
       completed.set(true);
     });
     term.read('a');
@@ -185,7 +185,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.complete(new int[0], true).end();
+      completion.complete(new int[0], true);
       completed.set(true);
     });
     term.read('a', 'b');
@@ -210,7 +210,7 @@ public class CompletionTest extends TestBase {
           new int[]{'f','o','o','a'},
           new int[]{'f','o','o','b'},
           new int[]{'f','o','o','c'}
-      )).end();
+      ));
       completed.set(true);
     });
     term.read('f', 'o', 'o');
@@ -234,7 +234,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n"));
       completed.set(true);
     });
     term.read('a', 'b');
@@ -259,7 +259,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n"));
       completed.set(true);
     });
     term.read('a', '\\', '\r', 'b', 'c');
@@ -284,7 +284,7 @@ public class CompletionTest extends TestBase {
     TestTerm term = new TestTerm(this);
     AtomicBoolean completed = new AtomicBoolean();
     Supplier<String> line = term.readlineComplete(completion -> {
-      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n")).end();
+      completion.suggest(Helper.toCodePoints("a\r\nb\r\nc\r\n"));
       completed.set(true);
     });
     term.read('a', '"', '\r', 'b', 'c');
@@ -302,37 +302,6 @@ public class CompletionTest extends TestBase {
     term.assertScreen("% a\"", "> bc", "a", "b", "c", "> bd\"c");
     term.assertAt(6, 0);
     assertEquals("a\"\nbd\"c", line.get());
-  }
-
-  @Test
-  public void testPaginate() throws Exception {
-    TestTerm term = new TestTerm(this);
-    AtomicReference<Completion> completed = new AtomicReference<>();
-    Supplier<String> line = term.readlineComplete(completed::set);
-    term.assertScreen("% ");
-    term.assertAt(0, 2);
-    term.read('\t');
-    term.assertScreen("% ");
-    term.assertAt(0, 2);
-    Completion completion = completed.get();
-    assertNull(line.get());
-    completion.suggest(new int[]{'a'});
-    assertNull(line.get());
-    term.assertScreen("% ", "a");
-    term.assertAt(1, 1);
-    try {
-      completion.complete(new int[]{'a'});
-      fail("Was expecting an IllegalStateException");
-    } catch (IllegalStateException ignore) {
-    }
-    completion.suggest(new int[]{'b'});
-    assertNull(line.get());
-    term.assertScreen("% ", "ab");
-    term.assertAt(1, 2);
-    completion.end();
-    assertNull(line.get());
-    term.assertScreen("% ", "ab% ");
-    term.assertAt(1, 4);
   }
 
   @Test
