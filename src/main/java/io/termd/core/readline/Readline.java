@@ -210,7 +210,7 @@ public class Readline {
       if (completionHandler != null) {
         // Readline.this.interaction = null;
         paused = true;
-        completionHandler.accept(new CompletionImpl(this));
+        completionHandler.accept(new Completion(this));
       }
     }
 
