@@ -62,26 +62,26 @@ public class QuotingTest {
 
   private String escape(String line) {
     final StringBuilder builder = new StringBuilder();
-    ParsedBuffer buf = new ParsedBuffer();
+    LineStatus.Ext buf = new LineStatus.Ext();
     boolean escaping = false;
-    Quote prev = Quote.NONE;
+    int prev = 0;
     for (int offset = 0; offset < line.length(); ) {
       int cp = line.codePointAt(offset);
       buf.accept(cp);
-      if (buf.escaping) {
+      if (buf.isEscaping()) {
         builder.append("[");
         escaping = true;
       } else {
-        if (prev != buf.quoting) {
+        if (prev != buf.getQuote()) {
           switch (prev) {
-            case NONE:
-              builder.append("<").appendCodePoint(buf.quoting.ch).append(">");
+            case 0:
+              builder.append("<").appendCodePoint(buf.getQuote()).append(">");
               break;
             default:
-              builder.append("</").appendCodePoint(prev.ch).append(">");
+              builder.append("</").appendCodePoint(prev).append(">");
               break;
           }
-          prev = buf.quoting;
+          prev = buf.getQuote();
         } else {
           builder.appendCodePoint(cp);
           if (escaping) {

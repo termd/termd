@@ -96,8 +96,8 @@ public class LineBuffer {
     return this;
   }
 
-  public ParsedBuffer insertEscaped(int... codePoints) {
-    ParsedBuffer status = new ParsedBuffer();
+  public LineStatus.Ext insertEscaped(int... codePoints) {
+    LineStatus.Ext status = new LineStatus.Ext();
     Helper.consumeTo(toArray(), status);
     status.buffer.clear();
     for (int cp : codePoints) {
@@ -105,18 +105,18 @@ public class LineBuffer {
         // Todo support \n with $'\n'
         throw new UnsupportedOperationException("todo");
       }
-      switch (status.quoting) {
-        case WEAK:
+      switch (status.getQuote()) {
+        case '"':
           switch (cp) {
             case '\\':
             case '"':
-              if (!status.escaping) {
+              if (!status.isEscaping()) {
                 status.accept('\\');
               }
               status.accept(cp);
               break;
             default:
-              if (status.escaping) {
+              if (status.isEscaping()) {
                 // Should beep
               } else {
                 status.accept(cp);
@@ -124,7 +124,7 @@ public class LineBuffer {
               break;
           }
           break;
-        case STRONG:
+        case '\'':
           switch (cp) {
             case '\'':
               status.accept('\'');
@@ -137,8 +137,8 @@ public class LineBuffer {
               break;
           }
           break;
-        case NONE:
-          if (status.escaping) {
+        case 0:
+          if (status.isEscaping()) {
             status.accept(cp);
           } else {
             switch (cp) {
@@ -156,7 +156,7 @@ public class LineBuffer {
           }
           break;
         default:
-          throw new UnsupportedOperationException("Todo " + status.quoting);
+          throw new UnsupportedOperationException("Todo " + status.getQuote());
       }
     }
     insert(status.buffer.stream().mapToInt(i -> i).toArray());

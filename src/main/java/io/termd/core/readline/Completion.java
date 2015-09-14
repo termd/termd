@@ -19,7 +19,10 @@ package io.termd.core.readline;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An object for asynchronous completion.
@@ -61,6 +64,37 @@ public interface Completion {
    */
   default void complete(int[] text) {
     complete(text, false);
+  }
+
+  /**
+   * Perform completion based on a map of candidates, when the map:
+   *
+   * <ul>
+   *   <li>is empty: end this completion</li>
+   *   <li>has a single entry, perform a completion with the </li>
+   * </ul>
+   *
+   * @param candidates
+   */
+  default void complete(Map<int[], Boolean> candidates) {
+    switch (candidates.size()) {
+      case 0:
+        end();
+        break;
+      case 1:
+        Map.Entry<int[], Boolean> match = candidates.entrySet().iterator().next();
+        complete(match.getKey(), match.getValue());
+        break;
+      default:
+        ArrayList<int[]> list = new ArrayList<>(candidates.keySet());
+        int[] prefix = Helper.findLongestCommonPrefix(list);
+        if (prefix.length > 0) {
+          complete(prefix);
+        } else {
+          suggest(list);
+        }
+        break;
+    }
   }
 
   /**

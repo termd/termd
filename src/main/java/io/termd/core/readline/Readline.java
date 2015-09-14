@@ -182,17 +182,17 @@ public class Readline {
 
     private void doEnter() {
       line.insert(buffer.toArray());
-      ParsedBuffer pb = new ParsedBuffer();
+      LineStatus pb = new LineStatus();
       for (int i = 0;i < line.size();i++) {
         pb.accept(line.getAt(i));
       }
       this.buffer.clear();
-      if (pb.escaping) {
+      if (pb.isEscaping()) {
         line.delete(-1); // Remove \
         currentPrompt = "> ";
         conn.write("\n> ");
       } else {
-        if (pb.quoting == Quote.WEAK || pb.quoting == Quote.STRONG) {
+        if (pb.isQuoted()) {
           line.insert('\n');
           conn.write("\n> ");
           currentPrompt = "> ";
@@ -352,7 +352,7 @@ public class Readline {
       toto.insert(buffer.toArray());
       toto.setCursor(currentPrompt.length() + buffer.getCursor());
       LineBuffer abc = new LineBuffer();
-      abc.update(toto, conn.stdoutHandler(), size().x());
+      abc.update(toto, conn.stdoutHandler(), size.x());
     }
 
     /**
@@ -361,7 +361,7 @@ public class Readline {
      * @param buffer the new buffer
      */
     public void refresh(LineBuffer buffer) {
-      refresh(buffer, size().x());
+      refresh(buffer, size.x());
     }
 
     private void refresh(LineBuffer update, int width) {
@@ -395,6 +395,7 @@ public class Readline {
         decoder.append(data);
         deliver();
       });
+      size = conn.size();
       conn.setSizeHandler(dim -> {
         if (size != null) {
           // Not supported for now

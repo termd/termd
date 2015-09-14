@@ -73,11 +73,11 @@ public class CompletionImpl implements Completion {
     }
     if (text.length > 0 || terminal) {
       LineBuffer work = interaction.buffer().copy();
-      ParsedBuffer toto = work.insertEscaped(text); // Todo improve that
+      LineStatus.Ext toto = work.insertEscaped(text); // Todo improve that
       if (terminal) {
-        switch (toto.quoting) {
-          case WEAK:
-            if (toto.escaping) {
+        switch (toto.getQuote()) {
+          case '"':
+            if (toto.isEscaping()) {
               // Do nothing emit bell
             } else {
               work.insert('"', ' ');
@@ -85,13 +85,13 @@ public class CompletionImpl implements Completion {
               toto.accept(' ');
             }
             break;
-          case STRONG:
+          case '\'':
             work.insert('\'', ' ');
             toto.accept('\'');
             toto.accept(' ');
             break;
-          case NONE:
-            if (toto.escaping) {
+          case 0:
+            if (toto.isEscaping()) {
               // Do nothing emit bell
             } else {
               work.insert(' ');
