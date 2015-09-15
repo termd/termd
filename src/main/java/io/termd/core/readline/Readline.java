@@ -23,7 +23,6 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +53,7 @@ public class Readline {
     this.keymap = keymap;
     this.decoder = new EventQueue(keymap);
     this.history = new ArrayList<>();
+    addFunction(ACCEPT_LINE);
   }
 
   public Interaction getInteraction() {
@@ -155,7 +155,6 @@ public class Readline {
     private final Consumer<String> requestHandler;
     private final Consumer<Completion> completionHandler;
     private final Map<String, Object> data;
-    private final Map<IntBuffer, Runnable> handlers;
     private final LineBuffer line = new LineBuffer();
     private final LineBuffer buffer = new LineBuffer();
     private int historyIndex = -1;
@@ -169,40 +168,10 @@ public class Readline {
         Consumer<Completion> completionHandler) {
       this.conn = conn;
       this.prompt = prompt;
-      this.handlers = new HashMap<>();
       this.data = new HashMap<>();
       this.currentPrompt = prompt;
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
-
-      // Try to have function : for this -> make Function async
-      handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), this::doEnter);
-    }
-
-    private void doEnter() {
-      line.insert(buffer.toArray());
-      LineStatus pb = new LineStatus();
-      for (int i = 0;i < line.size();i++) {
-        pb.accept(line.getAt(i));
-      }
-      this.buffer.clear();
-      if (pb.isEscaping()) {
-        line.delete(-1); // Remove \
-        currentPrompt = "> ";
-        conn.write("\n> ");
-      } else {
-        if (pb.isQuoted()) {
-          line.insert('\n');
-          conn.write("\n> ");
-          currentPrompt = "> ";
-        } else {
-          String raw = line.toString();
-          history.add(0, line.toArray());
-          line.clear();
-          conn.write("\n");
-          end(raw);
-        }
-      }
     }
 
     /**
@@ -219,6 +188,8 @@ public class Readline {
     }
 
     private void handle(KeyEvent event) {
+
+      // Very specific behavior that cannot be encapsulated in a function flow
       if (event.length() == 1) {
         if (event.getCodePointAt(0) == 4 && buffer.size() == 0) {
           // Specific behavior for Ctrl-D with empty line
@@ -242,21 +213,16 @@ public class Readline {
           System.out.println("Unimplemented function " + fname.name());
         }
       } else {
-        Runnable handler = handlers.get(event.buffer());
-        if (handler != null) {
-          handler.run();
-        } else {
-          LineBuffer buf = buffer.copy();
-          for (int i = 0;i < event.length();i++) {
-            int codePoint = event.getCodePointAt(i);
-            try {
-              buf.insert(codePoint);
-            } catch (IllegalArgumentException e) {
-              conn.stdoutHandler().accept(new int[]{'\007'});
-            }
+        LineBuffer buf = buffer.copy();
+        for (int i = 0;i < event.length();i++) {
+          int codePoint = event.getCodePointAt(i);
+          try {
+            buf.insert(codePoint);
+          } catch (IllegalArgumentException e) {
+            conn.stdoutHandler().accept(new int[]{'\007'});
           }
-          refresh(buf);
         }
+        refresh(buf);
       }
     }
 
@@ -403,4 +369,42 @@ public class Readline {
       conn.setEventHandler(null);
     }
   }
+
+  // Need to access internal state
+  private final Function ACCEPT_LINE = new Function() {
+
+    @Override
+    public String name() {
+      return "accept-line";
+    }
+
+    @Override
+    public void apply(Interaction interaction) {
+      interaction.line.insert(interaction.buffer.toArray());
+      LineStatus pb = new LineStatus();
+      for (int i = 0;i < interaction.line.size();i++) {
+        pb.accept(interaction.line.getAt(i));
+      }
+      interaction.buffer.clear();
+      if (pb.isEscaping()) {
+        interaction.line.delete(-1); // Remove \
+        interaction.currentPrompt = "> ";
+        interaction.conn.write("\n> ");
+        interaction.resume();
+      } else {
+        if (pb.isQuoted()) {
+          interaction.line.insert('\n');
+          interaction.conn.write("\n> ");
+          interaction.currentPrompt = "> ";
+          interaction.resume();
+        } else {
+          String raw = interaction.line.toString();
+          history.add(0, interaction.line.toArray());
+          interaction.line.clear();
+          interaction.conn.write("\n");
+          interaction.end(raw);
+        }
+      }
+    }
+  };
 }

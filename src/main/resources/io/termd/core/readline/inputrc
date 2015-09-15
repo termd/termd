@@ -10,3 +10,5 @@
 "\C-a":beginning-of-line
 "\C-D":delete-char
 "\C-i": complete
+"\C-j": accept-line
+"\C-m": accept-line
