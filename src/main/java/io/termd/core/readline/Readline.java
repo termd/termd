@@ -399,7 +399,9 @@ public class Readline {
           interaction.resume();
         } else {
           String raw = interaction.line.toString();
-          history.add(0, interaction.line.toArray());
+          if (interaction.line.size() > 0) {
+            history.add(0, interaction.line.toArray());
+          }
           interaction.line.clear();
           interaction.conn.write("\n");
           interaction.end(raw);

@@ -61,4 +61,12 @@ public class HistoryTest extends TestBase {
     term.read(Keys.DOWN.sequence);
     term.assertScreen("% ", "", "");
   }
+
+  @Test
+  public void testEmptyLineMustNotBeAddedToHistory() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('\r');
+    assertEquals(0, term.readline.getHistory().size());
+  }
 }
