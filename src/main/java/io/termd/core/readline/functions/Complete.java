@@ -16,22 +16,30 @@
 
 package io.termd.core.readline.functions;
 
+import io.termd.core.readline.Completion;
 import io.termd.core.readline.Function;
 import io.termd.core.readline.Readline;
+
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BeginningOfLine implements Function {
+public class Complete implements Function {
 
   @Override
   public String name() {
-    return "beginning-of-line";
+    return "complete";
   }
 
   @Override
   public void apply(Readline.Interaction interaction) {
-    interaction.refresh(interaction.buffer().copy().setCursor(0));
-    interaction.resume();
+    Consumer<Completion> handler = interaction.completionHandler();
+    if (handler != null) {
+      Completion completion = new Completion(interaction);
+      handler.accept(completion);
+    } else {
+      interaction.resume();
+    }
   }
 }

@@ -6,3 +6,4 @@ io.termd.core.readline.functions.EndOfLine
 io.termd.core.readline.functions.NextHistory
 io.termd.core.readline.functions.BeginningOfLine
 io.termd.core.readline.functions.DeleteChar
+io.termd.core.readline.functions.Complete

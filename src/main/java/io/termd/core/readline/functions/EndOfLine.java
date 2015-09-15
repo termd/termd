@@ -35,5 +35,6 @@ public class EndOfLine implements Function {
     LineBuffer buf = interaction.buffer().copy();
     buf.setCursor(buf.size());
     interaction.refresh(buf);
+    interaction.resume();
   }
 }

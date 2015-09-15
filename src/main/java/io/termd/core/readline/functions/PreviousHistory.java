@@ -49,5 +49,6 @@ public class PreviousHistory implements Function {
         interaction.setHistoryIndex(next);
       }
     }
+    interaction.resume();
   }
 }

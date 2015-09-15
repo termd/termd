@@ -47,5 +47,6 @@ public class NextHistory implements Function {
       interaction.refresh(new LineBuffer().insert(line));
       interaction.setHistoryIndex(next);
     }
+    interaction.resume();
   }
 }

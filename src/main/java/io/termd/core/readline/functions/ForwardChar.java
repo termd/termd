@@ -35,5 +35,6 @@ public class ForwardChar implements Function {
     LineBuffer buf = interaction.buffer().copy();
     buf.moveCursor(1);
     interaction.refresh(buf);
+    interaction.resume();
   }
 }

@@ -35,5 +35,6 @@ public class BackwardDeleteChar implements Function {
     LineBuffer buf = interaction.buffer().copy();
     buf.delete(-1);
     interaction.refresh(buf);
+    interaction.resume();
   }
 }

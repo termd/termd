@@ -177,7 +177,6 @@ public class Readline {
 
       // Try to have function : for this -> make Function async
       handlers.put(Keys.CTRL_M.buffer().asReadOnlyBuffer(), this::doEnter);
-      handlers.put(Keys.CTRL_I.buffer().asReadOnlyBuffer(), this::doComplete);
     }
 
     private void doEnter() {
@@ -203,14 +202,6 @@ public class Readline {
           conn.write("\n");
           end(raw);
         }
-      }
-    }
-
-    private void doComplete() {
-      if (completionHandler != null) {
-        // Readline.this.interaction = null;
-        paused = true;
-        completionHandler.accept(new Completion(this));
       }
     }
 
@@ -245,6 +236,7 @@ public class Readline {
         FunctionEvent fname = (FunctionEvent) event;
         Function function = functions.get(fname.name());
         if (function != null) {
+          paused = true;
           function.apply(this);
         } else {
           System.out.println("Unimplemented function " + fname.name());
@@ -311,6 +303,10 @@ public class Readline {
       refresh(new LineBuffer(), newWidth);
     }
 
+    public Consumer<Completion> completionHandler() {
+      return completionHandler;
+    }
+
     public Map<String, Object> data() {
       return data;
     }
@@ -360,8 +356,9 @@ public class Readline {
      *
      * @param buffer the new buffer
      */
-    public void refresh(LineBuffer buffer) {
+    public Interaction refresh(LineBuffer buffer) {
       refresh(buffer, size.x());
+      return this;
     }
 
     private void refresh(LineBuffer update, int width) {
@@ -379,7 +376,7 @@ public class Readline {
       buffer.setCursor(update.getCursor());
     }
 
-    void resume() {
+    public void resume() {
       if (!paused) {
         throw new IllegalStateException();
       }
