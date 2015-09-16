@@ -23,17 +23,17 @@ import io.termd.core.readline.Readline;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndOfLine implements Function {
+public class KillLine implements Function {
 
   @Override
   public String name() {
-    return "end-of-line";
+    return "kill-line";
   }
 
   @Override
   public void apply(Readline.Interaction interaction) {
     LineBuffer buf = interaction.buffer().copy();
-    buf.setCursor(buf.getSize());
+    buf.setSize(buf.getCursor());
     interaction.refresh(buf);
     interaction.resume();
   }

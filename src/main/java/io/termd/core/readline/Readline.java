@@ -191,7 +191,7 @@ public class Readline {
 
       // Very specific behavior that cannot be encapsulated in a function flow
       if (event.length() == 1) {
-        if (event.getCodePointAt(0) == 4 && buffer.size() == 0) {
+        if (event.getCodePointAt(0) == 4 && buffer.getSize() == 0) {
           // Specific behavior for Ctrl-D with empty line
           end(null);
           return;
@@ -240,7 +240,7 @@ public class Readline {
       int curHeight = pos.y();
 
       // Recompute new end
-      Vector end = abc.getPosition(abc.size(), oldWith);
+      Vector end = abc.getPosition(abc.getSize(), oldWith);
       int endHeight = end.y() + end.x() / newWidth;
 
       // Position at the bottom / right
@@ -382,7 +382,7 @@ public class Readline {
     public void apply(Interaction interaction) {
       interaction.line.insert(interaction.buffer.toArray());
       LineStatus pb = new LineStatus();
-      for (int i = 0;i < interaction.line.size();i++) {
+      for (int i = 0;i < interaction.line.getSize();i++) {
         pb.accept(interaction.line.getAt(i));
       }
       interaction.buffer.clear();
@@ -399,7 +399,7 @@ public class Readline {
           interaction.resume();
         } else {
           String raw = interaction.line.toString();
-          if (interaction.line.size() > 0) {
+          if (interaction.line.getSize() > 0) {
             history.add(0, interaction.line.toArray());
           }
           interaction.line.clear();

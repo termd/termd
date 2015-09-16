@@ -176,4 +176,30 @@ public class LineBufferUpdateTest {
     screen.assertCodePoints("ab\n\ncd");
   }
 
+  @Test
+  public void testS() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer curr = new LineBuffer().insert("abcdefg").setCursor(2);
+    curr.update(new LineBuffer().insert("ab"), screen, 4);
+    screen.assertCodePoints("\033[K\r\033[1B\033[K\033[1C\033[1C\033[1A").assertEmpty();
+  }
+
+  @Test
+  public void testT() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer curr = new LineBuffer().insert("abcdefg").setCursor(3);
+    curr.update(new LineBuffer().insert("abc"), screen, 4);
+    screen.assertCodePoints("\033[K\r\033[1B\033[K\033[1C\033[1C\033[1C\033[1A").assertEmpty();
+  }
+
+  @Test
+  public void testU() {
+    TestTerminal screen = new TestTerminal();
+    LineBuffer curr = new LineBuffer().insert("abcdefghijk").setCursor(2);
+    curr.update(new LineBuffer().insert("ab"), screen, 4);
+    // todo:
+    // optimize \033[1C + \033[1C -> \033[2C
+    // optimize \033[1A + \033[1A -> \033[2A
+    screen.assertCodePoints("\033[K\r\033[1B\033[K\033[1B\033[K\033[1C\033[1C\033[1A\033[1A").assertEmpty();
+  }
 }

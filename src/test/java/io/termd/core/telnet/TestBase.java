@@ -29,15 +29,20 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestBase {
 
-  protected static final int[] CTRL_A_KEY = { 1 };
-  protected static final int[] CTRL_C_KEY = { 3 };
-  protected static final int[] CTRL_D_KEY = { 4 };
-  protected static final int[] CTRL_E_KEY = { 5 };
+  private static final int ctrl(char c) {
+    return c - 64;
+  }
+
+  protected static final int[] CTRL_A_KEY = { ctrl('A') };
+  protected static final int[] CTRL_C_KEY = { ctrl('C') };
+  protected static final int[] CTRL_D_KEY = { ctrl('D') };
+  protected static final int[] CTRL_E_KEY = { ctrl('E') };
   protected static final int[] UP_KEY = { 27, '[', 'A' };
   protected static final int[] DOWN_KEY = { 27, '[', 'B' };
   protected static final int[] FORWARD_KEY = { 27, '[', 'C' };
   protected static final int[] BACKWARD_KEY = { 27, '[', 'D' };
   protected static final int[] BACKWARD_DELETE_KEY = { 8 };
+  protected static final int[] KILL_LINE = { ctrl('K') };
 
   private volatile Throwable throwable;
   private CountDownLatch latch;

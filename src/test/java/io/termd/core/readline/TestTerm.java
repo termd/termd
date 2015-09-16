@@ -23,6 +23,7 @@ import io.termd.core.readline.functions.Complete;
 import io.termd.core.readline.functions.DeleteChar;
 import io.termd.core.readline.functions.EndOfLine;
 import io.termd.core.readline.functions.ForwardChar;
+import io.termd.core.readline.functions.KillLine;
 import io.termd.core.readline.functions.NextHistory;
 import io.termd.core.readline.functions.PreviousHistory;
 import io.termd.core.telnet.TestBase;
@@ -52,6 +53,7 @@ class TestTerm {
   private int status = 0;
   private int acc = -1;
   private int bell;
+  private int width = 40;
   Consumer<int[]> writeHandler = new Consumer<int[]>() {
     @Override
     public void accept(int[] event) {
@@ -62,7 +64,8 @@ class TestTerm {
         switch (status) {
           case 0:
             if (i >= 32) {
-              buffer[row][cursor++] = i;
+              buffer[row][cursor] = i;
+              forward();
             } else {
               switch (i) {
                 case 7:
@@ -152,6 +155,10 @@ class TestTerm {
 
     private void forward() {
       cursor++;
+      if (cursor == width) {
+        cursor = 0;
+        row++;
+      }
     }
   };
   final Consumer<int[]> stdout = new TtyOutputMode(writeHandler);
@@ -166,7 +173,7 @@ class TestTerm {
 
     @Override
     public Vector size() {
-      return new Vector(40, 20);
+      return new Vector(width, 20);
     }
 
     @Override
@@ -251,6 +258,7 @@ class TestTerm {
     readline.addFunction(new EndOfLine());
     readline.addFunction(new DeleteChar());
     readline.addFunction(new Complete());
+    readline.addFunction(new KillLine());
   }
 
   public void readlineFail() {
@@ -322,6 +330,14 @@ class TestTerm {
 
   void read(int... data) {
     readHandler.accept(data);
+  }
+
+  TestTerm setWidth(int width) {
+    this.width = width;
+    if (sizeHandler != null) {
+      sizeHandler.accept(conn.size());
+    }
+    return this;
   }
 
 }

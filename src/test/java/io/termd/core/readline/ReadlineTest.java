@@ -373,6 +373,27 @@ public class ReadlineTest extends TestBase {
     assertEquals("ac", line.get());
   }
 
+  @Test
+  public void testKillLine() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.setWidth(4);
+    term.read('a', 'b', 'c', 'd', 'e');
+    term.assertScreen("% ab", "cde");
+    term.assertAt(1, 3);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.read(BACKWARD_KEY);
+    term.assertScreen("% ab", "cde");
+    term.assertAt(0, 3);
+    term.read(KILL_LINE);
+    term.assertScreen("% a", "");
+    term.assertAt(0, 3);
+    term.read('\r');
+    assertEquals("a", line.get());
+  }
+
 /*
 
   @Test

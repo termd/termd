@@ -190,8 +190,15 @@ public class LineBuffer {
     }
   }
 
-  public int size() {
+  public int getSize() {
     return size;
+  }
+
+  public void setSize(int size) {
+    this.size = size >= 0 ? size : 0;
+    if (cursor > size) {
+      cursor = size;
+    }
   }
 
   public int getCursor() {
@@ -385,18 +392,18 @@ public class LineBuffer {
               throw new UnsupportedOperationException();
             }
             srcCol++;
+            count++;
             if (srcCol == width) {
               if (count > 0) {
                 moveCursor(_col, _row);
                 out.accept(new int[]{'\033', '[', 'K'});
                 count = 0;
-                _col = srcCol;
-                _row = srcRow;
+                _col = srcCol = 0;
+                _row = ++srcRow;
+              } else {
+                srcCol = 0;
+                srcRow++;
               }
-              srcCol = 0;
-              srcRow++;
-            } else {
-              count++;
             }
           }
         }

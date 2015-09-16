@@ -12,3 +12,4 @@
 "\C-i": complete
 "\C-j": accept-line
 "\C-m": accept-line
+"\C-k": kill-line
