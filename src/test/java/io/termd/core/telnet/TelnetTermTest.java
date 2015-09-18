@@ -1,15 +1,11 @@
 package io.termd.core.telnet;
 
-import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -52,22 +48,14 @@ public abstract class TelnetTermTest extends TelnetTestBase {
       });
     });
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
-    final AtomicReference<OutputStream> out = new AtomicReference<>();
-    client = new TelnetClient() {
-      @Override
-      protected void _connectAction_() throws IOException {
-        super._connectAction_();
-        out.set(_output_);
-      }
-    };
-    client.addOptionHandler(optionHandler);
+    client.setOptionHandler(optionHandler);
     client.connect("localhost", 4000);
     latch1.await(30, TimeUnit.SECONDS);
-    out.get().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, 80, 0, 24, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
-    out.get().flush();
+    client.getDirectOutput().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, 80, 0, 24, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
+    client.getDirectOutput().flush();
     latch2.await(30, TimeUnit.SECONDS);
-    out.get().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, (byte) 180, 0, (byte) 160, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
-    out.get().flush();
+    client.getDirectOutput().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, (byte) 180, 0, (byte) 160, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
+    client.getDirectOutput().flush();
     await();
   }
 }

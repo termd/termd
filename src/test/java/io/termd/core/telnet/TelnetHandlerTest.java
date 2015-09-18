@@ -19,17 +19,13 @@ package io.termd.core.telnet;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.SuppressGAOptionHandler;
-import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.TelnetNotificationHandler;
 import org.apache.commons.net.telnet.TelnetOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,8 +40,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   private void testOptionValue(Supplier<TelnetHandler> factory, TelnetOptionHandler optionHandler) throws Exception {
     server.start(factory);
-    client = new TelnetClient();
-    client.addOptionHandler(optionHandler);
+    client.setOptionHandler(optionHandler);
     client.connect("localhost", 4000);
     await();
   }
@@ -189,7 +184,6 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         testComplete();
       }
     });
-    client = new TelnetClient();
     client.connect("localhost", 4000);
     await();
   }
@@ -202,7 +196,6 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         testComplete();
       }
     });
-    client = new TelnetClient();
     try {
       client.connect("localhost", 4000);
     } finally {
@@ -223,7 +216,6 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         testComplete();
       }
     });
-    client = new TelnetClient();
     client.connect("localhost", 4000);
     await();
   }
@@ -236,9 +228,8 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         conn.write(new byte[]{0, 1, 2, 3, 127, (byte) 0x80, (byte) 0x81, -1});
       }
     });
-    client = new TelnetClient();
     client.connect("localhost", 4000);
-    byte[] data = assertReadBytes(8);
+    byte[] data = client.assertReadBytes(8);
     assertEquals((byte)0, data[0]);
     assertEquals((byte)1, data[1]);
     assertEquals((byte)2, data[2]);
@@ -255,50 +246,45 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
       @Override
       protected void onData(byte[] data) {
         assertEquals(7, data.length);
-        assertEquals((byte)0, data[0]);
-        assertEquals((byte)1, data[1]);
-        assertEquals((byte)2, data[2]);
-        assertEquals((byte)3, data[3]);
-        assertEquals((byte)127, data[4]);
-        assertEquals((byte)0x80, data[5]);
-        assertEquals((byte)0x81, data[6]);
+        assertEquals((byte) 0, data[0]);
+        assertEquals((byte) 1, data[1]);
+        assertEquals((byte) 2, data[2]);
+        assertEquals((byte) 3, data[3]);
+        assertEquals((byte) 127, data[4]);
+        assertEquals((byte) 0x80, data[5]);
+        assertEquals((byte) 0x81, data[6]);
         testComplete();
       }
     });
-    client = new TelnetClient();
-    client.connect("localhost", 4000);
-    client.getOutputStream().write(new byte[]{0,1,2,3,127,(byte) 0x80, (byte) 0x81});
-    client.getOutputStream().flush();
+    client.connect("localhost", 4000).write(new byte[]{0, 1, 2, 3, 127, (byte) 0x80, (byte) 0x81}).flush();
     await();
   }
 
   @Test
   public void testWillUnknownOption() throws Exception {
     server.start(TelnetHandler::new);
-    client = new TelnetClient();
-    client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
       if (option_code == 47) {
         assertEquals(TelnetNotificationHandler.RECEIVED_DONT, negotiation_code);
         testComplete();
       }
     });
-    client.addOptionHandler(new SimpleOptionHandler(47, true, false, false, false));
+    client.setOptionHandler(new SimpleOptionHandler(47, true, false, false, false));
+    client.connect("localhost", 4000);
     await();
   }
 
   @Test
   public void testDoUnknownOption() throws Exception {
     server.start(TelnetHandler::new);
-    client = new TelnetClient();
-    client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
       if (option_code == 47) {
         assertEquals(TelnetNotificationHandler.RECEIVED_WONT, negotiation_code);
         testComplete();
       }
     });
-    client.addOptionHandler(new SimpleOptionHandler(47, false, true, false, false));
+    client.setOptionHandler(new SimpleOptionHandler(47, false, true, false, false));
+    client.connect("localhost", 4000);
     await();
   }
 
@@ -310,12 +296,14 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
       protected void onOpen(TelnetConnection conn) {
         conn.writeDoOption(Option.BINARY);
       }
+
       @Override
       protected void onSendBinary(boolean binary) {
         if (binary) {
           fail("Was not expecting a do for binary option");
         }
       }
+
       @Override
       protected void onReceiveBinary(boolean binary) {
         if (binary) {
@@ -324,6 +312,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
           fail("Was not expecting a won't for binary option");
         }
       }
+
       @Override
       protected void onData(byte[] data) {
         assertEquals(1, data.length);
@@ -331,20 +320,12 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         testComplete();
       }
     });
-    final AtomicReference<OutputStream> out = new AtomicReference<>();
-    client = new TelnetClient() {
-      @Override
-      protected void _connectAction_() throws IOException {
-        super._connectAction_();
-        out.set(_output_);
-      }
-    };
-    client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, false));
+    client.setOptionHandler(new SimpleOptionHandler(0, false, false, true, false));
     client.connect("localhost", 4000);
     latch.await();
-    out.get().write(-1);
-    out.get().write(-1);
-    out.get().flush();
+    client.getDirectOutput().write(-1);
+    client.getDirectOutput().write(-1);
+    client.getDirectOutput().flush();
     await();
   }
 
@@ -356,11 +337,13 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
       public TelnetHandler get() {
         return new TelnetHandler() {
           private TelnetConnection conn;
+
           @Override
           protected void onOpen(TelnetConnection conn) {
             this.conn = conn;
             conn.writeWillOption(Option.BINARY);
           }
+
           @Override
           protected void onSendBinary(boolean binary) {
             if (binary) {
@@ -370,6 +353,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
               fail("Was not expecting a don't for binary option");
             }
           }
+
           @Override
           protected void onReceiveBinary(boolean binary) {
             if (binary) {
@@ -379,20 +363,12 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
         };
       }
     });
-    final AtomicReference<InputStream> out = new AtomicReference<>();
-    client = new TelnetClient() {
-      @Override
-      protected void _connectAction_() throws IOException {
-        super._connectAction_();
-        out.set(_input_);
-      }
-    };
-    client.addOptionHandler(new SimpleOptionHandler(0, false, false, false, true));
+    client.setOptionHandler(new SimpleOptionHandler(0, false, false, false, true));
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    client.registerSpyStream(baos);
+    client.client.registerSpyStream(baos);
     client.connect("localhost", 4000);
     latch.await();
-    Reader reader = new InputStreamReader(client.getInputStream());
+    Reader reader = new InputStreamReader(client.client.getInputStream());
     char[] hello = new char[5];
     int num = reader.read(hello);
     assertEquals(5, num);

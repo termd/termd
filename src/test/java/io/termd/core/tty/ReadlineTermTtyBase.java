@@ -5,11 +5,9 @@ import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.TelnetTestBase;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
-import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
 import org.junit.Test;
 
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -25,13 +23,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
   protected String term;
 
   protected final void assertConnect() throws Exception {
-    client = new TelnetClient();
-    client.addOptionHandler(new EchoOptionHandler(false, false, true, true));
+    client.setOptionHandler(new EchoOptionHandler(false, false, true, true));
     if (binary) {
-      client.addOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
+      client.setOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
     }
     if (term != null) {
-      client.addOptionHandler(new TerminalTypeOptionHandler(term, false, false, true, false));
+      client.setOptionHandler(new TerminalTypeOptionHandler(term, false, false, true, false));
     }
     client.connect("localhost", 4000);
   }
@@ -41,9 +38,8 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
   }
 
   protected final void assertWrite(byte... data) throws Exception {
-    OutputStream out = client.getOutputStream();
-    out.write(data);
-    out.flush();
+    client.write(data);
+    client.flush();
   }
 
   protected final void assertWrite(String s) throws Exception {
@@ -66,7 +62,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
       });
     });
     assertConnect();
-    assertEquals("% ", assertReadString(2));
+    assertEquals("% ", client.assertReadString(2));
     assertEquals(1, connectionCount.get());
     assertEquals(1, requestCount.get());
   }
@@ -84,7 +80,7 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     assertWriteln("");
     int[] data = queue.poll(10, TimeUnit.SECONDS);
     assertTrue(Arrays.equals(new int[]{'\r'}, data));
-    assertEquals("hello", assertReadString(5));
+    assertEquals("hello", client.assertReadString(5));
   }
 
   @Test
