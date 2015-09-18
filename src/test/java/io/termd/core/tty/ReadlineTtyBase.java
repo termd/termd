@@ -214,8 +214,15 @@ public abstract class ReadlineTtyBase extends TestBase {
 
   @Test
   public void testConnectionClose() throws Exception {
+    AtomicInteger closeCount = new AtomicInteger();
     server(conn -> {
-      conn.setCloseHandler(v -> testComplete());
+      conn.setCloseHandler(v -> {
+        if (closeCount.incrementAndGet() > 1) {
+          fail("Closed call several times");
+        } else {
+          testComplete();
+        }
+      });
       conn.setStdinHandler(text -> conn.close());
     });
     assertConnect();

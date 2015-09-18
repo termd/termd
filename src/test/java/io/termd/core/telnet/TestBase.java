@@ -46,14 +46,14 @@ public class TestBase {
 
   private volatile Throwable throwable;
   private CountDownLatch latch;
-  private boolean testCompleteCalled;
+  private Exception testCompleteCalled;
   private boolean awaitCalled;
 
   protected void testComplete() {
-    if (testCompleteCalled) {
-      throw new IllegalStateException("testComplete() already invoked");
+    if (testCompleteCalled != null) {
+      throw new IllegalStateException("testComplete() already invoked", testCompleteCalled);
     }
-    testCompleteCalled = true;
+    testCompleteCalled = new Exception();
     latch.countDown();
   }
 
@@ -186,13 +186,13 @@ public class TestBase {
   public void beforeTest() {
     latch = new CountDownLatch(1);
     throwable = null;
-    testCompleteCalled = false;
+    testCompleteCalled = null;
     awaitCalled = false;
   }
 
   @After
   public void afterTest() {
-    if (!testCompleteCalled && !awaitCalled && throwable != null) {
+    if (testCompleteCalled == null && !awaitCalled && throwable != null) {
       throw new IllegalStateException("You either forget to call testComplete() or forgot to await() for an asynchronous test");
     }
   }

@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -64,6 +65,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   private ChannelSession session;
+  private final AtomicBoolean closed = new AtomicBoolean();
 
   public SshTtyConnection(Consumer<TtyConnection> handler) {
     this.handler = handler;
@@ -143,8 +145,12 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
 
       @Override
       public void close() throws IOException {
-        if (closeHandler != null) {
-          closeHandler.accept(null);
+        if (closed.compareAndSet(false, true)) {
+          if (closeHandler != null) {
+            closeHandler.accept(null);
+          } else {
+            // This happen : report it to the SSHD project
+          }
         }
       }
     });

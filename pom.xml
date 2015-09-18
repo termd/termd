@@ -147,6 +147,12 @@
       <version>1.2.7.Final</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jsch</artifactId>
+      <version>0.1.53</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
