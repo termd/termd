@@ -16,7 +16,6 @@
 
 package io.termd.core.tty;
 
-import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -27,7 +26,6 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Consumer;
@@ -35,7 +33,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SSHReadlineTtyTest extends ReadlineTtyBase {
+public class SshTtyTest extends TtyBase {
 
   JSch jsch = new JSch();
   Session session;

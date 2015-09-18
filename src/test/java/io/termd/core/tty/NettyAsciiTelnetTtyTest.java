@@ -26,10 +26,10 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyBinaryTelnetReadlineTtyTest extends ReadlineTelnetTtyBase {
+public class NettyAsciiTelnetTtyTest extends TelnetTtyBase {
 
-  public NettyBinaryTelnetReadlineTtyTest() {
-    binary = true;
+  public NettyAsciiTelnetTtyTest() {
+    binary = false;
   }
 
   @Override

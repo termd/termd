@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class ReadlineTtyBase extends TestBase {
+public abstract class TtyBase extends TestBase {
 
   protected abstract void assertConnect(String term) throws Exception;
   protected abstract void assertWrite(byte... data) throws Exception;
