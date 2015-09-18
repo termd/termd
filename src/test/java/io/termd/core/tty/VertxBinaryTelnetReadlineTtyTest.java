@@ -10,10 +10,10 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxAsciiReadlineTelnetTtyTest extends ReadlineTermTelnetTtyBase {
+public class VertxBinaryTelnetReadlineTtyTest extends ReadlineTelnetTtyBase {
 
-  public VertxAsciiReadlineTelnetTtyTest() {
-    binary = false;
+  public VertxBinaryTelnetReadlineTtyTest() {
+    binary = true;
   }
 
   @Override
