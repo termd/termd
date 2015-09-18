@@ -1,6 +1,7 @@
 package io.termd.core.tty;
 
 import io.termd.core.telnet.TelnetHandler;
+import io.termd.core.telnet.TelnetServerRule;
 
 import java.io.Closeable;
 import java.util.function.Function;
@@ -17,6 +18,6 @@ public class VertxBinaryReadlineTtyTest extends ReadlineTermTtyBase {
 
   @Override
   protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return VERTX_SERVER;
+    return TelnetServerRule.VERTX_SERVER;
   }
 }

@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   private void testOptionValue(Supplier<TelnetHandler> factory, TelnetOptionHandler optionHandler) throws Exception {
-    server(factory);
+    server.start(factory);
     client = new TelnetClient();
     client.addOptionHandler(optionHandler);
     client.connect("localhost", 4000);
@@ -183,7 +183,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testOpen() throws Exception {
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onOpen(TelnetConnection conn) {
         testComplete();
@@ -196,7 +196,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testClientDisconnect() throws Exception {
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onClose() {
         testComplete();
@@ -213,7 +213,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testServerClose() throws Exception {
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onOpen(TelnetConnection conn) {
         conn.close();
@@ -230,7 +230,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testSend() throws Exception {
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onOpen(TelnetConnection conn) {
         conn.write(new byte[]{0, 1, 2, 3, 127, (byte) 0x80, (byte) 0x81, -1});
@@ -251,7 +251,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testReceive() throws Exception {
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onData(byte[] data) {
         assertEquals(7, data.length);
@@ -274,7 +274,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testWillUnknownOption() throws Exception {
-    server(TelnetHandler::new);
+    server.start(TelnetHandler::new);
     client = new TelnetClient();
     client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
@@ -289,7 +289,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
 
   @Test
   public void testDoUnknownOption() throws Exception {
-    server(TelnetHandler::new);
+    server.start(TelnetHandler::new);
     client = new TelnetClient();
     client.connect("localhost", 4000);
     client.registerNotifHandler((negotiation_code, option_code) -> {
@@ -305,7 +305,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
   @Test
   public void testReceiveBinary() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(() -> new TelnetHandler() {
+    server.start(() -> new TelnetHandler() {
       @Override
       protected void onOpen(TelnetConnection conn) {
         conn.writeDoOption(Option.BINARY);
@@ -351,7 +351,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
   @Test
   public void testSendBinary() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Supplier<TelnetHandler>() {
+    server.start(new Supplier<TelnetHandler>() {
       @Override
       public TelnetHandler get() {
         return new TelnetHandler() {

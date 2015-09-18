@@ -28,6 +28,6 @@ public class VertxTelnetHandlerTest extends TelnetHandlerTest {
 
   @Override
   protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return VERTX_SERVER;
+    return TelnetServerRule.VERTX_SERVER;
   }
 }

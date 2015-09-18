@@ -29,6 +29,6 @@ public class NettyTelnetTermTest extends TelnetTermTest {
 
   @Override
   protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return NETTY_SERVER;
+    return TelnetServerRule.NETTY_SERVER;
   }
 }

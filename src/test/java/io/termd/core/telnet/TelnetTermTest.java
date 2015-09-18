@@ -20,7 +20,7 @@ public abstract class TelnetTermTest extends TelnetTestBase {
   public void testSizeHandler() throws Exception {
     final CountDownLatch latch1 = new CountDownLatch(1);
     final CountDownLatch latch2 = new CountDownLatch(1);
-    server(() -> {
+    server.start(() -> {
       final AtomicInteger count = new AtomicInteger();
       return new TelnetTtyConnection(conn -> {
         conn.setSizeHandler(size -> {
