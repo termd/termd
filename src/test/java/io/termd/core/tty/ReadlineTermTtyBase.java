@@ -60,15 +60,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
   public void testWrite() throws Exception {
     final AtomicInteger connectionCount = new AtomicInteger();
     final AtomicInteger requestCount = new AtomicInteger();
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        connectionCount.incrementAndGet();
-        return new TelnetTtyConnection(conn -> {
-          requestCount.incrementAndGet();
-          conn.stdoutHandler().accept(new int[]{'%', ' '});
-        });
-      }
+    server(() -> {
+      connectionCount.incrementAndGet();
+      return new TelnetTtyConnection(conn -> {
+        requestCount.incrementAndGet();
+        conn.stdoutHandler().accept(new int[]{'%', ' '});
+      });
     });
     assertConnect();
     assertEquals("% ", assertReadString(2));
@@ -79,17 +76,12 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
   @Test
   public void testRead() throws Exception {
     final ArrayBlockingQueue<int[]> queue = new ArrayBlockingQueue<>(1);
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        return new TelnetTtyConnection(conn -> {
-          conn.setStdinHandler(data -> {
-            queue.add(data);
-            conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
-          });
-        });
-      }
-    });
+    server(() -> new TelnetTtyConnection(conn -> {
+      conn.setStdinHandler(data -> {
+        queue.add(data);
+        conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
+      });
+    }));
     assertConnect();
     assertWriteln("");
     int[] data = queue.poll(10, TimeUnit.SECONDS);
@@ -134,34 +126,31 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
   @Test
   public void testSignals() throws Exception {
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        StringBuilder buffer = new StringBuilder();
-        AtomicInteger count = new AtomicInteger();
-        return new TelnetTtyConnection(conn -> {
-          conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
-          conn.setEventHandler((event, cp) -> {
-            switch (count.get()) {
-              case 0:
-                assertEquals(TtyEvent.INTR, event);
-                count.set(1);
-                break;
-              case 1:
-                assertEquals(TtyEvent.EOF, event);
-                count.set(2);
-                break;
-              case 2:
-                assertEquals(TtyEvent.SUSP, event);
-                count.set(3);
-                testComplete();
-                break;
-              default:
-                fail("Not expected");
-            }
-          });
+    server(() -> {
+      StringBuilder buffer = new StringBuilder();
+      AtomicInteger count = new AtomicInteger();
+      return new TelnetTtyConnection(conn -> {
+        conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
+        conn.setEventHandler((event, cp) -> {
+          switch (count.get()) {
+            case 0:
+              assertEquals(TtyEvent.INTR, event);
+              count.set(1);
+              break;
+            case 1:
+              assertEquals(TtyEvent.EOF, event);
+              count.set(2);
+              break;
+            case 2:
+              assertEquals(TtyEvent.SUSP, event);
+              count.set(3);
+              testComplete();
+              break;
+            default:
+              fail("Not expected");
+          }
         });
-      }
+      });
     });
     assertConnect();
     assertWrite(3, 4, 26);
@@ -207,27 +196,24 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
   @Test
   public void testBufferedRead() throws Exception {
     final CountDownLatch latch = new CountDownLatch(1);
-    server(new Supplier<TelnetHandler>() {
-      @Override
-      public TelnetHandler get() {
-        AtomicInteger count = new AtomicInteger();
-        return new TelnetTtyConnection(conn -> {
-          conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
-            switch (count.getAndIncrement()) {
-              case 0:
-                assertEquals("hello", Helper.fromCodePoints(codePoints));
-                latch.countDown();
-                break;
-              case 1:
-                assertEquals("bye", Helper.fromCodePoints(codePoints));
-                testComplete();
-                break;
-              default:
-                fail("Too many requests");
-            }
-          }));
-        });
-      }
+    server(() -> {
+      AtomicInteger count = new AtomicInteger();
+      return new TelnetTtyConnection(conn -> {
+        conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
+          switch (count.getAndIncrement()) {
+            case 0:
+              assertEquals("hello", Helper.fromCodePoints(codePoints));
+              latch.countDown();
+              break;
+            case 1:
+              assertEquals("bye", Helper.fromCodePoints(codePoints));
+              testComplete();
+              break;
+            default:
+              fail("Too many requests");
+          }
+        }));
+      });
     });
     assertConnect();
     assertWrite("hello");
