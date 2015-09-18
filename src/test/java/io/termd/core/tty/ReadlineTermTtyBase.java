@@ -1,11 +1,23 @@
+/*
+ * Copyright 2015 Julien Viet
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.termd.core.tty;
 
+import io.termd.core.telnet.TestBase;
 import io.termd.core.util.Helper;
-import io.termd.core.telnet.TelnetTtyConnection;
-import io.termd.core.telnet.TelnetTestBase;
-import org.apache.commons.net.telnet.EchoOptionHandler;
-import org.apache.commons.net.telnet.SimpleOptionHandler;
-import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -13,134 +25,111 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class ReadlineTermTtyBase extends TelnetTestBase {
+public abstract class ReadlineTermTtyBase extends TestBase {
 
-  protected boolean binary;
-  protected String term;
+  protected abstract void assertConnect(String term) throws Exception;
+  protected abstract void assertWrite(byte... data) throws Exception;
+  protected abstract String assertReadString(int len) throws Exception;
+  protected abstract void assertWriteln(String s) throws Exception;
+  protected abstract void server(Consumer<TtyConnection> onConnect);
 
-  protected final void assertConnect() throws Exception {
-    client.setOptionHandler(new EchoOptionHandler(false, false, true, true));
-    if (binary) {
-      client.setOptionHandler(new SimpleOptionHandler(0, false, false, true, true));
-    }
-    if (term != null) {
-      client.setOptionHandler(new TerminalTypeOptionHandler(term, false, false, true, false));
-    }
-    client.connect("localhost", 4000);
+  protected void assertConnect() throws Exception {
+    assertConnect(null);
   }
 
   protected final void assertWrite(int... codePoints) throws Exception {
     assertWrite(Helper.fromCodePoints(codePoints));
   }
 
-  protected final void assertWrite(byte... data) throws Exception {
-    client.write(data);
-    client.flush();
-  }
-
   protected final void assertWrite(String s) throws Exception {
     assertWrite(s.getBytes("UTF-8"));
   }
 
-  protected final void assertWriteln(String s) throws Exception {
-    assertWrite(s + (binary ? "\r" : "\r\n"));
-  }
-
   @Test
   public void testWrite() throws Exception {
-    final AtomicInteger connectionCount = new AtomicInteger();
     final AtomicInteger requestCount = new AtomicInteger();
-    server.start(() -> {
-      connectionCount.incrementAndGet();
-      return new TelnetTtyConnection(conn -> {
-        requestCount.incrementAndGet();
-        conn.stdoutHandler().accept(new int[]{'%', ' '});
-      });
+    server(conn -> {
+      requestCount.incrementAndGet();
+      conn.stdoutHandler().accept(new int[]{'%', ' '});
     });
     assertConnect();
-    assertEquals("% ", client.assertReadString(2));
-    assertEquals(1, connectionCount.get());
+    assertEquals("% ", assertReadString(2));
     assertEquals(1, requestCount.get());
   }
 
   @Test
   public void testRead() throws Exception {
     final ArrayBlockingQueue<int[]> queue = new ArrayBlockingQueue<>(1);
-    server.start(() -> new TelnetTtyConnection(conn -> {
-      conn.setStdinHandler(data -> {
-        queue.add(data);
-        conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
-      });
+    server(conn -> conn.setStdinHandler(data -> {
+      queue.add(data);
+      conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
     }));
     assertConnect();
     assertWriteln("");
     int[] data = queue.poll(10, TimeUnit.SECONDS);
     assertTrue(Arrays.equals(new int[]{'\r'}, data));
-    assertEquals("hello", client.assertReadString(5));
+    assertEquals("hello", assertReadString(5));
   }
 
   @Test
   public void testSignalInterleaving() throws Exception {
-    server.start(() -> {
-      StringBuilder buffer = new StringBuilder();
-      AtomicInteger count = new AtomicInteger();
-      return new TelnetTtyConnection(conn -> {
-        conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
-        conn.setEventHandler((event, cp) -> {
-          if (event == TtyEvent.INTR) {
-            switch (count.get()) {
-              case 0:
-                assertEquals("hello", buffer.toString());
-                buffer.setLength(0);
-                count.set(1);
-                break;
-              case 1:
-                assertEquals("bye", buffer.toString());
-                count.set(2);
-                testComplete();
-                break;
-              default:
-                fail("Not expected");
-            }
-          }
-        });
-      });
-    });
-    assertConnect();
-    assertWrite('h','e','l','l','o',3,'b','y','e',3);
-    await();
-  }
-
-  @Test
-  public void testSignals() throws Exception {
-    server.start(() -> {
-      StringBuilder buffer = new StringBuilder();
-      AtomicInteger count = new AtomicInteger();
-      return new TelnetTtyConnection(conn -> {
-        conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
-        conn.setEventHandler((event, cp) -> {
+    StringBuilder buffer = new StringBuilder();
+    AtomicInteger count = new AtomicInteger();
+    server(conn -> {
+      conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
+      conn.setEventHandler((event, cp) -> {
+        if (event == TtyEvent.INTR) {
           switch (count.get()) {
             case 0:
-              assertEquals(TtyEvent.INTR, event);
+              assertEquals("hello", buffer.toString());
+              buffer.setLength(0);
               count.set(1);
               break;
             case 1:
-              assertEquals(TtyEvent.EOF, event);
+              assertEquals("bye", buffer.toString());
               count.set(2);
-              break;
-            case 2:
-              assertEquals(TtyEvent.SUSP, event);
-              count.set(3);
               testComplete();
               break;
             default:
               fail("Not expected");
           }
-        });
+        }
+      });
+    });
+    assertConnect();
+    assertWrite('h', 'e', 'l', 'l', 'o', 3, 'b', 'y', 'e', 3);
+    await();
+  }
+
+  @Test
+  public void testSignals() throws Exception {
+    StringBuilder buffer = new StringBuilder();
+    AtomicInteger count = new AtomicInteger();
+    server(conn -> {
+      conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
+      conn.setEventHandler((event, cp) -> {
+        switch (count.get()) {
+          case 0:
+            assertEquals(TtyEvent.INTR, event);
+            count.set(1);
+            break;
+          case 1:
+            assertEquals(TtyEvent.EOF, event);
+            count.set(2);
+            break;
+          case 2:
+            assertEquals(TtyEvent.SUSP, event);
+            count.set(3);
+            testComplete();
+            break;
+          default:
+            fail("Not expected");
+        }
       });
     });
     assertConnect();
@@ -148,63 +137,61 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
     await();
   }
 
-/*
-  @Test
-  public void testAsyncEndRequest() throws Exception {
-    final ArrayBlockingQueue<ReadlineRequest> requestContextWait = new ArrayBlockingQueue<>(1);
-    server(new Provider<TelnetHandler>() {
-      @Override
-      public TelnetHandler provide() {
-        return new TelnetTermConnection() {
-          @Override
-          protected void onOpen(TelnetConnection conn) {
-            super.onOpen(conn);
-            new ReadlineTerm(this, new Handler<ReadlineRequest>() {
-              @Override
-              public void handle(ReadlineRequest request) {
-                switch (request.requestCount()) {
-                  case 0:
-                    request.write("% ").end();
-                    break;
-                  default:
-                    requestContextWait.add(request);
+  /*
+    @Test
+    public void testAsyncEndRequest() throws Exception {
+      final ArrayBlockingQueue<ReadlineRequest> requestContextWait = new ArrayBlockingQueue<>(1);
+      server(new Provider<TelnetHandler>() {
+        @Override
+        public TelnetHandler provide() {
+          return new TelnetTermConnection() {
+            @Override
+            protected void onOpen(TelnetConnection conn) {
+              super.onOpen(conn);
+              new ReadlineTerm(this, new Handler<ReadlineRequest>() {
+                @Override
+                public void handle(ReadlineRequest request) {
+                  switch (request.requestCount()) {
+                    case 0:
+                      request.write("% ").end();
+                      break;
+                    default:
+                      requestContextWait.add(request);
+                  }
                 }
-              }
-            });
-          }
-        };
-      }
-    });
-    assertConnect();
-    assertEquals("% ", assertReadString(2));
-    assertWriteln("");
-    ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
-    assertEquals("\r\n", assertReadString(2));
-    requestContext.write("% ").end();
-    assertEquals("% ", assertReadString(2));
-  }
-*/
+              });
+            }
+          };
+        }
+      });
+      assertConnect();
+      assertEquals("% ", assertReadString(2));
+      assertWriteln("");
+      ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
+      assertEquals("\r\n", assertReadString(2));
+      requestContext.write("% ").end();
+      assertEquals("% ", assertReadString(2));
+    }
+  */
   @Test
   public void testBufferedRead() throws Exception {
+    AtomicInteger count = new AtomicInteger();
     final CountDownLatch latch = new CountDownLatch(1);
-    server.start(() -> {
-      AtomicInteger count = new AtomicInteger();
-      return new TelnetTtyConnection(conn -> {
-        conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
-          switch (count.getAndIncrement()) {
-            case 0:
-              assertEquals("hello", Helper.fromCodePoints(codePoints));
-              latch.countDown();
-              break;
-            case 1:
-              assertEquals("bye", Helper.fromCodePoints(codePoints));
-              testComplete();
-              break;
-            default:
-              fail("Too many requests");
-          }
-        }));
-      });
+    server(conn -> {
+      conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals("hello", Helper.fromCodePoints(codePoints));
+            latch.countDown();
+            break;
+          case 1:
+            assertEquals("bye", Helper.fromCodePoints(codePoints));
+            testComplete();
+            break;
+          default:
+            fail("Too many requests");
+        }
+      }));
     });
     assertConnect();
     assertWrite("hello");
@@ -216,28 +203,21 @@ public abstract class ReadlineTermTtyBase extends TelnetTestBase {
 
   @Test
   public void testTerminalType() throws Exception {
-    server.start(() -> new TelnetTtyConnection(conn -> {
-      conn.setTermHandler(event -> {
-        assertEquals("xterm", event);
-        testComplete();
-      });
+    server(conn -> conn.setTermHandler(event -> {
+      assertEquals("xterm", event);
+      testComplete();
     }));
-    term = "xterm";
-    assertConnect();
+    assertConnect("xterm");
     assertWrite("bye");
     await();
   }
 
   @Test
   public void testConnectionClose() throws Exception {
-    server.start(() -> new TelnetTtyConnection(conn -> {
-      conn.setCloseHandler(v -> {
-        testComplete();
-      });
-      conn.setStdinHandler(text -> {
-        conn.close();
-      });
-    }));
+    server(conn -> {
+      conn.setCloseHandler(v -> testComplete());
+      conn.setStdinHandler(text -> conn.close());
+    });
     assertConnect();
     assertWrite("bye");
     await();

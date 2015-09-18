@@ -26,9 +26,9 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyBinaryReadlineTtyTest extends ReadlineTermTtyBase {
+public class NettyBinaryReadlineTelnetTtyTest extends ReadlineTermTelnetTtyBase {
 
-  public NettyBinaryReadlineTtyTest() {
+  public NettyBinaryReadlineTelnetTtyTest() {
     binary = true;
   }
 
