@@ -44,7 +44,6 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 - dynamic prompt
 - see to use IntStream or not
 - handle % stuff in parser
-- ^D EOT handling
 - foobar@ for any foobar, not only boolean and treat it as a removal
 
 Try to use the maven install plugin to install artifacts with specific dependencies.
