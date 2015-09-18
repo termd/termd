@@ -21,29 +21,34 @@ package io.termd.core.util;
  */
 public class MockProcess {
 
-    public static final String WELCOME_MESSAGE = "Hi there! I'm a long running process.";
-    public static final String MESSAGE = "Hello again!";
-    public static final String FINAL_MESSAGE = "I'm done.";
+  public static final String WELCOME_MESSAGE = "Hi there! I'm a long running process.";
+  public static final String MESSAGE = "Hello again!";
+  public static final String FINAL_MESSAGE = "I'm done.";
 
-    public static void main(String[] args) throws InterruptedException {
+  /**
+   *
+   * @param args 1: Number of repeats. 2: Delay in ms.
+   * @throws InterruptedException
+   */
+  public static void main(String[] args) throws InterruptedException {
 
-        int delay = 250;
-        int repeat = 40;
+    int delay = 250;
+    int repeat = 40;
 
-        if (args.length >= 1) {
-            repeat = Integer.parseInt(args[0]);
-        }
-
-        if (args.length >= 2) {
-            delay = Integer.parseInt(args[1]);
-        }
-
-        System.out.println(WELCOME_MESSAGE);
-        System.out.println("I'll write to stdout test message '" + MESSAGE + "' " + repeat + " times with " + delay + "ms delay.");
-        for (int i = 0; i < repeat; i++) {
-            System.out.println(i + " : " + MESSAGE);
-            Thread.sleep(delay);
-        }
-        System.out.println(FINAL_MESSAGE);
+    if (args.length >= 1) {
+      repeat = Integer.parseInt(args[0]);
     }
+
+    if (args.length >= 2) {
+      delay = Integer.parseInt(args[1]);
+    }
+
+    System.out.println(WELCOME_MESSAGE);
+    System.out.println("I'll write to stdout test message '" + MESSAGE + "' " + repeat + " times with " + delay + "ms delay.");
+    for (int i = 0; i < repeat; i++) {
+      System.out.println(i + " : " + MESSAGE);
+      Thread.sleep(delay);
+    }
+    System.out.println(FINAL_MESSAGE);
+  }
 }

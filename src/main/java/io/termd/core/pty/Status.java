@@ -20,9 +20,24 @@ package io.termd.core.pty;
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public enum Status {
-  NEW,
-  RUNNING,
-  COMPLETED,
-  FAILED,
-  INTERRUPTED;
+
+  NEW (false),
+  RUNNING (false),
+  COMPLETED (true),
+  FAILED (true),
+  INTERRUPTED (true);
+
+  private final boolean final_;
+
+  Status(boolean finalFlag) {
+    this.final_ = finalFlag;
+  }
+
+  /**
+   * @return true when master won't wait anymore for the process to end, the process may have terminated or not.
+   */
+  public boolean isFinal() {
+    return final_;
+  }
+
 }

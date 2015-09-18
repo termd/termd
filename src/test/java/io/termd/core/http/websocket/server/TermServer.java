@@ -32,12 +32,11 @@ import java.util.concurrent.Semaphore;
 public class TermServer {
 
   private static Thread serverThread;
-  Logger log = LoggerFactory.getLogger(TermServer.class);
+  private Logger log = LoggerFactory.getLogger(TermServer.class);
 
   private UndertowBootstrap undertowBootstrap;
   private int port;
   final Executor executor = Executors.newFixedThreadPool(1);
-  final ConcurrentHashMap<String, Term> terms = new ConcurrentHashMap<>(); // Should evict from this map somehow :-)
 
   /**
    * Method returns once server is started.

@@ -22,6 +22,7 @@ import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 
@@ -36,6 +37,8 @@ public class UndertowBootstrap {
   final int port;
   private Undertow server;
   private TermServer termServer;
+  final ConcurrentHashMap<String, Term> terms = new ConcurrentHashMap<>();
+
 
   public UndertowBootstrap(String host, int port, TermServer termServer) {
     this.host = host;
@@ -57,14 +60,26 @@ public class UndertowBootstrap {
   private void handleWebSocketRequests(HttpServerExchange exchange) throws Exception {
     String requestPath = exchange.getRequestPath();
     if (requestPath.startsWith(Configurations.TERM_PATH)) {
+      log.debug("Connecting to term ...");
       String invokerContext = requestPath.replace(Configurations.TERM_PATH + "/", "");
-      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
-      term.getWebSocketHandler(invokerContext).handleRequest(exchange);
+      Term term = getTerm(invokerContext);
+      term.getWebSocketHandler().handleRequest(exchange);
     } else  if (requestPath.startsWith(Configurations.PROCESS_UPDATES_PATH)) {
+      log.debug("Connecting status listener ...");
       String invokerContext = requestPath.replace(Configurations.PROCESS_UPDATES_PATH + "/", "");
-      Term term = termServer.terms.computeIfAbsent(invokerContext, ctx -> new Term(termServer, invokerContext));
+      Term term = getTerm(invokerContext);
       term.webSocketStatusUpdateHandler().handleRequest(exchange);
     }
+  }
+
+  private Term getTerm(String invokerContext) {
+    return terms.computeIfAbsent(invokerContext, ctx -> createNewTerm(invokerContext));
+  }
+
+  private Term createNewTerm(String invokerContext) {
+    log.debug("Creating new term for context [{}].", invokerContext);
+    Runnable onDestroy = () -> terms.remove(invokerContext);
+    return new Term(termServer, invokerContext, onDestroy, termServer.executor);
   }
 
   public void stop() {

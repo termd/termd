@@ -112,10 +112,13 @@ public class PtyMaster extends Thread {
       Pipe stderr = new Pipe(process.getErrorStream());
       stdout.start();
       stderr.start();
-      int exitValue = -1;
       try {
-        process.waitFor();
-        exitValue = process.exitValue();
+        int exitValue = process.waitFor();
+        if (exitValue == 0) {
+          setStatus(Status.COMPLETED);
+        } else {
+          setStatus(Status.FAILED);
+        }
       } catch (InterruptedException e) {
         setStatus(Status.INTERRUPTED);
         Thread.currentThread().interrupt();
@@ -129,11 +132,6 @@ public class PtyMaster extends Thread {
         stderr.join();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-      }
-      if (exitValue == 0) {
-        setStatus(Status.COMPLETED);
-      } else {
-        setStatus(Status.FAILED);
       }
     } catch (IOException e) {
       stdout.accept(Helper.toCodePoints(e.getMessage() + "\r\n"));
