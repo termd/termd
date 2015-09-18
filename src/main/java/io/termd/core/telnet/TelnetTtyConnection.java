@@ -129,9 +129,6 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   @Override
   public void setSizeHandler(Consumer<Vector> handler) {
     this.sizeHandler = handler;
-    if (handler != null && size != null) {
-      handler.accept(size);
-    }
   }
 
   @Override

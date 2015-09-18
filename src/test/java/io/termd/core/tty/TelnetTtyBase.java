@@ -7,6 +7,7 @@ import io.termd.core.telnet.TelnetTtyConnection;
 import org.apache.commons.net.telnet.EchoOptionHandler;
 import org.apache.commons.net.telnet.SimpleOptionHandler;
 import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
+import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Rule;
 
 import java.io.Closeable;
@@ -17,9 +18,10 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class TelnetTtyBase extends TtyBase {
+public abstract class TelnetTtyBase extends TtyTestBase {
 
   protected boolean binary;
+  private WindowSizeOptionHandler wsHandler;
 
   @Rule
   public TelnetServerRule server = new TelnetServerRule(serverFactory());
@@ -31,6 +33,10 @@ public abstract class TelnetTtyBase extends TtyBase {
 
   protected void server(Consumer<TtyConnection> onConnect) {
     server.start(() -> new TelnetTtyConnection(onConnect));
+  }
+
+  @Override
+  protected void resize(int width, int height) {
   }
 
   @Override
@@ -57,5 +63,12 @@ public abstract class TelnetTtyBase extends TtyBase {
   @Override
   protected String assertReadString(int len) throws Exception {
     return client.assertReadString(len);
+  }
+
+  @Override
+  public void testSize() throws Exception {
+    wsHandler = new WindowSizeOptionHandler(80, 24, false, false, true, true);
+    client.setOptionHandler(wsHandler);
+    super.testSize();
   }
 }

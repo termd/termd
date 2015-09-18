@@ -34,12 +34,7 @@ public abstract class TelnetTermTest extends TelnetTestBase {
             case 2:
               assertEquals(180, size.x());
               assertEquals(160, size.y());
-              conn.setSizeHandler(null);
-              conn.setSizeHandler(size1 -> {
-                assertEquals(180, size1.x());
-                assertEquals(160, size1.y());
-                testComplete();
-              });
+              testComplete();
               break;
             default:
               fail("Was not expecting that");

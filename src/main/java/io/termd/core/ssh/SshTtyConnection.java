@@ -107,9 +107,6 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   @Override
   public void setSizeHandler(Consumer<Vector> handler) {
     sizeHandler = handler;
-    if (handler != null && size != null) {
-      handler.accept(size);
-    }
   }
 
   @Override

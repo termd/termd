@@ -21,9 +21,11 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import io.termd.core.ssh.SshTtyConnection;
+import io.termd.core.ssh.vertx.VertxIoServiceFactoryFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.InputStream;
@@ -33,7 +35,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SshTtyTest extends TtyBase {
+public class SshTtyTest extends TtyTestBase {
 
   JSch jsch = new JSch();
   Session session;
@@ -86,6 +88,11 @@ public class SshTtyTest extends TtyBase {
     channel.connect();
     in = channel.getInputStream();
     out = channel.getOutputStream();
+  }
+
+  @Override
+  protected void resize(int width, int height) {
+    channel.setPtySize(width, height, width * 8, height * 8);
   }
 
   @Override
@@ -151,5 +158,25 @@ public class SshTtyTest extends TtyBase {
       } catch (Exception ignore) {
       }
     }
+  }
+
+  @Test
+  public void testFoo() throws Exception {
+
+    sshd = SshServer.setUpDefaultServer();
+    sshd.setIoServiceFactoryFactory(new VertxIoServiceFactoryFactory());
+    sshd.setPort(5000);
+    sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
+    sshd.setPasswordAuthenticator((username, password, session) -> true);
+    sshd.setShellFactory(() -> {
+      throw new UnsupportedOperationException("todo");
+    });
+    sshd.start();
+
+
+    assertConnect();
+    await();
+
+
   }
 }

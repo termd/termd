@@ -30,13 +30,19 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class TtyBase extends TestBase {
+public abstract class TtyTestBase extends TestBase {
 
   protected abstract void assertConnect(String term) throws Exception;
+
   protected abstract void assertWrite(byte... data) throws Exception;
+
   protected abstract String assertReadString(int len) throws Exception;
+
   protected abstract void assertWriteln(String s) throws Exception;
+
   protected abstract void server(Consumer<TtyConnection> onConnect);
+
+  protected abstract void resize(int width, int height);
 
   protected void assertConnect() throws Exception {
     assertConnect(null);
@@ -209,6 +215,26 @@ public abstract class TtyBase extends TestBase {
     }));
     assertConnect("xterm");
     assertWrite("bye");
+    await();
+  }
+
+  @Test
+  public void testSize() throws Exception {
+    server(conn -> {
+          if (conn.size() != null) {
+            assertEquals(80, conn.size().x());
+            assertEquals(24, conn.size().y());
+            testComplete();
+          } else {
+            conn.setSizeHandler(size -> {
+              assertEquals(80, conn.size().x());
+              assertEquals(24, conn.size().y());
+              testComplete();
+            });
+          }
+        }
+    );
+    assertConnect();
     await();
   }
 
