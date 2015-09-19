@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package io.termd.core.tty;
+package io.termd.core.ssh.netty;
 
-import io.termd.core.telnet.TelnetHandler;
-import io.termd.core.telnet.TelnetServerRule;
-
-import java.io.Closeable;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.io.IOException;
+import java.io.InterruptedIOException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyAsciiTelnetTtyTest extends TelnetTtyTestBase {
+class Helper {
 
-  public NettyAsciiTelnetTtyTest() {
-    binary = false;
+  static IOException toIOException(Exception e) {
+    if (e instanceof InterruptedException) {
+      InterruptedIOException ioe = new InterruptedIOException();
+      ioe.initCause(e);
+      return ioe;
+    } else {
+      return new IOException(e);
+    }
   }
 
-  @Override
-  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return TelnetServerRule.NETTY_SERVER;
-  }
 }

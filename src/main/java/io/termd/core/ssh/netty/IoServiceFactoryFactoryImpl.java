@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package io.termd.core.tty;
+package io.termd.core.ssh.netty;
 
-import io.termd.core.telnet.TelnetHandler;
-import io.termd.core.telnet.TelnetServerRule;
-
-import java.io.Closeable;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import org.apache.sshd.common.FactoryManager;
+import org.apache.sshd.common.io.IoServiceFactory;
+import org.apache.sshd.common.io.IoServiceFactoryFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyAsciiTelnetTtyTest extends TelnetTtyTestBase {
-
-  public NettyAsciiTelnetTtyTest() {
-    binary = false;
-  }
+public class IoServiceFactoryFactoryImpl implements IoServiceFactoryFactory {
 
   @Override
-  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return TelnetServerRule.NETTY_SERVER;
+  public IoServiceFactory create(FactoryManager manager) {
+    return new IoServiceFactoryImpl();
   }
 }

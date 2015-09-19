@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class TelnetTtyBase extends TtyTestBase {
+public abstract class TelnetTtyTestBase extends TtyTestBase {
 
   protected boolean binary;
   private WindowSizeOptionHandler wsHandler;

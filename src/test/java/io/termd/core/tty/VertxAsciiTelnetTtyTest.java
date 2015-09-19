@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxAsciiTelnetTtyTest extends TelnetTtyBase {
+public class VertxAsciiTelnetTtyTest extends TelnetTtyTestBase {
 
   public VertxAsciiTelnetTtyTest() {
     binary = false;

@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxBinaryTelnetTtyTest extends TelnetTtyBase {
+public class VertxBinaryTelnetTtyTest extends TelnetTtyTestBase {
 
   public VertxBinaryTelnetTtyTest() {
     binary = true;

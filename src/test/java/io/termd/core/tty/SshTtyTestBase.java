@@ -21,11 +21,9 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import io.termd.core.ssh.SshTtyConnection;
-import io.termd.core.ssh.vertx.VertxIoServiceFactoryFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.InputStream;
@@ -35,7 +33,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SshTtyTest extends TtyTestBase {
+public abstract class SshTtyTestBase extends TtyTestBase {
 
   JSch jsch = new JSch();
   Session session;
@@ -121,13 +119,15 @@ public class SshTtyTest extends TtyTestBase {
 
   private SshServer sshd;
 
+  protected abstract SshServer createServer();
+
   @Override
   protected void server(Consumer<TtyConnection> onConnect) {
     if (sshd != null) {
       throw failure("Already a server");
     }
     try {
-      sshd = SshServer.setUpDefaultServer();
+      sshd = createServer();
       sshd.setPort(5000);
       sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
       sshd.setPasswordAuthenticator((username, password, session) -> true);
@@ -158,25 +158,5 @@ public class SshTtyTest extends TtyTestBase {
       } catch (Exception ignore) {
       }
     }
-  }
-
-  @Test
-  public void testFoo() throws Exception {
-
-    sshd = SshServer.setUpDefaultServer();
-    sshd.setIoServiceFactoryFactory(new VertxIoServiceFactoryFactory());
-    sshd.setPort(5000);
-    sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
-    sshd.setPasswordAuthenticator((username, password, session) -> true);
-    sshd.setShellFactory(() -> {
-      throw new UnsupportedOperationException("todo");
-    });
-    sshd.start();
-
-
-    assertConnect();
-    await();
-
-
   }
 }

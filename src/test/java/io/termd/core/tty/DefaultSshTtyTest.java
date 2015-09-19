@@ -16,24 +16,15 @@
 
 package io.termd.core.tty;
 
-import io.termd.core.telnet.TelnetHandler;
-import io.termd.core.telnet.TelnetServerRule;
-
-import java.io.Closeable;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import org.apache.sshd.server.SshServer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyAsciiTelnetTtyTest extends TelnetTtyTestBase {
-
-  public NettyAsciiTelnetTtyTest() {
-    binary = false;
-  }
+public class DefaultSshTtyTest extends SshTtyTestBase {
 
   @Override
-  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
-    return TelnetServerRule.NETTY_SERVER;
+  protected SshServer createServer() {
+    return SshServer.setUpDefaultServer();
   }
 }

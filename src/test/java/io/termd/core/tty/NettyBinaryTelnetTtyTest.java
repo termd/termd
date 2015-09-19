@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyBinaryTelnetTtyTest extends TelnetTtyBase {
+public class NettyBinaryTelnetTtyTest extends TelnetTtyTestBase {
 
   public NettyBinaryTelnetTtyTest() {
     binary = true;
