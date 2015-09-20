@@ -44,21 +44,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class IoAcceptorImpl extends CloseableUtils.AbstractCloseable implements IoAcceptor {
 
-  private final IoServiceFactoryImpl factory;
+  final IoServiceFactoryImpl factory;
   final ChannelGroup channelGroup;
+  final IoServiceImpl ioService = new IoServiceImpl();
   private final ServerBootstrap bootstrap = new ServerBootstrap();
   private final DefaultCloseFuture closeFuture = new DefaultCloseFuture(null);
   private final Map<SocketAddress, Channel> boundAddresses = new HashMap<>();
-  final AtomicLong sessionSeq = new AtomicLong();
-  final Map<Long, IoSession> sessions = new ConcurrentHashMap<>();
   private final IoHandler handler;
 
   public IoAcceptorImpl(IoServiceFactoryImpl factory, IoHandler handler) {
@@ -138,7 +135,7 @@ public class IoAcceptorImpl extends CloseableUtils.AbstractCloseable implements 
 
   @Override
   public Map<Long, IoSession> getManagedSessions() {
-    return sessions;
+    return ioService.sessions;
   }
 
   @Override

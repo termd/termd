@@ -45,7 +45,6 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
   private final Map<Object, Object> attributes = new HashMap<>();
   private final IoAcceptorImpl acceptor;
   private final IoHandler handler;
-  private final IoService service;
   private ChannelHandlerContext context;
   private SocketAddress remoteAddr;
   private ChannelFuture prev;
@@ -55,8 +54,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
   public IoSessionImpl(IoAcceptorImpl acceptor, IoHandler handler, IoService service) {
     this.acceptor = acceptor;
     this.handler = handler;
-    this.service = service;
-    this.id = acceptor.sessionSeq.incrementAndGet();
+    this.id = acceptor.ioService.sessionSeq.incrementAndGet();
   }
 
   final ChannelInboundHandlerAdapter adapter = new ChannelInboundHandlerAdapter() {
@@ -64,7 +62,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
       context = ctx;
       acceptor.channelGroup.add(ctx.channel());
-      acceptor.sessions.put(id, IoSessionImpl.this);
+      acceptor.ioService.sessions.put(id, IoSessionImpl.this);
       prev = context.newPromise().setSuccess();
       remoteAddr = context.channel().remoteAddress();
       handler.sessionCreated(IoSessionImpl.this);
@@ -72,7 +70,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-      acceptor.sessions.remove(id);
+      acceptor.ioService.sessions.remove(id);
       handler.sessionClosed(IoSessionImpl.this);
       context = null;
     }
@@ -136,8 +134,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
 
   @Override
   public IoService getService() {
-    System.out.println("NOT IMPLEMENTED getService()");
-    return service;
+    return acceptor.ioService;
   }
 
   @Override
