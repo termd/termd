@@ -40,10 +40,10 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements IoSession {
+public class NettyIoSession extends CloseableUtils.AbstractCloseable implements IoSession {
 
   private final Map<Object, Object> attributes = new HashMap<>();
-  private final IoAcceptorImpl acceptor;
+  private final NettyIoAcceptor acceptor;
   private final IoHandler handler;
   private ChannelHandlerContext context;
   private SocketAddress remoteAddr;
@@ -51,7 +51,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
   private final DefaultCloseFuture closeFuture = new DefaultCloseFuture(null);
   private final long id;
 
-  public IoSessionImpl(IoAcceptorImpl acceptor, IoHandler handler, IoService service) {
+  public NettyIoSession(NettyIoAcceptor acceptor, IoHandler handler) {
     this.acceptor = acceptor;
     this.handler = handler;
     this.id = acceptor.ioService.sessionSeq.incrementAndGet();
@@ -62,16 +62,16 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
       context = ctx;
       acceptor.channelGroup.add(ctx.channel());
-      acceptor.ioService.sessions.put(id, IoSessionImpl.this);
+      acceptor.ioService.sessions.put(id, NettyIoSession.this);
       prev = context.newPromise().setSuccess();
       remoteAddr = context.channel().remoteAddress();
-      handler.sessionCreated(IoSessionImpl.this);
+      acceptor.factory.handlerBridge.sessionCreated(handler, NettyIoSession.this);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       acceptor.ioService.sessions.remove(id);
-      handler.sessionClosed(IoSessionImpl.this);
+      acceptor.factory.handlerBridge.sessionClosed(handler, NettyIoSession.this);
       context = null;
     }
 
@@ -80,7 +80,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
       ByteBuf buf = (ByteBuf) msg;
       byte[] bytes = new byte[buf.readableBytes()];
       buf.getBytes(0, bytes);
-      handler.messageReceived(IoSessionImpl.this, new ByteArrayBuffer(bytes));
+      acceptor.factory.handlerBridge.messageReceived(handler, NettyIoSession.this, new ByteArrayBuffer(bytes));
     }
 
     @Override
@@ -88,6 +88,10 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
       cause.printStackTrace();
     }
   };
+
+  public void schedule(Runnable task) {
+    context.channel().eventLoop().execute(task);
+  }
 
   @Override
   public long getId() {
@@ -118,7 +122,7 @@ public class IoSessionImpl extends CloseableUtils.AbstractCloseable implements I
   public IoWriteFuture write(Buffer buffer) {
     ByteBuf buf = Unpooled.buffer(buffer.available());
     buf.writeBytes(buffer.array(), buffer.rpos(), buffer.available());
-    IoWriteFutureImpl msg = new IoWriteFutureImpl();
+    NettyIoWriteFuture msg = new NettyIoWriteFuture();
     ChannelPromise next = context.newPromise();
     prev.addListener(whatever -> context.writeAndFlush(buf, next));
     prev = next;

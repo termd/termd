@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class IoServiceImpl extends CloseableUtils.AbstractCloseable implements IoService {
+public class NettyIoService extends CloseableUtils.AbstractCloseable implements IoService {
 
   final AtomicLong sessionSeq = new AtomicLong();
   final Map<Long, IoSession> sessions = new ConcurrentHashMap<>();

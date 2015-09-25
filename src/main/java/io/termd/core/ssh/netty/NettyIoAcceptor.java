@@ -48,21 +48,21 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class IoAcceptorImpl extends CloseableUtils.AbstractCloseable implements IoAcceptor {
+public class NettyIoAcceptor extends CloseableUtils.AbstractCloseable implements IoAcceptor {
 
-  final IoServiceFactoryImpl factory;
+  final NettyIoServiceFactory factory;
   final ChannelGroup channelGroup;
-  final IoServiceImpl ioService = new IoServiceImpl();
+  final NettyIoService ioService = new NettyIoService();
   private final ServerBootstrap bootstrap = new ServerBootstrap();
   private final DefaultCloseFuture closeFuture = new DefaultCloseFuture(null);
   private final Map<SocketAddress, Channel> boundAddresses = new HashMap<>();
   private final IoHandler handler;
 
-  public IoAcceptorImpl(IoServiceFactoryImpl factory, IoHandler handler) {
+  public NettyIoAcceptor(NettyIoServiceFactory factory, IoHandler handler) {
     this.factory = factory;
     this.handler = handler;
     channelGroup = new DefaultChannelGroup("sshd-acceptor-channels", GlobalEventExecutor.INSTANCE);;
-    bootstrap.group(factory.bossGroup, factory.workerGroup)
+    bootstrap.group(factory.eventLoopGroup)
         .channel(NioServerSocketChannel.class)
         .option(ChannelOption.SO_BACKLOG, 100)
         .handler(new LoggingHandler(LogLevel.INFO))
@@ -70,7 +70,7 @@ public class IoAcceptorImpl extends CloseableUtils.AbstractCloseable implements 
           @Override
           public void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline p = ch.pipeline();
-            p.addLast(new IoSessionImpl(IoAcceptorImpl.this, handler, null).adapter);
+            p.addLast(new NettyIoSession(NettyIoAcceptor.this, handler).adapter);
           }
         });
   }

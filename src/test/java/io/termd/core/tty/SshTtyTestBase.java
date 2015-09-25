@@ -121,6 +121,10 @@ public abstract class SshTtyTestBase extends TtyTestBase {
 
   protected abstract SshServer createServer();
 
+  protected SshTtyConnection createConnection(Consumer<TtyConnection> onConnect) {
+    return new SshTtyConnection(onConnect);
+  }
+
   @Override
   protected void server(Consumer<TtyConnection> onConnect) {
     if (sshd != null) {
@@ -131,7 +135,7 @@ public abstract class SshTtyTestBase extends TtyTestBase {
       sshd.setPort(5000);
       sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
       sshd.setPasswordAuthenticator((username, password, session) -> true);
-      sshd.setShellFactory(() -> new SshTtyConnection(onConnect));
+      sshd.setShellFactory(() -> createConnection(onConnect));
       sshd.start();
     } catch (Exception e) {
       throw failure(e);
@@ -139,7 +143,7 @@ public abstract class SshTtyTestBase extends TtyTestBase {
   }
 
   @After
-  public void after() {
+  public void after() throws Exception {
     if (out != null) {
       try { out.close(); } catch (Exception ignore) {}
     }

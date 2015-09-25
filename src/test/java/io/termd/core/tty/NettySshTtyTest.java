@@ -16,18 +16,57 @@
 
 package io.termd.core.tty;
 
-import io.termd.core.ssh.netty.IoServiceFactoryFactoryImpl;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.termd.core.ssh.SshTtyConnection;
+import io.termd.core.ssh.netty.NettyIoServiceFactoryFactory;
+import io.termd.core.ssh.netty.NettyIoSession;
+import org.apache.sshd.common.session.Session;
 import org.apache.sshd.server.SshServer;
+import org.junit.After;
+import org.junit.Before;
+
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NettySshTtyTest extends SshTtyTestBase {
 
+  private EventLoopGroup eventLoopGroup;
+
+  @Before
+  public void before() {
+    eventLoopGroup = new NioEventLoopGroup();
+  }
+
+  @After
+  public void after() throws Exception {
+    eventLoopGroup.shutdownGracefully().sync();
+  }
+
   @Override
   protected SshServer createServer() {
     SshServer sshd = SshServer.setUpDefaultServer();
-    sshd.setIoServiceFactoryFactory(new IoServiceFactoryFactoryImpl());
+    sshd.setIoServiceFactoryFactory(new NettyIoServiceFactoryFactory(eventLoopGroup));
     return sshd;
+  }
+
+  @Override
+  protected SshTtyConnection createConnection(Consumer<TtyConnection> onConnect) {
+    return new SshTtyConnection(onConnect) {
+      @Override
+      public void schedule(Runnable task) {
+        Session session = this.session.getSession();
+        NettyIoSession ioSession = (NettyIoSession) session.getIoSession();
+        ioSession.schedule(task);
+      }
+    };
+  }
+
+  @Override
+  protected void assertThreading(Thread connThread, Thread schedulerThread) throws Exception {
+    assertTrue(connThread.getName().startsWith("nioEventLoopGroup"));
+    assertEquals(connThread, schedulerThread);
   }
 }

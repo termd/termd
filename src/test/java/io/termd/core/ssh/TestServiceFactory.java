@@ -16,8 +16,8 @@
 
 package io.termd.core.ssh;
 
-import io.termd.core.ssh.netty.IoAcceptorImpl;
-import io.termd.core.ssh.netty.IoServiceFactoryImpl;
+import io.termd.core.ssh.netty.NettyIoAcceptor;
+import io.termd.core.ssh.netty.NettyIoServiceFactory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.common.io.IoAcceptor;
@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class TestServiceFactory extends Nio2ServiceFactory {
 
-  private final IoServiceFactoryImpl factory = new IoServiceFactoryImpl();
+  private final NettyIoServiceFactory factory = new NettyIoServiceFactory();
 
   public TestServiceFactory(FactoryManager factoryManager, ExecutorService service, boolean shutdownOnExit) {
     super(factoryManager, service, shutdownOnExit);
@@ -39,7 +39,7 @@ public class TestServiceFactory extends Nio2ServiceFactory {
 
   @Override
   public IoAcceptor createAcceptor(IoHandler handler) {
-    return new IoAcceptorImpl(factory, handler);
+    return new NettyIoAcceptor(factory, handler);
   }
 
   @Override

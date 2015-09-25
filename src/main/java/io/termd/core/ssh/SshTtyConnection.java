@@ -25,6 +25,7 @@ import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
 import org.apache.sshd.common.channel.PtyMode;
+import org.apache.sshd.common.session.Session;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
@@ -64,7 +65,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   private Consumer<Vector> sizeHandler;
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
-  private ChannelSession session;
+  protected ChannelSession session;
   private final AtomicBoolean closed = new AtomicBoolean();
 
   public SshTtyConnection(Consumer<TtyConnection> handler) {

@@ -16,14 +16,24 @@
 
 package io.termd.core.ssh.netty;
 
-import org.apache.sshd.common.io.AbstractIoWriteFuture;
+import org.apache.sshd.common.io.IoHandler;
+import org.apache.sshd.common.io.IoSession;
+import org.apache.sshd.common.util.Readable;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class IoWriteFutureImpl extends AbstractIoWriteFuture {
+public class NettyIoHandlerBridge {
 
-  public IoWriteFutureImpl() {
-    super(null);
+  public void sessionCreated(IoHandler handler, IoSession session) throws Exception {
+    handler.sessionCreated(session);
+  }
+
+  public void sessionClosed(IoHandler handler, IoSession session) throws Exception {
+    handler.sessionClosed(session);
+  }
+
+  public void messageReceived(IoHandler handler, IoSession session, Readable message) throws Exception {
+    handler.messageReceived(session, message);
   }
 }

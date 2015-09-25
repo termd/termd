@@ -255,4 +255,25 @@ public abstract class TtyTestBase extends TestBase {
     assertWrite("bye");
     await();
   }
+
+  @Test
+  public void testScheduleThread() throws Exception {
+    server(conn -> {
+      Thread connThread = Thread.currentThread();
+      conn.schedule(() -> {
+        Thread schedulerThread = Thread.currentThread();
+        try {
+          assertThreading(connThread, schedulerThread);
+        } catch (Exception e) {
+          fail(e);
+        }
+        testComplete();
+      });
+    });
+    assertConnect();
+    await();
+  }
+
+  protected void assertThreading(Thread connThread, Thread schedulerThread) throws Exception {
+  }
 }

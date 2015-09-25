@@ -19,7 +19,6 @@ package io.termd.core.ssh.netty;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.common.io.IoAcceptor;
 import org.apache.sshd.common.io.IoConnector;
@@ -27,16 +26,28 @@ import org.apache.sshd.common.io.IoHandler;
 import org.apache.sshd.common.io.IoServiceFactory;
 import org.apache.sshd.common.util.CloseableUtils;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class IoServiceFactoryImpl extends CloseableUtils.AbstractCloseable implements IoServiceFactory {
+public class NettyIoServiceFactory extends CloseableUtils.AbstractCloseable implements IoServiceFactory {
 
-  final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-  final EventLoopGroup workerGroup = new NioEventLoopGroup();
+  final NettyIoHandlerBridge handlerBridge;
+  final EventLoopGroup eventLoopGroup;
+  final boolean closeEventLoopGroup;
+
+  public NettyIoServiceFactory() {
+    this(null);
+  }
+
+  public NettyIoServiceFactory(EventLoopGroup group) {
+    this(group, new NettyIoHandlerBridge());
+  }
+
+  public NettyIoServiceFactory(EventLoopGroup group, NettyIoHandlerBridge handlerBridge) {
+    this.handlerBridge = handlerBridge;
+    this.closeEventLoopGroup = group == null;
+    this.eventLoopGroup = group == null ? new NioEventLoopGroup() : group;
+  }
 
   @Override
   public IoConnector createConnector(IoHandler handler) {
@@ -45,26 +56,24 @@ public class IoServiceFactoryImpl extends CloseableUtils.AbstractCloseable imple
 
   @Override
   public IoAcceptor createAcceptor(IoHandler handler) {
-    return new IoAcceptorImpl(this, handler);
+    return new NettyIoAcceptor(this, handler);
   }
 
   @Override
   protected CloseFuture doCloseGracefully() {
-    AtomicInteger count = new AtomicInteger(2);
-    GenericFutureListener<Future<Object>> adapter = (Future<Object> future) -> {
-      if (count.decrementAndGet() == 0) {
+    if (closeEventLoopGroup) {
+      eventLoopGroup.shutdownGracefully().addListener((Future<Object> fut) -> {
         closeFuture.setClosed();
-      }
-    };
-    bossGroup.shutdownGracefully().addListener(adapter);
-    workerGroup.shutdownGracefully().addListener(adapter);
+      });
+    } else {
+      closeFuture.setClosed();
+    }
     return closeFuture;
   }
 
   @Override
   protected void doCloseImmediately() {
-    bossGroup.shutdownGracefully(0, 15, TimeUnit.SECONDS);
-    workerGroup.shutdownGracefully(0, 15, TimeUnit.SECONDS);
+    doCloseGracefully();
     super.doCloseImmediately();
   }
 }

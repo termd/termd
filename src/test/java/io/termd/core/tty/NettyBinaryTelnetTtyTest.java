@@ -36,4 +36,10 @@ public class NettyBinaryTelnetTtyTest extends TelnetTtyTestBase {
   protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
     return TelnetServerRule.NETTY_SERVER;
   }
+
+  @Override
+  protected void assertThreading(Thread connThread, Thread schedulerThread) throws Exception {
+    assertTrue(connThread.getName().startsWith("nioEventLoopGroup"));
+    assertTrue(schedulerThread.getName().startsWith("nioEventLoopGroup"));
+  }
 }
