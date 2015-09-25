@@ -27,17 +27,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.termd.core.telnet.netty.TelnetChannelHandler;
-import io.termd.core.telnet.vertx.TelnetSocketHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Vertx;
-import io.vertx.core.net.NetServer;
 import org.junit.rules.ExternalResource;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -45,26 +38,6 @@ import java.util.function.Supplier;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TelnetServerRule extends ExternalResource {
-
-  public static final Function<Supplier<TelnetHandler>, Closeable> VERTX_SERVER = handlerFactory -> {
-    Vertx vertx= Vertx.vertx();
-    NetServer server = vertx.createNetServer().connectHandler(new TelnetSocketHandler(vertx, handlerFactory));
-    BlockingQueue<AsyncResult<NetServer>> latch = new ArrayBlockingQueue<>(1);
-    server.listen(4000, "localhost", latch::add);
-    AsyncResult<NetServer> result;
-    try {
-      result = latch.poll(2, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw TestBase.failure(e);
-    }
-    if (result.failed()) {
-      throw TestBase.failure(result.cause());
-    }
-    return () -> {
-      server.close();
-      vertx.close();
-    };
-  };
 
   public static final Function<Supplier<TelnetHandler>, Closeable> NETTY_SERVER = handlerFactory -> {
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);

@@ -16,10 +16,8 @@
 
 package io.termd.core.pty;
 
-import io.termd.core.http.vertx.VertxSockJSBootstrap;
 import io.termd.core.tty.TtyConnection;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
@@ -32,6 +30,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
   }
 
   public static void main(String[] args) throws Exception {
+/*
     PtyBootstrap bootstrap = new PtyBootstrap();
     VertxSockJSBootstrap sockJSBootstrap = new VertxSockJSBootstrap(
         "localhost",
@@ -48,6 +47,7 @@ public class PtyBootstrap implements Consumer<TtyConnection> {
       }
     });
     latch.await();
+*/
   }
 
   @Override
