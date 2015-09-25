@@ -18,8 +18,7 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 
 ### Features
 
-- Telnet protocol using _Vert.x 3_ or _Netty 4_
-- SSH protocol using _Apache SSHD_
+- Telnet/SSH using _Netty 4_ or [_Vert.x 3_](https://github.com/vert-x3/vertx-shell)
 - Web interface using _term.js_ and _SockJS_/_Websocket_
 - Event based design
    - read events
