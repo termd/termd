@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.termd.core.telnet.netty;
+package examples;
 
 import io.termd.core.readline.Keymap;
 import io.termd.core.readline.Readline;
+import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 import io.termd.core.term.Capability;
 import io.termd.core.term.Device;
 import io.termd.core.term.TermInfo;
@@ -25,20 +26,17 @@ import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.TelnetBootstrap;
-import io.termd.core.telnet.TelnetConnection;
-import io.termd.core.telnet.TelnetHandler;
 
 import java.io.InputStream;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * A test class.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineBootstrap {
+public class TelnetReadlineExample {
 
 /*
   public static final Handler<ReadlineRequest> ECHO_HANDLER = new Handler<ReadlineRequest>() {
@@ -79,17 +77,17 @@ public class ReadlineBootstrap {
 */
 
   public synchronized static void main(String[] args) throws Exception {
-    new ReadlineBootstrap("localhost", 4000).start();
-    ReadlineBootstrap.class.wait();
+    new TelnetReadlineExample("localhost", 4000).start();
+    TelnetReadlineExample.class.wait();
   }
 
   private final TelnetBootstrap telnet;
 
-  public ReadlineBootstrap(String host, int port) {
+  public TelnetReadlineExample(String host, int port) {
     this(new NettyTelnetBootstrap(host, port));
   }
 
-  public ReadlineBootstrap(TelnetBootstrap telnet) {
+  public TelnetReadlineExample(TelnetBootstrap telnet) {
     this.telnet = telnet;
   }
 

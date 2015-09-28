@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.termd.core.ssh;
+package examples;
 
+import io.termd.core.ssh.SshTtyConnection;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 
@@ -26,15 +27,15 @@ import java.io.File;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ReadlineBootstrap {
+public class SshReadlineExample {
 
   public synchronized static void main(String[] args) throws Exception {
     SshServer sshd = SshServer.setUpDefaultServer();
     sshd.setPort(5000);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
     sshd.setPasswordAuthenticator((username, password, session) -> true);
-    sshd.setShellFactory(() -> new SshTtyConnection(io.termd.core.telnet.netty.ReadlineBootstrap.READLINE));
+    sshd.setShellFactory(() -> new SshTtyConnection(TelnetReadlineExample.READLINE));
     sshd.start();
-    ReadlineBootstrap.class.wait();
+    SshReadlineExample.class.wait();
   }
 }

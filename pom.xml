@@ -254,11 +254,29 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.9.1</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${basedir}/src/examples/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
   <profiles>
-
 
     <profile>
       <id>jacoco</id>
@@ -326,6 +344,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
+                  <!-- Fixme -->
                   <mainClass>io.termd.core.pty.PtyBootstrap</mainClass>
                 </configuration>
               </execution>
@@ -352,7 +371,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.termd.core.telnet.netty.ReadlineBootstrap</mainClass>
+                  <mainClass>examples.TelnetReadlineExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -386,7 +405,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.termd.core.ssh.ReadlineBootstrap</mainClass>
+                  <mainClass>examples.SshReadlineExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -412,7 +431,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>io.termd.core.http.netty.NettyWebsocketBootstrap</mainClass>
+                  <mainClass>examples.NettyWebsocketReadlineExample</mainClass>
                 </configuration>
               </execution>
             </executions>

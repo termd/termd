@@ -31,7 +31,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,12 +39,6 @@ import java.util.function.Supplier;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NettyTelnetBootstrap extends TelnetBootstrap {
-
-  public static void main(String[] args) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    new NettyTelnetBootstrap("localhost", 4000).start(() -> DEBUG_HANDLER).get();
-    latch.await();
-  }
 
   private final String host;
   private final int port;

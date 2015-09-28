@@ -28,7 +28,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import io.termd.core.telnet.netty.ReadlineBootstrap;
 import io.termd.core.tty.TtyConnection;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,13 +39,6 @@ import java.util.function.Consumer;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NettyWebsocketBootstrap {
-
-  public static void main(String[] args) throws Exception {
-    NettyWebsocketBootstrap bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
-    bootstrap.start(ReadlineBootstrap.READLINE);
-    System.in.read();
-    bootstrap.stop();
-  }
 
   private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
   private final String host;
