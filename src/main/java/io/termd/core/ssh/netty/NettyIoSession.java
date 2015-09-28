@@ -124,7 +124,11 @@ public class NettyIoSession extends CloseableUtils.AbstractCloseable implements 
     buf.writeBytes(buffer.array(), buffer.rpos(), buffer.available());
     NettyIoWriteFuture msg = new NettyIoWriteFuture();
     ChannelPromise next = context.newPromise();
-    prev.addListener(whatever -> context.writeAndFlush(buf, next));
+    prev.addListener(whatever -> {
+      if (context != null) {
+        context.writeAndFlush(buf, next);
+      }
+    });
     prev = next;
     next.addListener(fut -> {
       if (fut.isSuccess()) {
