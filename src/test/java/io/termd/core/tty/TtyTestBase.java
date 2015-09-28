@@ -281,7 +281,7 @@ public abstract class TtyTestBase extends TestBase {
   public void testScheduleThread() throws Exception {
     server(conn -> {
       Thread connThread = Thread.currentThread();
-      conn.schedule(() -> {
+      conn.execute(() -> {
         Thread schedulerThread = Thread.currentThread();
         try {
           assertThreading(connThread, schedulerThread);

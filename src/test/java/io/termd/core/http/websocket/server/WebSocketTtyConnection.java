@@ -31,6 +31,8 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -40,7 +42,7 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
 
   private static Logger log = LoggerFactory.getLogger(WebSocketTtyConnection.class);
   private WebSocketChannel webSocketChannel;
-  private final Executor executor;
+  private final ScheduledExecutorService executor;
   private Set<WebSocketChannel> readonlyChannels = new HashSet<>();
 
   @Override
@@ -56,11 +58,16 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
   }
 
   @Override
-  public void schedule(Runnable task) {
+  public void execute(Runnable task) {
     executor.execute(task);
   }
 
-  public WebSocketTtyConnection(WebSocketChannel webSocketChannel, Executor executor) {
+  @Override
+  public void schedule(Runnable task, long delay, TimeUnit unit) {
+    executor.schedule(task, delay, unit);
+  }
+
+  public WebSocketTtyConnection(WebSocketChannel webSocketChannel, ScheduledExecutorService executor) {
     this.webSocketChannel = webSocketChannel;
     this.executor = executor;
 

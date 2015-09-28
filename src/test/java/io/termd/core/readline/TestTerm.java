@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -230,8 +231,13 @@ class TestTerm {
     }
 
     @Override
-    public void schedule(Runnable task) {
+    public void execute(Runnable task) {
       tasks.add(task);
+    }
+
+    @Override
+    public void schedule(Runnable task, long delay, TimeUnit unit) {
+      throw new UnsupportedOperationException();
     }
 
     @Override

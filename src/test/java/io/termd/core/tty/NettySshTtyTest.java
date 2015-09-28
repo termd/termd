@@ -56,7 +56,7 @@ public class NettySshTtyTest extends SshTtyTestBase {
   protected SshTtyConnection createConnection(Consumer<TtyConnection> onConnect) {
     return new SshTtyConnection(onConnect) {
       @Override
-      public void schedule(Runnable task) {
+      public void execute(Runnable task) {
         Session session = this.session.getSession();
         NettyIoSession ioSession = (NettyIoSession) session.getIoSession();
         ioSession.schedule(task);

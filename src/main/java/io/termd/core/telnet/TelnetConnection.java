@@ -16,6 +16,7 @@
 package io.termd.core.telnet;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -94,7 +95,9 @@ public abstract class TelnetConnection {
     }
   }
 
-  protected abstract void schedule(Runnable task);
+  protected abstract void execute(Runnable task);
+
+  protected abstract void schedule(Runnable task, long delay, TimeUnit unit);
 
   protected abstract void send(byte[] data);
 

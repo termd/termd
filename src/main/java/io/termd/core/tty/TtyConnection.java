@@ -19,6 +19,7 @@ package io.termd.core.tty;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -81,6 +82,15 @@ public interface TtyConnection {
    *
    * @param task the task to schedule
    */
-  void schedule(Runnable task);
+  void execute(Runnable task);
+
+  /**
+   * Schedule a task for execution.
+   *
+   * @param task the task to schedule
+   * @param delay the delay
+   * @param unit the time unit
+   */
+  void schedule(Runnable task, long delay, TimeUnit unit);
 
 }

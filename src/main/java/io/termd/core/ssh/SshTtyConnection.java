@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -180,8 +181,13 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
-  public void schedule(Runnable task) {
+  public void execute(Runnable task) {
     session.getSession().getFactoryManager().getScheduledExecutorService().execute(task);
+  }
+
+  @Override
+  public void schedule(Runnable task, long delay, TimeUnit unit) {
+    session.getSession().getFactoryManager().getScheduledExecutorService().schedule(task, delay, unit);
   }
 
   @Override
@@ -210,7 +216,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
     int veof = getControlChar(env, PtyMode.VEOF, 4);
 
     //
-    readBuffer = new ReadBuffer(this::schedule);
+    readBuffer = new ReadBuffer(this::execute);
     eventDecoder = new TtyEventDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, charset, eventDecoder);
     stdout = new TtyOutputMode(new BinaryEncoder(512, charset, out));

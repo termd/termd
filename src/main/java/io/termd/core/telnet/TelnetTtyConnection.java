@@ -27,6 +27,7 @@ import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -43,7 +44,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
-  private final ReadBuffer readBuffer = new ReadBuffer(this::schedule);
+  private final ReadBuffer readBuffer = new ReadBuffer(this::execute);
   private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
   private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, data -> conn.write(data));
@@ -60,8 +61,13 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   }
 
   @Override
-  public void schedule(Runnable task) {
-    conn.schedule(task);
+  public void execute(Runnable task) {
+    conn.execute(task);
+  }
+
+  @Override
+  public void schedule(Runnable task, long delay, TimeUnit unit) {
+    conn.schedule(task, delay, unit);
   }
 
   @Override

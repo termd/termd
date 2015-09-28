@@ -38,8 +38,13 @@ public class NettyTelnetConnection extends TelnetConnection {
   }
 
   @Override
-  public void schedule(Runnable task) {
-    context.channel().eventLoop().schedule(task, 0, TimeUnit.SECONDS);
+  protected void execute(Runnable task) {
+    context.channel().eventLoop().execute(task);
+  }
+
+  @Override
+  protected void schedule(Runnable task, long delay, TimeUnit unit) {
+    context.channel().eventLoop().schedule(task, delay, unit);
   }
 
   // Not properly synchronized, but ok for now

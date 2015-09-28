@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.termd.core.http.HttpTtyConnection;
 import io.termd.core.tty.TtyConnection;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -61,8 +62,14 @@ public class TtyWebSocketFrameHandler extends SimpleChannelInboundHandler<TextWe
           byteBuf.writeBytes(buffer);
           context.writeAndFlush(new TextWebSocketFrame(byteBuf));
         }
+
         @Override
-        public void schedule(Runnable task) {
+        public void schedule(Runnable task, long delay, TimeUnit unit) {
+          context.executor().schedule(task, delay, unit);
+        }
+
+        @Override
+        public void execute(Runnable task) {
           context.executor().execute(task);
         }
 

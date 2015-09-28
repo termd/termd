@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 /**
@@ -48,9 +49,9 @@ class Term {
   final Set<Consumer<TaskStatusUpdateEvent>> statusUpdateListeners = new HashSet<>();
   private WebSocketTtyConnection webSocketTtyConnection;
   private boolean activeCommand;
-  private Executor executor;
+  private ScheduledExecutorService executor;
 
-  public Term(TermServer termServer, String context, Runnable onDestroy, Executor executor) {
+  public Term(TermServer termServer, String context, Runnable onDestroy, ScheduledExecutorService executor) {
     this.context = context;
     this.onDestroy = onDestroy;
     this.executor = executor;

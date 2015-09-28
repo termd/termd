@@ -93,7 +93,7 @@ public class TtyBridge {
       }
       PtyMaster task = new PtyMaster(line,
           buffer -> {
-            conn.schedule(() -> {
+            conn.execute(() -> {
               conn.stdoutHandler().accept(buffer);
             });
             if (processStdoutListener != null) {
@@ -102,7 +102,7 @@ public class TtyBridge {
           },
           v -> {
         conn.setEventHandler(null);
-        conn.schedule(() -> read(conn, readline));
+        conn.execute(() -> read(conn, readline));
       });
       conn.setEventHandler((event,cp) -> {
         if (event == TtyEvent.INTR) {

@@ -21,9 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -36,7 +35,7 @@ public class TermServer {
 
   private UndertowBootstrap undertowBootstrap;
   private int port;
-  final Executor executor = Executors.newFixedThreadPool(1);
+  final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
 
   /**
    * Method returns once server is started.

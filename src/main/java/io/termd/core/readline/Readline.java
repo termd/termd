@@ -131,7 +131,7 @@ public class Readline {
       throw new IllegalStateException("No interaction!");
     }
     if (decoder.hasNext()) {
-      interaction.conn.schedule(Readline.this::deliver);
+      interaction.conn.execute(Readline.this::deliver);
     }
   }
 
