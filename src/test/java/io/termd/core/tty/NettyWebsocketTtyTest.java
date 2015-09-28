@@ -18,6 +18,7 @@ package io.termd.core.tty;
 
 import io.termd.core.http.netty.NettyWebsocketBootstrap;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -34,7 +35,7 @@ public class NettyWebsocketTtyTest extends WebsocketTtyTestBase {
     }
     bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
     try {
-      bootstrap.startBlocking(onConnect);
+      bootstrap.start(onConnect).get(10, TimeUnit.SECONDS);
     } catch (Exception e) {
       throw failure(e);
     }
@@ -42,7 +43,7 @@ public class NettyWebsocketTtyTest extends WebsocketTtyTestBase {
 
   public void after() throws Exception {
     if (bootstrap != null) {
-      bootstrap.stopBlocking();
+      bootstrap.stop().get();
       bootstrap = null;
     }
   }

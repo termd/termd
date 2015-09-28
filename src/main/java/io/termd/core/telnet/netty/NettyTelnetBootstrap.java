@@ -17,8 +17,6 @@
 package io.termd.core.telnet.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -29,13 +27,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -53,22 +49,20 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
 
   private final String host;
   private final int port;
-  private EventLoopGroup bossGroup;
-  private EventLoopGroup workerGroup;
+  private EventLoopGroup parentGroup;
+  private EventLoopGroup childGroup;
 
   public NettyTelnetBootstrap(String host, int port) {
     this.host = host;
     this.port = port;
+    this.parentGroup = new NioEventLoopGroup(1);
+    this.childGroup = new NioEventLoopGroup();
   }
 
   @Override
   public void start(Supplier<TelnetHandler> factory, Consumer<Throwable> doneHandler) {
-
-    bossGroup = new NioEventLoopGroup(1);
-    workerGroup = new NioEventLoopGroup();
-
-    ServerBootstrap b = new ServerBootstrap();
-    b.group(bossGroup, workerGroup)
+    ServerBootstrap boostrap = new ServerBootstrap();
+    boostrap.group(parentGroup, childGroup)
         .channel(NioServerSocketChannel.class)
         .option(ChannelOption.SO_BACKLOG, 100)
         .handler(new LoggingHandler(LogLevel.INFO))
@@ -81,12 +75,11 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
           }
         });
 
-    ChannelFuture f = b.bind(port);
-    f.addListener(abc -> {
-      if (abc.isSuccess()) {
+    boostrap.bind(host, port).addListener(fut -> {
+      if (fut.isSuccess()) {
         doneHandler.accept(null);
       } else {
-        doneHandler.accept(abc.cause());
+        doneHandler.accept(fut.cause());
       }
     });
   }
@@ -99,7 +92,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
         doneHandler.accept(null);
       }
     };
-    bossGroup.shutdownGracefully().addListener(adapter);
-    workerGroup.shutdownGracefully().addListener(adapter);
+    parentGroup.shutdownGracefully().addListener(adapter);
+    childGroup.shutdownGracefully().addListener(adapter);
   }
 }

@@ -30,11 +30,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.termd.core.telnet.netty.ReadlineBootstrap;
 import io.termd.core.tty.TtyConnection;
-import io.termd.core.util.Helper;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -46,9 +43,9 @@ public class NettyWebsocketBootstrap {
 
   public static void main(String[] args) throws Exception {
     NettyWebsocketBootstrap bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
-    bootstrap.startBlocking(ReadlineBootstrap.READLINE);
+    bootstrap.start(ReadlineBootstrap.READLINE);
     System.in.read();
-    bootstrap.stopBlocking();
+    bootstrap.stop();
   }
 
   private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
@@ -82,7 +79,7 @@ public class NettyWebsocketBootstrap {
     });
   }
 
-  public void startBlocking(Consumer<TtyConnection> handler) throws Exception {
+  public CompletableFuture<Void> start(Consumer<TtyConnection> handler) throws Exception {
     CompletableFuture<Void> fut = new CompletableFuture<>();
     start(handler, err -> {
       if (err != null) {
@@ -91,11 +88,7 @@ public class NettyWebsocketBootstrap {
         fut.complete(null);
       }
     });
-    try {
-      fut.get(10, TimeUnit.SECONDS);
-    } catch (ExecutionException e) {
-      Helper.uncheckedThrow(e.getCause());
-    }
+    return fut;
   }
 
   public void stop(Consumer<Void> doneHandler) {
@@ -107,13 +100,9 @@ public class NettyWebsocketBootstrap {
     group.shutdownGracefully().addListener(abc);
   }
 
-  public void stopBlocking() throws InterruptedException {
+  public CompletableFuture<Void> stop() throws InterruptedException {
     CompletableFuture<Void> fut = new CompletableFuture<>();
     stop(fut::complete);
-    try {
-      fut.get();
-    } catch (ExecutionException ignore) {
-      // Log me I'm famous
-    }
+    return fut;
   }
 }

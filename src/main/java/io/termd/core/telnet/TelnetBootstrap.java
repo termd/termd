@@ -80,9 +80,6 @@ public abstract class TelnetBootstrap {
     }
   };
 
-  public TelnetBootstrap() {
-  }
-
   public CompletableFuture<?> start(Supplier<TelnetHandler> factory) {
     CompletableFuture<?> fut = new CompletableFuture<>();
     start(factory, err -> {
