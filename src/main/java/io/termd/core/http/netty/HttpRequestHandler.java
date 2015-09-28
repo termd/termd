@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.termd.core.http.HttpTtyConnection;
+import io.termd.core.util.Logging;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -109,7 +110,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
       throws Exception {
-    cause.printStackTrace();
+    Logging.logReportedIoError(cause);
     ctx.close();
   }
 }

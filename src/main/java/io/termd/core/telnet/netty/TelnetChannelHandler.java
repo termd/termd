@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.termd.core.telnet.TelnetHandler;
+import io.termd.core.util.Logging;
 
 import java.util.function.Supplier;
 
@@ -60,7 +61,7 @@ public class TelnetChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    cause.printStackTrace();
+    Logging.logReportedIoError(cause);
     ctx.close();
   }
 }

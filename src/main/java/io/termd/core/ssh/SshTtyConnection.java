@@ -23,9 +23,9 @@ import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
+import io.termd.core.util.Logging;
 import io.termd.core.util.Vector;
 import org.apache.sshd.common.channel.PtyMode;
-import org.apache.sshd.common.session.Session;
 import org.apache.sshd.server.ChannelSessionAware;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
@@ -174,7 +174,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
         out.write(event);
         out.flush();
       } catch (IOException e) {
-        e.printStackTrace();
+        Logging.logUndeclaredIoError(e);
       }
     };
   }
