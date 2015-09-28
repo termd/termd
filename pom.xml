@@ -371,7 +371,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.TelnetReadlineExample</mainClass>
+                  <mainClass>examples.shell.TelnetShellExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -405,7 +405,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.SshReadlineExample</mainClass>
+                  <mainClass>examples.shell.SshShellExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -431,7 +431,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.NettyWebsocketReadlineExample</mainClass>
+                  <mainClass>examples.shell.NettyWebsocketShellExample</mainClass>
                 </configuration>
               </execution>
             </executions>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package examples;
+package examples.shell;
 
 import io.termd.core.ssh.SshTtyConnection;
 import org.apache.sshd.server.SshServer;
@@ -27,15 +27,15 @@ import java.io.File;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SshReadlineExample {
+public class SshShellExample {
 
   public synchronized static void main(String[] args) throws Exception {
     SshServer sshd = SshServer.setUpDefaultServer();
     sshd.setPort(5000);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
     sshd.setPasswordAuthenticator((username, password, session) -> true);
-    sshd.setShellFactory(() -> new SshTtyConnection(new ReadlineApp()));
+    sshd.setShellFactory(() -> new SshTtyConnection(new Shell()));
     sshd.start();
-    SshReadlineExample.class.wait();
+    SshShellExample.class.wait();
   }
 }

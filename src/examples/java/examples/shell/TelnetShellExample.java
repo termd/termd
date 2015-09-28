@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples;
+package examples.shell;
 
 import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 import io.termd.core.telnet.TelnetTtyConnection;
@@ -24,7 +24,7 @@ import io.termd.core.telnet.TelnetBootstrap;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TelnetReadlineExample {
+public class TelnetShellExample {
 
 /*
   public static final Handler<ReadlineRequest> ECHO_HANDLER = new Handler<ReadlineRequest>() {
@@ -65,21 +65,21 @@ public class TelnetReadlineExample {
 */
 
   public synchronized static void main(String[] args) throws Exception {
-    new TelnetReadlineExample("localhost", 4000).start();
-    TelnetReadlineExample.class.wait();
+    new TelnetShellExample("localhost", 4000).start();
+    TelnetShellExample.class.wait();
   }
 
   private final TelnetBootstrap telnet;
 
-  public TelnetReadlineExample(String host, int port) {
+  public TelnetShellExample(String host, int port) {
     this(new NettyTelnetBootstrap(host, port));
   }
 
-  public TelnetReadlineExample(TelnetBootstrap telnet) {
+  public TelnetShellExample(TelnetBootstrap telnet) {
     this.telnet = telnet;
   }
 
   public void start() {
-    telnet.start(() -> new TelnetTtyConnection(new ReadlineApp()));
+    telnet.start(() -> new TelnetTtyConnection(new Shell()));
   }
 }
