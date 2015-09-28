@@ -9,7 +9,7 @@ public class NettyWebsocketReadlineExample {
 
   public static void main(String[] args) throws Exception {
     NettyWebsocketBootstrap bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
-    bootstrap.start(TelnetReadlineExample.READLINE);
+    bootstrap.start(new ReadlineApp());
     System.in.read();
     bootstrap.stop();
   }

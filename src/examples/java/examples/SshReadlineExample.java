@@ -34,7 +34,7 @@ public class SshReadlineExample {
     sshd.setPort(5000);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
     sshd.setPasswordAuthenticator((username, password, session) -> true);
-    sshd.setShellFactory(() -> new SshTtyConnection(TelnetReadlineExample.READLINE));
+    sshd.setShellFactory(() -> new SshTtyConnection(new ReadlineApp()));
     sshd.start();
     SshReadlineExample.class.wait();
   }

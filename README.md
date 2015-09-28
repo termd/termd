@@ -32,11 +32,14 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 - Unicode support
 - Terminfo capabilities
 
-### What is not Termd
+### FAQ
 
-- not a shell
-- not an arg parser
-- not a command framework
+- what is not Termd ?
+  - not a shell
+  - not an arg parser
+  - not a command framework
+- why async style ?
+  - keyboard, ctrl-c, etc... event processing is easy to program against   
 
 ### Todo
 
