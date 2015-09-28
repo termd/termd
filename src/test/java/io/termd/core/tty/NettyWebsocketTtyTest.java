@@ -17,7 +17,6 @@
 package io.termd.core.tty;
 
 import io.termd.core.http.netty.NettyWebsocketBootstrap;
-import org.junit.After;
 
 import java.util.function.Consumer;
 
