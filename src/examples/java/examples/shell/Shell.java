@@ -234,7 +234,7 @@ public class Shell implements Consumer<TtyConnection> {
           for (int i = 1;i <= conn.size().y();i++) {
 
             // Change cursor position and erase line with ANSI escape code magic
-            buf.append("\033[").append(i).append(";0H\033[K");
+            buf.append("\033[").append(i).append(";1H\033[K");
 
             //
             String format = "  %1$-5s %2$-10s %3$-50s %4$s";

@@ -40,6 +40,11 @@ public final class Vector {
   }
 
   @Override
+  public int hashCode() {
+    return x + y * 101;
+  }
+
+  @Override
   public boolean equals(Object obj) {
     if (obj == this) {
       return true;
