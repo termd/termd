@@ -172,6 +172,11 @@ class TestTerm {
   TtyConnection conn = new TtyConnection() {
 
     @Override
+    public String term() {
+      return "xterm";
+    }
+
+    @Override
     public Vector size() {
       return new Vector(width, 20);
     }

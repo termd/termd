@@ -30,6 +30,14 @@ import java.util.function.IntConsumer;
  */
 public class Helper {
 
+  public static void uncheckedThrow(Throwable throwable) {
+    Helper.<RuntimeException>throwIt(throwable);
+  }
+
+  private static <T extends Throwable> void throwIt(Throwable throwable) throws T {
+    throw (T)throwable;
+  }
+
   /**
    * Do absolutely nothing. This can be useful for code coverage analysis.
    */

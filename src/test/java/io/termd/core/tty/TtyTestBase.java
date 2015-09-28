@@ -34,15 +34,15 @@ public abstract class TtyTestBase extends TestBase {
 
   protected abstract void assertConnect(String term) throws Exception;
 
-  protected abstract void assertWrite(byte... data) throws Exception;
-
   protected abstract String assertReadString(int len) throws Exception;
+
+  protected abstract void assertWrite(String s) throws Exception;
 
   protected abstract void assertWriteln(String s) throws Exception;
 
   protected abstract void server(Consumer<TtyConnection> onConnect);
 
-  protected abstract void resize(int width, int height);
+  protected abstract void resize(int width, int height) throws Exception;
 
   protected void assertConnect() throws Exception {
     assertConnect(null);
@@ -50,10 +50,6 @@ public abstract class TtyTestBase extends TestBase {
 
   protected final void assertWrite(int... codePoints) throws Exception {
     assertWrite(Helper.fromCodePoints(codePoints));
-  }
-
-  protected final void assertWrite(String s) throws Exception {
-    assertWrite(s.getBytes("UTF-8"));
   }
 
   @Test
@@ -209,10 +205,20 @@ public abstract class TtyTestBase extends TestBase {
 
   @Test
   public void testTerminalType() throws Exception {
-    server(conn -> conn.setTermHandler(event -> {
-      assertEquals("xterm", event);
-      testComplete();
-    }));
+    Consumer<String> assertTerm = term -> {
+      if (term.equals("xterm") || term.equals("vt100")) {
+        testComplete();
+      } else {
+        fail("Unexpected term " + term);
+      }
+    };
+    server(conn -> {
+      if (conn.term() != null) {
+        assertTerm.accept(conn.term());
+      } else {
+        conn.setTermHandler(assertTerm);
+      }
+    });
     assertConnect("xterm");
     assertWrite("bye");
     await();
@@ -235,6 +241,21 @@ public abstract class TtyTestBase extends TestBase {
         }
     );
     assertConnect();
+    await();
+  }
+
+  @Test
+  public void testResize() throws Exception {
+    server(conn -> {
+          conn.setSizeHandler(size -> {
+            assertEquals(40, conn.size().x());
+            assertEquals(12, conn.size().y());
+            testComplete();
+          });
+        }
+    );
+    assertConnect();
+    resize(40, 12);
     await();
   }
 

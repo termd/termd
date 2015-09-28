@@ -11,6 +11,7 @@ import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Rule;
 
 import java.io.Closeable;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,8 +52,9 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
     client.connect("localhost", 4000);
   }
 
-  protected final void assertWrite(byte... data) throws Exception {
-    client.write(data);
+  @Override
+  protected void assertWrite(String s) throws Exception {
+    client.write(s.getBytes(StandardCharsets.UTF_8));
     client.flush();
   }
 
@@ -70,5 +72,10 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
     wsHandler = new WindowSizeOptionHandler(80, 24, false, false, true, true);
     client.setOptionHandler(wsHandler);
     super.testSize();
+  }
+
+  @Override
+  public void testResize() throws Exception {
+    // Cannot be tested with this client that does not support resize
   }
 }

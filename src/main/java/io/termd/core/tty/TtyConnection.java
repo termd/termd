@@ -31,6 +31,8 @@ public interface TtyConnection {
 
   Vector size();
 
+  String term();
+
   Consumer<String> getTermHandler();
 
   void setTermHandler(Consumer<String> handler);

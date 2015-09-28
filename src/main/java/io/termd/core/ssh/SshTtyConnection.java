@@ -73,6 +73,11 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
+  public String term() {
+    return term;
+  }
+
+  @Override
   public Consumer<int[]> getStdinHandler() {
     return readBuffer.getReadHandler();
   }
@@ -90,9 +95,6 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   @Override
   public void setTermHandler(Consumer<String> handler) {
     termHandler = handler;
-    if (handler != null && term != null) {
-      handler.accept(term);
-    }
   }
 
   @Override

@@ -28,6 +28,7 @@ import org.junit.After;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
@@ -94,8 +95,8 @@ public abstract class SshTtyTestBase extends TtyTestBase {
   }
 
   @Override
-  protected void assertWrite(byte... data) throws Exception {
-    out.write(data);
+  protected void assertWrite(String s) throws Exception {
+    out.write(s.getBytes(StandardCharsets.UTF_8));
     out.flush();
   }
 
@@ -114,7 +115,7 @@ public abstract class SshTtyTestBase extends TtyTestBase {
 
   @Override
   protected void assertWriteln(String s) throws Exception {
-    assertWrite((s + "\r").getBytes("UTF-8"));
+    assertWrite((s + "\r"));
   }
 
   private SshServer sshd;

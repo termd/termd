@@ -1,29 +1,52 @@
 <!doctype html>
-<title>tty.js</title>
+<title>Term.d</title>
 
-<h1>termd.js</h1>
+<h1>Term.d</h1>
 
-<script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+<style>
+  html {
+    background: #555;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    font: 20px/1.5 sans-serif;
+  }
+
+  .terminal {
+    float: left;
+    border: #000 solid 5px;
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+    font-size: 11px;
+    color: #f0f0f0;
+    background: #000;
+  }
+
+  .terminal-cursor {
+    color: #000;
+    background: #f0f0f0;
+  }
+</style><!--<script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>-->
 <script src="term.js"></script>
 
 <script type="text/javascript">
-  window.addEventListener('load', function() {
-    var socket = new SockJS('http://localhost:8080/term');
-    socket.onopen = function() {
+  window.addEventListener('load', function () {
+    var socket = new WebSocket('ws://localhost:8080/ws');
+    socket.onopen = function () {
       var term = new Terminal({cols: 80, rows: 24, screenKeys: true});
-      socket.onmessage = function(event) {
+      socket.onmessage = function (event) {
         if (event.type === 'message') {
           var data = event.data;
           term.write(data);
         }
-      }
-      socket.onclose = function() {
+      };
+      socket.onclose = function () {
         socket.onmessage = null;
         socket.onclose = null;
         term.destroy();
       };
-      term.on('data', function(data) {
-        socket.send(JSON.stringify({action:'read',data:data}));
+      term.on('data', function (data) {
+        socket.send(JSON.stringify({action: 'read', data: data}));
       });
       term.open(document.body);
     };

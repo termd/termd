@@ -26,8 +26,6 @@ import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,15 +34,28 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * A connection to an http client, independant of the protocol, it could be straight Bebsockets or
+ * A connection to an http client, independant of the protocol, it could be straight Websockets or
  * SockJS, etc...
+ *
+ * The incoming protocol is based on json messages:
+ *
+ * {
+ *   "action": "read",
+ *   "data": "what the user typed"
+ * }
+ *
+ * or
+ *
+ * {
+ *   "action": "resize",
+ *   "cols": 30,
+ *   "rows: 50
+ * }
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public abstract class HttpTtyConnection implements TtyConnection {
-
-  private static Logger log = LoggerFactory.getLogger(HttpTtyConnection.class);
 
   private Vector size = new Vector(80, 24); // For now hardcoded
   private Consumer<Vector> sizeHandler;
@@ -53,47 +64,57 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private final BinaryDecoder decoder;
   private final Consumer<int[]> stdout;
   private Consumer<Void> closeHandler;
+  private Consumer<String> termHandler;
 
   public HttpTtyConnection() {
-    readBuffer = new ReadBuffer(command -> {
-      log.debug("Server read buffer executing command: {}" + command);
-      schedule(command);
-    });
+    readBuffer = new ReadBuffer(this::schedule);
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
     stdout = new TtyOutputMode(new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write));
+  }
+
+  @Override
+  public String term() {
+    return "vt100";
   }
 
   protected abstract void write(byte[] buffer);
 
   public void writeToDecoder(String msg) {
     ObjectMapper mapper = new ObjectMapper();
-    Map<String, String> obj = null;
+    Map<String, Object> obj;
     String action;
-
     try {
       obj = mapper.readValue(msg, Map.class);
-      action = obj.get("action");
+      action = (String) obj.get("action");
     } catch (IOException e) {
+      // Handle this better!!!
       throw new RuntimeException("Cannot deserialize object from json", e);
     }
-
-    if (obj != null) {
+    if (action != null) {
       switch (action) {
         case "read":
-          String data = obj.get("data");
+          String data = (String) obj.get("data");
           decoder.write(data.getBytes()); //write back echo
+          break;
+        case "resize":
+          int cols = (int) obj.get("cols");
+          int rows = (int) obj.get("rows");
+          size = new Vector(cols, rows);
+          if (sizeHandler != null) {
+            sizeHandler.accept(size);
+          }
           break;
       }
     }
   }
 
   public Consumer<String> getTermHandler() {
-    return null; //TODO
+    return termHandler;
   }
 
   public void setTermHandler(Consumer<String> handler) {
-      //TODO
+    termHandler = handler;
   }
 
   @Override
@@ -107,9 +128,6 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   public void setSizeHandler(Consumer<Vector> handler) {
     this.sizeHandler = handler;
-    if (handler != null && size != null) {
-      handler.accept(size);
-    }
   }
 
   @Override
@@ -142,12 +160,5 @@ public abstract class HttpTtyConnection implements TtyConnection {
   @Override
   public Consumer<Void> getCloseHandler() {
     return closeHandler;
-  }
-
-  @Override
-  public void close() {
-    if (closeHandler != null) {
-      closeHandler.accept(null);
-    }
   }
 }

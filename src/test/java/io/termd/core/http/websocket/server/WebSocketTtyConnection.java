@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
@@ -106,5 +107,13 @@ public class WebSocketTtyConnection extends HttpTtyConnection {
 
   public void removeWebSocketChannel() {
     webSocketChannel = null;
+  }
+
+  @Override
+  public void close() {
+    Consumer<Void> closeHandler = getCloseHandler();
+    if (closeHandler != null) {
+      closeHandler.accept(null);
+    }
   }
 }

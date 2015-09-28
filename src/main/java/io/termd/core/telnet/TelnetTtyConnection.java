@@ -55,6 +55,11 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   }
 
   @Override
+  public String term() {
+    return terminalType;
+  }
+
+  @Override
   public void schedule(Runnable task) {
     conn.schedule(task);
   }
