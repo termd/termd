@@ -15,7 +15,6 @@
  */
 package examples.snake;
 
-import examples.shell.Shell;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.telnet.netty.NettyTelnetBootstrap;
@@ -43,6 +42,6 @@ public class TelnetSnakeExample {
   }
 
   public void start() {
-    telnet.start(() -> new TelnetTtyConnection(new Snake()));
+    telnet.start(() -> new TelnetTtyConnection(new SnakeGame()));
   }
 }
