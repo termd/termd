@@ -59,6 +59,40 @@ Termd in a web page using the [term.js](https://github.com/chjj/term.js/) client
   - you want to support various protocols like SSH, telnet or a web interface
   - you don't care about the technical details
 
+### Examples
+
+#### Shell
+
+A simple shell example giving an overview of TTY interactions.
+
+[Telnet](src/examples/java/examples/shell/TelnetShellExample.java)
+[SSH](src/examples/java/examples/shell/SshShellExample.java)
+[Websocket](src/examples/java/examples/shell/WebsocketShellExample.java)
+
+#### Screencast
+
+Broadcast the desktop to the client, focusing on pushing data to the TTY.
+
+[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
+[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java)
+[Websocket](src/examples/examples/java/screencast/WebsocketScreencastingExample.java)
+
+#### Snake
+
+The popular Snake game on the event loop
+
+[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
+[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java)
+[Websocket](src/examples/java/examples/screencast/WebsocketScreencastingExample.java)
+
+#### Ptybridge
+
+The PTY bridge is a bridge to native process, use with caution for security reasons.
+
+[Telnet](src/examples/java/examples/ptrybridge/TelnetPtyBridgeExample.java)
+[SSH](src/examples/java/examples/ptrybridge/SshPtyBridgeExample.java)
+[Websocket](src/examples/java/examples/ptrybridge/WebsocketPtyBridgeExample.java)
+
 ### Todo
 
 - dynamic prompt
