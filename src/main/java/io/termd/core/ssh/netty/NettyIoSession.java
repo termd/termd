@@ -37,6 +37,7 @@ import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -91,8 +92,12 @@ public class NettyIoSession extends CloseableUtils.AbstractCloseable implements 
     }
   };
 
-  public void schedule(Runnable task) {
+  public void execute(Runnable task) {
     context.channel().eventLoop().execute(task);
+  }
+
+  public void schedule(Runnable task, long delay, TimeUnit unit) {
+    context.channel().eventLoop().schedule(task, delay, unit);
   }
 
   @Override

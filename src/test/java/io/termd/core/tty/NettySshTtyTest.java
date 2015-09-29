@@ -59,7 +59,7 @@ public class NettySshTtyTest extends SshTtyTestBase {
       public void execute(Runnable task) {
         Session session = this.session.getSession();
         NettyIoSession ioSession = (NettyIoSession) session.getIoSession();
-        ioSession.schedule(task);
+        ioSession.execute(task);
       }
     };
   }
