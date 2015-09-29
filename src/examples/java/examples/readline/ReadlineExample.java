@@ -7,8 +7,6 @@ import io.termd.core.tty.TtyConnection;
 
 /**
  * Shows how to use async Readline.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ReadlineExample {
 
@@ -24,6 +22,8 @@ public class ReadlineExample {
         conn.write("Logout").close();
       } else {
         conn.write("User entered " + line + "\n");
+
+        // Read line again
         readline(readline, conn);
       }
     });

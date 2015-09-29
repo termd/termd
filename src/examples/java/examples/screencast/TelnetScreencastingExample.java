@@ -20,11 +20,6 @@ import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
 import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * A test class.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
 public class TelnetScreencastingExample {
 
   public synchronized static void main(String[] args) throws Exception {

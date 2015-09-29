@@ -20,11 +20,6 @@ import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * A test class.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
 public class TelnetPtyBridgeExample {
 
   public synchronized static void main(String[] args) throws Exception {

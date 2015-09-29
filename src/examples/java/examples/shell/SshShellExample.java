@@ -20,11 +20,6 @@ import io.termd.core.ssh.netty.NettySshTtyBootstrap;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Readline bootstrap for SSH.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
 public class SshShellExample {
 
   public synchronized static void main(String[] args) throws Exception {

@@ -5,9 +5,6 @@ import io.termd.core.http.netty.NettyWebsocketTtyBootstrap;
 import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
 public class WebsocketScreencastingExample {
 
   public synchronized static void main(String[] args) throws Exception {

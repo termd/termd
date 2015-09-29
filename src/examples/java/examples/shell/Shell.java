@@ -23,8 +23,6 @@ import java.util.regex.Pattern;
  *   <li>{@link Readline} usage</li>
  *   <li>{@link TtyConnection} usage</li>
  * </ul>
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Shell implements Consumer<TtyConnection> {
 

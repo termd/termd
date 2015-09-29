@@ -5,9 +5,6 @@ import io.termd.core.pty.TtyBridge;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
 public class WebsocketPtyBridgeExample {
 
   public synchronized static void main(String[] args) throws Exception {

@@ -11,8 +11,6 @@ import java.util.concurrent.TimeUnit;
  * Createa a screencast of the current screen to the TTY.
  *
  * This example shows how to push data to the TTY on regular intervals.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Screencaster {
 

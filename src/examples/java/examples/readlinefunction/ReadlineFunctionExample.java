@@ -9,8 +9,6 @@ import io.termd.core.tty.TtyConnection;
 
 /**
  * Shows how to extend readline with custom functions.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ReadlineFunctionExample {
 
