@@ -37,7 +37,6 @@ import java.util.function.Consumer;
  */
 public class Readline {
 
-  private final Keymap keymap;
   private final Device device;
   private final Map<String, Function> functions = new HashMap<>();
   private final EventQueue decoder;
@@ -50,7 +49,6 @@ public class Readline {
 
   public Readline(Keymap keymap) {
     this.device = TermInfo.defaultInfo().getDevice("xterm"); // For now use xterm
-    this.keymap = keymap;
     this.decoder = new EventQueue(keymap);
     this.history = new ArrayList<>();
     addFunction(ACCEPT_LINE);

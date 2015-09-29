@@ -18,19 +18,20 @@ package io.termd.core.readline;
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventQueue {
+public class EventQueue implements Iterator<KeyEvent> {
 
-  private final Keymap keymap;
+  private KeyEvent[] bindings;
   private final LinkedList<KeyEvent> events = new LinkedList<>();
   private int[] pending = new int[0];
 
   public EventQueue(Keymap keymap) {
-    this.keymap = keymap;
+    this.bindings = keymap.bindings.toArray(new KeyEvent[keymap.bindings.size()]);
   }
 
   public EventQueue append(int... codePoints) {
@@ -44,16 +45,16 @@ public class EventQueue {
     return this;
   }
 
-  public boolean hasNext() {
-    return peek() != null;
-  }
-
   public KeyEvent peek() {
     if (events.isEmpty()) {
       return match(pending);
     } else {
       return events.peekFirst();
     }
+  }
+
+  public boolean hasNext() {
+    return peek() != null;
   }
 
   public KeyEvent next() {
@@ -83,24 +84,24 @@ public class EventQueue {
 
   private KeyEvent match(int[] buffer) {
     if (buffer.length > 0) {
-      Keymap.Binding candidate = null;
+      KeyEvent candidate = null;
       int prefixes = 0;
       next:
-      for (Keymap.Binding action : keymap.bindings) {
-        if (action.seq.length > 0) {
-          if (action.seq.length <= buffer.length) {
-            for (int i = 0;i < action.seq.length;i++) {
-              if (action.seq[i] != buffer[i]) {
+      for (KeyEvent action : bindings) {
+        if (action.length() > 0) {
+          if (action.length() <= buffer.length) {
+            for (int i = 0;i < action.length();i++) {
+              if (action.getCodePointAt(i) != buffer[i]) {
                 continue next;
               }
             }
-            if (candidate != null && candidate.seq.length > action.seq.length) {
+            if (candidate != null && candidate.length() > action.length()) {
               continue next;
             }
             candidate = action;
           } else {
             for (int i = 0;i < buffer.length;i++) {
-              if (action.seq[i] != buffer[i]) {
+              if (action.getCodePointAt(i) != buffer[i]) {
                 continue next;
               }
             }
@@ -130,7 +131,7 @@ public class EventQueue {
           };
         }
       } else {
-        return candidate.event;
+        return candidate;
       }
     }
     return null;

@@ -18,8 +18,12 @@ package io.termd.core.readline;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
+ * A keymap, binds key events to key sequence.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Keymap {
@@ -29,17 +33,14 @@ public class Keymap {
     return new Keymap(inputrc);
   }
 
-  final Binding[] bindings;
+  final List<KeyEvent> bindings;
 
   public Keymap() {
-    this(Keys.values());
+    this(Arrays.asList(Keys.values()));
   }
 
-  public Keymap(KeyEvent[] keys) {
-    this.bindings = new Binding[keys.length];
-    for (int i = 0;i < keys.length;i++) {
-      bindings[i] = new Binding(keys[i]);
-    }
+  public Keymap(List<KeyEvent> keys) {
+    this.bindings = new ArrayList<>(keys);
   }
 
   /**
@@ -48,30 +49,37 @@ public class Keymap {
    * @param inputrc the configuration file
    */
   public Keymap(InputStream inputrc) {
-    final ArrayList<Binding> actions = new ArrayList<>();
+    final ArrayList<KeyEvent> actions = new ArrayList<>();
     InputrcParser handler = new InputrcParser() {
       @Override
       public void bindFunction(final int[] keySequence, final String functionName) {
-        actions.add(new Binding(keySequence, new FunctionEvent(functionName, keySequence)));
+        actions.add(new FunctionEvent(functionName, keySequence));
       }
     };
     InputrcParser.parse(inputrc, handler);
-    this.bindings = actions.toArray(new Binding[actions.size()]);
+    this.bindings = actions;
   }
 
-  static class Binding {
-    final int[] seq;
-    final KeyEvent event;
-    public Binding(KeyEvent event) {
-      this.seq = new int[event.length()];
-      for (int i = 0;i < seq.length;i++) {
-        seq[i] = event.getCodePointAt(i);
-      }
-      this.event = event;
-    }
-    public Binding(int[] seq, KeyEvent event) {
-      this.seq = seq;
-      this.event = event;
-    }
+  /**
+   * Bind a function to a key sequence, the key seq must be in <i>inputrc</i> format.
+   *
+   * @param keyseq the key sequence
+   * @param function the function to bind
+   * @return this keymap
+   */
+  public Keymap bindFunction(String keyseq, String function) {
+    return bindFunction(InputrcParser.parseKeySeq(keyseq), function);
+  }
+
+  /**
+   * Bind a function to a key sequence, the key seq must be in <i>inputrc</i> format.
+   *
+   * @param keyseq the key sequence
+   * @param function the function to bind
+   * @return this keymap
+   */
+  public Keymap bindFunction(int[] keyseq, String function) {
+    bindings.add(new FunctionEvent(function, keyseq));
+    return this;
   }
 }
