@@ -92,6 +92,13 @@ public class Readline {
     return this;
   }
 
+  public Readline addFunctions(Iterable<Function> functions) {
+    for (Function function : functions) {
+      addFunction(function);
+    }
+    return this;
+  }
+
   private void deliver() {
     while (decoder.hasNext() && interaction != null && !interaction.paused) {
       KeyEvent next = decoder.next();

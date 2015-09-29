@@ -16,6 +16,9 @@
 
 package io.termd.core.readline;
 
+import io.termd.core.util.Helper;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,6 +27,19 @@ import java.util.List;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface Function {
+
+  /**
+   * Load the defaults function via the {@link java.util.ServiceLoader} SPI.
+   *
+   * @return the loaded function
+   */
+  static List<Function> loadDefaults() {
+    List<Function> functions = new ArrayList<>();
+    for (io.termd.core.readline.Function function : Helper.loadServices(Thread.currentThread().getContextClassLoader(), io.termd.core.readline.Function.class)) {
+      functions.add(function);
+    }
+    return functions;
+  }
 
   /**
    * The function name, for instance <i>backward-char</i>.

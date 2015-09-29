@@ -24,6 +24,11 @@ import java.util.ArrayList;
  */
 public class Keymap {
 
+  public static Keymap getDefault() {
+    InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
+    return new Keymap(inputrc);
+  }
+
   final Binding[] bindings;
 
   public Keymap() {
