@@ -89,9 +89,9 @@ The popular Snake game on the event loop
 
 The PTY bridge is a bridge to native process, use with caution for security reasons.
 
-[Telnet](src/examples/java/examples/ptrybridge/TelnetPtyBridgeExample.java)
-[SSH](src/examples/java/examples/ptrybridge/SshPtyBridgeExample.java)
-[Websocket](src/examples/java/examples/ptrybridge/WebsocketPtyBridgeExample.java)
+[Telnet](src/examples/java/examples/ptybridge/TelnetPtyBridgeExample.java)
+[SSH](src/examples/java/examples/ptybridge/SshPtyBridgeExample.java)
+[Websocket](src/examples/java/examples/ptybridge/WebsocketPtyBridgeExample.java)
 
 ### Todo
 
