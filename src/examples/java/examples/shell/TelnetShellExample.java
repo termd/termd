@@ -15,9 +15,9 @@
  */
 package examples.shell;
 
-import io.termd.core.telnet.netty.NettyTelnetBootstrap;
-import io.termd.core.telnet.TelnetTtyConnection;
-import io.termd.core.telnet.TelnetBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * A test class.
@@ -26,60 +26,12 @@ import io.termd.core.telnet.TelnetBootstrap;
  */
 public class TelnetShellExample {
 
-/*
-  public static final Handler<ReadlineRequest> ECHO_HANDLER = new Handler<ReadlineRequest>() {
-    @Override
-    public void handle(final ReadlineRequest request) {
-      if (request.requestCount() == 0) {
-        request.write("Welcome sir\r\n\r\n% ").end();
-      } else {
-        request.eventHandler(new Handler<TermEvent>() {
-          @Override
-          public void handle(TermEvent event) {
-            if (event instanceof TermEvent.Read) {
-              request.write("key pressed " + Helper.fromCodePoints(((TermEvent.Read) event).getData()) + "\r\n");
-            }
-          }
-        });
-        new Thread() {
-          @Override
-          public void run() {
-            new Thread() {
-              @Override
-              public void run() {
-                try {
-                  Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                  e.printStackTrace();
-                } finally {
-                  request.write("You just typed :" + request.line());
-                  request.write("\r\n% ").end();
-                }
-              }
-            }.start();
-          }
-        }.start();
-      }
-    }
-  };
-*/
-
   public synchronized static void main(String[] args) throws Exception {
-    new TelnetShellExample("localhost", 4000).start();
+    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().
+        setHost("localhost").
+        setPort(4000);
+    bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
+    System.out.println("Telnet server started on localhost/4000");
     TelnetShellExample.class.wait();
-  }
-
-  private final TelnetBootstrap telnet;
-
-  public TelnetShellExample(String host, int port) {
-    this(new NettyTelnetBootstrap(host, port));
-  }
-
-  public TelnetShellExample(TelnetBootstrap telnet) {
-    this.telnet = telnet;
-  }
-
-  public void start() {
-    telnet.start(() -> new TelnetTtyConnection(new Shell()));
   }
 }

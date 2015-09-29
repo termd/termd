@@ -1,16 +1,18 @@
 package examples.shell;
 
-import io.termd.core.http.netty.NettyWebsocketBootstrap;
+import io.termd.core.http.netty.NettyWebsocketTtyBootstrap;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NettyWebsocketShellExample {
 
-  public static void main(String[] args) throws Exception {
-    NettyWebsocketBootstrap bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
-    bootstrap.start(new Shell());
-    System.in.read();
-    bootstrap.stop();
+  public synchronized static void main(String[] args) throws Exception {
+    NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap().setHost("localhost").setPort(8080);
+    bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
+    System.out.println("Web server started on localhost/8080");
+    NettyWebsocketShellExample.class.wait();
   }
 }

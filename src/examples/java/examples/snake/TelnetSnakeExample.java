@@ -15,9 +15,9 @@
  */
 package examples.snake;
 
-import io.termd.core.telnet.TelnetBootstrap;
-import io.termd.core.telnet.TelnetTtyConnection;
-import io.termd.core.telnet.netty.NettyTelnetBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * A test class.
@@ -27,21 +27,9 @@ import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 public class TelnetSnakeExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    new TelnetSnakeExample("localhost", 4000).start();
+    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setHost("localhost").setPort(4000);
+    bootstrap.start(new SnakeGame()).get(10, TimeUnit.SECONDS);
+    System.out.println("Telnet server started on localhost/4000");
     TelnetSnakeExample.class.wait();
-  }
-
-  private final TelnetBootstrap telnet;
-
-  public TelnetSnakeExample(String host, int port) {
-    this(new NettyTelnetBootstrap(host, port));
-  }
-
-  public TelnetSnakeExample(TelnetBootstrap telnet) {
-    this.telnet = telnet;
-  }
-
-  public void start() {
-    telnet.start(() -> new TelnetTtyConnection(new SnakeGame()));
   }
 }

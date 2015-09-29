@@ -67,7 +67,7 @@ public class NettyTelnetExample {
 
   public static void main(String[] args) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    new NettyTelnetBootstrap("localhost", 4000).start(() -> DEBUG_HANDLER).get();
+    new NettyTelnetBootstrap().setHost("localhost").setPort(4000).start(() -> DEBUG_HANDLER).get();
     latch.await();
   }
 }

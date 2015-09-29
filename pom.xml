@@ -354,7 +354,7 @@
       </build>
     </profile>
     <profile>
-      <id>netty</id>
+      <id>netty-shell</id>
       <properties>
         <skipTests>true</skipTests>
       </properties>
@@ -380,7 +380,7 @@
       </build>
     </profile>
     <profile>
-      <id>ssh</id>
+      <id>ssh-shell</id>
       <properties>
         <skipTests>true</skipTests>
       </properties>
@@ -414,7 +414,7 @@
       </build>
     </profile>
     <profile>
-      <id>http</id>
+      <id>websocket-shell</id>
       <properties>
         <skipTests>true</skipTests>
       </properties>

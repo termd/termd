@@ -29,6 +29,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.termd.core.tty.TtyConnection;
+import io.termd.core.util.Helper;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -38,17 +39,35 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyWebsocketBootstrap {
+public class NettyWebsocketTtyBootstrap {
 
   private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
-  private final String host;
-  private final int port;
+  private String host;
+  private int port;
   private EventLoopGroup group;
   private Channel channel;
 
-  public NettyWebsocketBootstrap(String host, int port) {
+  public NettyWebsocketTtyBootstrap() {
+    this.host = "localhost";
+    this.port = 8080;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public NettyWebsocketTtyBootstrap setHost(String host) {
     this.host = host;
+    return this;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public NettyWebsocketTtyBootstrap setPort(int port) {
     this.port = port;
+    return this;
   }
 
   public void start(Consumer<TtyConnection> handler, Consumer<Throwable> doneHandler) {
@@ -73,17 +92,11 @@ public class NettyWebsocketBootstrap {
 
   public CompletableFuture<Void> start(Consumer<TtyConnection> handler) throws Exception {
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    start(handler, err -> {
-      if (err != null) {
-        fut.completeExceptionally(err);
-      } else {
-        fut.complete(null);
-      }
-    });
+    start(handler, Helper.startedHandler(fut));
     return fut;
   }
 
-  public void stop(Consumer<Void> doneHandler) {
+  public void stop(Consumer<Throwable> doneHandler) {
     if (channel != null) {
       channel.close();
     }
@@ -94,7 +107,7 @@ public class NettyWebsocketBootstrap {
 
   public CompletableFuture<Void> stop() throws InterruptedException {
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    stop(fut::complete);
+    stop(Helper.stoppedHandler(fut));
     return fut;
   }
 }

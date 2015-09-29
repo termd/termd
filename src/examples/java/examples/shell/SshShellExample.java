@@ -16,11 +16,9 @@
 
 package examples.shell;
 
-import io.termd.core.ssh.SshTtyConnection;
-import org.apache.sshd.server.SshServer;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import io.termd.core.ssh.netty.NettySshTtyBootstrap;
 
-import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Readline bootstrap for SSH.
@@ -30,12 +28,11 @@ import java.io.File;
 public class SshShellExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    SshServer sshd = SshServer.setUpDefaultServer();
-    sshd.setPort(5000);
-    sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));
-    sshd.setPasswordAuthenticator((username, password, session) -> true);
-    sshd.setShellFactory(() -> new SshTtyConnection(new Shell()));
-    sshd.start();
+    NettySshTtyBootstrap bootstrap = new NettySshTtyBootstrap().
+        setPort(5000).
+        setHost("localhost");
+    bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
+    System.out.println("SSH started on localhost/5000");
     SshShellExample.class.wait();
   }
 }

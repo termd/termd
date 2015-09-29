@@ -40,16 +40,20 @@ import java.util.function.Supplier;
  */
 public class NettyTelnetBootstrap extends TelnetBootstrap {
 
-  private final String host;
-  private final int port;
   private EventLoopGroup parentGroup;
   private EventLoopGroup childGroup;
 
-  public NettyTelnetBootstrap(String host, int port) {
-    this.host = host;
-    this.port = port;
+  public NettyTelnetBootstrap() {
     this.parentGroup = new NioEventLoopGroup(1);
     this.childGroup = new NioEventLoopGroup();
+  }
+
+  public NettyTelnetBootstrap setHost(String host) {
+    return (NettyTelnetBootstrap) super.setHost(host);
+  }
+
+  public NettyTelnetBootstrap setPort(int port) {
+    return (NettyTelnetBootstrap) super.setPort(port);
   }
 
   @Override
@@ -68,7 +72,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
           }
         });
 
-    boostrap.bind(host, port).addListener(fut -> {
+    boostrap.bind(getHost(), getPort()).addListener(fut -> {
       if (fut.isSuccess()) {
         doneHandler.accept(null);
       } else {
@@ -78,7 +82,7 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
   }
 
   @Override
-  public void stop(Consumer<Void> doneHandler) {
+  public void stop(Consumer<Throwable> doneHandler) {
     AtomicInteger count = new AtomicInteger(2);
     GenericFutureListener<Future<Object>> adapter = (Future<Object> future) -> {
       if (count.decrementAndGet() == 0) {

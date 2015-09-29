@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
@@ -224,5 +226,21 @@ public class Helper {
       }
     }
     return new Vector(col, row);
+  }
+
+  public static Consumer<Throwable> startedHandler(CompletableFuture<?> fut) {
+    return err -> {
+      if (err == null) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(err);
+      }
+    };
+  }
+
+  public static Consumer<Throwable> stoppedHandler(CompletableFuture<?> fut) {
+    return err -> {
+      fut.complete(null);
+    };
   }
 }

@@ -15,6 +15,8 @@
  */
 package io.termd.core.telnet;
 
+import io.termd.core.util.Helper;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,23 +28,36 @@ import java.util.function.Supplier;
  */
 public abstract class TelnetBootstrap {
 
+  private String host = "localhost";
+  private int port = 4000;
+
+  public String getHost() {
+    return host;
+  }
+
+  public TelnetBootstrap setHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public TelnetBootstrap setPort(int port) {
+    this.port = port;
+    return this;
+  }
+
   public CompletableFuture<?> start(Supplier<TelnetHandler> factory) {
     CompletableFuture<?> fut = new CompletableFuture<>();
-    start(factory, err -> {
-      if (err == null) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(err);
-      }
-    });
+    start(factory, Helper.startedHandler(fut));
     return fut;
   }
 
   public CompletableFuture<?> stop() {
     CompletableFuture<?> fut = new CompletableFuture<>();
-    stop(err -> {
-      fut.complete(null);
-    });
+    stop(Helper.stoppedHandler(fut));
     return fut;
   }
 
@@ -54,6 +69,6 @@ public abstract class TelnetBootstrap {
    */
   public abstract void start(Supplier<TelnetHandler> factory, Consumer<Throwable> doneHandler);
 
-  public abstract void stop(Consumer<Void> doneHandler);
+  public abstract void stop(Consumer<Throwable> doneHandler);
 
 }

@@ -16,7 +16,7 @@
 
 package io.termd.core.tty;
 
-import io.termd.core.http.netty.NettyWebsocketBootstrap;
+import io.termd.core.http.netty.NettyWebsocketTtyBootstrap;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -26,14 +26,14 @@ import java.util.function.Consumer;
  */
 public class NettyWebsocketTtyTest extends WebsocketTtyTestBase {
 
-  private NettyWebsocketBootstrap bootstrap;
+  private NettyWebsocketTtyBootstrap bootstrap;
 
   @Override
   protected void server(Consumer<TtyConnection> onConnect) {
     if (bootstrap != null) {
       throw failure("Server already started");
     }
-    bootstrap = new NettyWebsocketBootstrap("localhost", 8080);
+    bootstrap = new NettyWebsocketTtyBootstrap().setHost("localhost").setPort(8080);
     try {
       bootstrap.start(onConnect).get(10, TimeUnit.SECONDS);
     } catch (Exception e) {
