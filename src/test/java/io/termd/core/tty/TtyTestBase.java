@@ -83,7 +83,9 @@ public abstract class TtyTestBase extends TestBase {
     StringBuilder buffer = new StringBuilder();
     AtomicInteger count = new AtomicInteger();
     server(conn -> {
-      conn.setStdinHandler(event -> Helper.appendCodePoints(event, buffer));
+      conn.setStdinHandler(event -> {
+        Helper.appendCodePoints(event, buffer);
+      });
       conn.setEventHandler((event, cp) -> {
         if (event == TtyEvent.INTR) {
           switch (count.get()) {

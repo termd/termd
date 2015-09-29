@@ -18,7 +18,7 @@ public abstract class TelnetTermTest extends TelnetTestBase {
     final CountDownLatch latch2 = new CountDownLatch(1);
     server.start(() -> {
       final AtomicInteger count = new AtomicInteger();
-      return new TelnetTtyConnection(conn -> {
+      return new TelnetTtyConnection(false, false, conn -> {
         conn.setSizeHandler(size -> {
           switch (count.getAndIncrement()) {
             case 0:

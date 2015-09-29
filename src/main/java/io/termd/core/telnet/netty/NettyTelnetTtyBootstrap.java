@@ -13,6 +13,8 @@ import java.util.function.Consumer;
 public class NettyTelnetTtyBootstrap {
 
   private final NettyTelnetBootstrap telnet;
+  private boolean outBinary;
+  private boolean inBinary;
 
   public NettyTelnetTtyBootstrap() {
     this.telnet = new NettyTelnetBootstrap();
@@ -36,6 +38,36 @@ public class NettyTelnetTtyBootstrap {
     return this;
   }
 
+  public boolean isOutBinary() {
+    return outBinary;
+  }
+
+  /**
+   * Enable or disable the TELNET BINARY option on output.
+   *
+   * @param outBinary true to require the client to receive binary
+   * @return this object
+   */
+  public NettyTelnetTtyBootstrap setOutBinary(boolean outBinary) {
+    this.outBinary = outBinary;
+    return this;
+  }
+
+  public boolean isInBinary() {
+    return inBinary;
+  }
+
+  /**
+   * Enable or disable the TELNET BINARY option on input.
+   *
+   * @param inBinary true to require the client to emit binary
+   * @return this object
+   */
+  public NettyTelnetTtyBootstrap setInBinary(boolean inBinary) {
+    this.inBinary = inBinary;
+    return this;
+  }
+
 
   public CompletableFuture<?> start(Consumer<TtyConnection> factory) {
     CompletableFuture<?> fut = new CompletableFuture<>();
@@ -50,7 +82,7 @@ public class NettyTelnetTtyBootstrap {
   }
 
   public void start(Consumer<TtyConnection> factory, Consumer<Throwable> doneHandler) {
-    telnet.start(() -> new TelnetTtyConnection(factory), doneHandler);
+    telnet.start(() -> new TelnetTtyConnection(inBinary, outBinary, factory), doneHandler);
   }
 
   public void stop(Consumer<Throwable> doneHandler) {

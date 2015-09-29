@@ -26,6 +26,8 @@ import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -38,12 +40,18 @@ import java.util.function.Consumer;
  */
 public final class TelnetTtyConnection extends TelnetHandler implements TtyConnection {
 
+  private final boolean inBinary;
+  private final boolean outBinary;
+  private boolean receivingBinary;
+  private boolean sendingBinary;
+  private boolean accepted;
   private Vector size;
   private String terminalType;
   private Consumer<Vector> sizeHandler;
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
+  private final ByteArrayOutputStream acceptBuffer = new ByteArrayOutputStream();
   private final ReadBuffer readBuffer = new ReadBuffer(this::execute);
   private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
@@ -51,7 +59,9 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
   private final Consumer<TtyConnection> handler;
 
-  public TelnetTtyConnection(Consumer<TtyConnection> handler) {
+  public TelnetTtyConnection(boolean inBinary, boolean outBinary, Consumer<TtyConnection> handler) {
+    this.inBinary = inBinary;
+    this.outBinary = outBinary;
     this.handler = handler;
   }
 
@@ -72,21 +82,37 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
 
   @Override
   protected void onSendBinary(boolean binary) {
+    sendingBinary = binary;
     if (binary) {
       encoder.setCharset(StandardCharsets.UTF_8);
     }
+    checkAccept();
   }
 
   @Override
   protected void onReceiveBinary(boolean binary) {
+    receivingBinary = binary;
     if (binary) {
       decoder.setCharset(StandardCharsets.UTF_8);
     }
+    checkAccept();
   }
 
   @Override
   protected void onData(byte[] data) {
-    decoder.write(data);
+    if (accepted) {
+      decoder.write(data);
+    } else {
+      if (acceptBuffer.size() < 10000) {
+        try {
+          acceptBuffer.write(data);
+        } catch (IOException ignore) {
+          // Can't happen
+        }
+      } else {
+        // Just lose data
+      }
+    }
   }
 
   @Override
@@ -100,15 +126,35 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
     // Window size
     conn.writeDoOption(Option.NAWS);
 
-    // Binary by all means
-    conn.writeDoOption(Option.BINARY);
-    conn.writeWillOption(Option.BINARY);
+    //
+    if (inBinary) {
+      conn.writeDoOption(Option.BINARY);
+    }
+    if (outBinary) {
+      conn.writeWillOption(Option.BINARY);
+    }
 
     // Get some info about user
     conn.writeDoOption(Option.TERMINAL_TYPE);
 
     //
-    handler.accept(this);
+    checkAccept();
+  }
+
+  private void checkAccept() {
+    if (!accepted) {
+      if (!outBinary | (outBinary && sendingBinary)) {
+        if (!inBinary | (inBinary && receivingBinary)) {
+          accepted = true;
+          handler.accept(this);
+          if (acceptBuffer.size() > 0) {
+            byte[] pending = acceptBuffer.toByteArray();
+            acceptBuffer.reset();
+            onData(pending);
+          }
+        }
+      }
+    }
   }
 
   @Override
