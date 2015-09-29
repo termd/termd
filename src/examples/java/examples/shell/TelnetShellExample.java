@@ -31,7 +31,7 @@ public class TelnetShellExample {
         setHost("localhost").
         setPort(4000);
     bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
-    System.out.println("Telnet server started on localhost/4000");
+    System.out.println("Telnet server started on localhost:4000");
     TelnetShellExample.class.wait();
   }
 }

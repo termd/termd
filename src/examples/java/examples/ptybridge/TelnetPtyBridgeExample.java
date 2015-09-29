@@ -30,7 +30,7 @@ public class TelnetPtyBridgeExample {
   public synchronized static void main(String[] args) throws Exception {
     NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
     bootstrap.start(conn -> new TtyBridge(conn).readline()).get(10, TimeUnit.SECONDS);
-    System.out.println("Telnet server started on localhost/4000");
+    System.out.println("Telnet server started on localhost:4000");
     TelnetPtyBridgeExample.class.wait();
   }
 }

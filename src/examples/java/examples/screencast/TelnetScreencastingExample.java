@@ -31,7 +31,7 @@ public class TelnetScreencastingExample {
     NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
     Robot robot = new Robot();
     bootstrap.start(conn -> new Screencaster(robot, conn).handle()).get(10, TimeUnit.SECONDS);
-    System.out.println("Telnet server started on localhost/4000");
+    System.out.println("Telnet server started on localhost:4000");
     TelnetScreencastingExample.class.wait();
   }
 }

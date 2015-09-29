@@ -32,7 +32,7 @@ public class SshSnakeExample {
         setPort(5000).
         setHost("localhost");
     bootstrap.start(new SnakeGame()).get(10, TimeUnit.SECONDS);
-    System.out.println("SSH started on localhost/5000");
+    System.out.println("SSH started on localhost:5000");
     SshSnakeExample.class.wait();
   }
 }

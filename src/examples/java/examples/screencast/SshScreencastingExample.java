@@ -34,7 +34,7 @@ public class SshScreencastingExample {
         setHost("localhost");
     Robot robot = new Robot();
     bootstrap.start(conn -> new Screencaster(robot, conn).handle()).get(10, TimeUnit.SECONDS);
-    System.out.println("SSH started on localhost/5000");
+    System.out.println("SSH started on localhost:5000");
     SshScreencastingExample.class.wait();
   }
 }

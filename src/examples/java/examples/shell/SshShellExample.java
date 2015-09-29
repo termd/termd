@@ -32,7 +32,7 @@ public class SshShellExample {
         setPort(5000).
         setHost("localhost");
     bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
-    System.out.println("SSH started on localhost/5000");
+    System.out.println("SSH started on localhost:5000");
     SshShellExample.class.wait();
   }
 }

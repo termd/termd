@@ -14,7 +14,7 @@ public class WebsocketScreencastingExample {
     NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap().setHost("localhost").setPort(8080);
     Robot robot = new Robot();
     bootstrap.start(conn -> new Screencaster(robot, conn).handle()).get(10, TimeUnit.SECONDS);
-    System.out.println("Web server started on localhost/8080");
+    System.out.println("Web server started on localhost:8080");
     WebsocketScreencastingExample.class.wait();
   }
 }

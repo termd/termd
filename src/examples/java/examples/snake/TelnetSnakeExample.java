@@ -29,7 +29,7 @@ public class TelnetSnakeExample {
   public synchronized static void main(String[] args) throws Exception {
     NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setHost("localhost").setPort(4000);
     bootstrap.start(new SnakeGame()).get(10, TimeUnit.SECONDS);
-    System.out.println("Telnet server started on localhost/4000");
+    System.out.println("Telnet server started on localhost:4000");
     TelnetSnakeExample.class.wait();
   }
 }

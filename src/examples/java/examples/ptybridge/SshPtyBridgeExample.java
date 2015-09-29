@@ -33,7 +33,7 @@ public class SshPtyBridgeExample {
         setPort(5000).
         setHost("localhost");
     bootstrap.start(conn -> new TtyBridge(conn).readline()).get(10, TimeUnit.SECONDS);
-    System.out.println("SSH started on localhost/5000");
+    System.out.println("SSH started on localhost:5000");
     SshPtyBridgeExample.class.wait();
   }
 }
