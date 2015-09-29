@@ -65,6 +65,8 @@ Termd in a web page using the [term.js](https://github.com/chjj/term.js/) client
 
 A simple shell example giving an overview of TTY interactions.
 
+The actual [example](src/examples/java/examples/shell/Shell.java).
+
 [Telnet](src/examples/java/examples/shell/TelnetShellExample.java)
 [SSH](src/examples/java/examples/shell/SshShellExample.java)
 [Websocket](src/examples/java/examples/shell/WebsocketShellExample.java)
@@ -73,17 +75,21 @@ A simple shell example giving an overview of TTY interactions.
 
 Broadcast the desktop to the client, focusing on pushing data to the TTY.
 
+The actual [example](src/examples/java/examples/screencast/Screencaster.java).
+
 [Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
 [SSH](src/examples/java/examples/screencast/SshScreencastingExample.java)
 [Websocket](src/examples/examples/java/screencast/WebsocketScreencastingExample.java)
 
 #### Snake
 
-The popular Snake game on the event loop
+The popular Snake game on the event loop.
 
-[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
-[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java)
-[Websocket](src/examples/java/examples/screencast/WebsocketScreencastingExample.java)
+The actual [example](src/examples/java/examples/snake/SnakeGame.java).
+
+[Telnet bootstrap](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
+[SSH bootstrap](src/examples/java/examples/screencast/SshScreencastingExample.java)
+[Websocket bootstrap](src/examples/java/examples/screencast/WebsocketScreencastingExample.java)
 
 #### Ptybridge
 
