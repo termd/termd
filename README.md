@@ -66,61 +66,61 @@ Termd in a web page using the [term.js](https://github.com/chjj/term.js/) client
 A simple examples showing TTY events.
 
 The actual [example](src/examples/java/examples/events/EventsExample.java), runs with
-[Telnet](src/examples/java/examples/events/TelnetEventsExample.java)
-[SSH](src/examples/java/examples/events/SshEventsExample.java)
-[Websocket](src/examples/java/examples/events/WebsocketEventsExample.java)
+[Telnet](src/examples/java/examples/events/TelnetEventsExample.java),
+[SSH](src/examples/java/examples/events/SshEventsExample.java),
+[Websocket](src/examples/java/examples/events/WebsocketEventsExample.java).
 
 #### Readline
 
 A simple examples showing how to use Readline.
 
 The actual [example](src/examples/java/examples/readline/ReadlineExample.java), runs with
-[Telnet](src/examples/java/examples/readline/TelnetReadlineExample.java)
-[SSH](src/examples/java/examples/readline/SshReadlineExample.java)
-[Websocket](src/examples/java/examples/readline/WebsocketReadlineExample.java)
+[Telnet](src/examples/java/examples/readline/TelnetReadlineExample.java),
+[SSH](src/examples/java/examples/readline/SshReadlineExample.java),
+[Websocket](src/examples/java/examples/readline/WebsocketReadlineExample.java).
 
 #### Readline function
 
 A simple examples showing how to extend Readline with a custom function that reverse the line content.
 
 The actual [example](src/examples/java/examples/readlinefunction/ReadlineFunctionExample.java), runs with
-[Telnet](src/examples/java/examples/readlinefunction/TelnetReadlineFunctionExample.java)
-[SSH](src/examples/java/examples/readlinefunction/SshReadlineFunctionExample.java)
-[Websocket](src/examples/java/examples/readlinefunction/WebsocketReadlineFunctionExample.java)
+[Telnet](src/examples/java/examples/readlinefunction/TelnetReadlineFunctionExample.java),
+[SSH](src/examples/java/examples/readlinefunction/SshReadlineFunctionExample.java),
+[Websocket](src/examples/java/examples/readlinefunction/WebsocketReadlineFunctionExample.java).
 
 #### Shell
 
 A simple shell example giving an overview of TTY interactions.
 
 The actual [example](src/examples/java/examples/shell/Shell.java), run with
-[Telnet](src/examples/java/examples/shell/TelnetShellExample.java)
-[SSH](src/examples/java/examples/shell/SshShellExample.java)
-[Websocket](src/examples/java/examples/shell/WebsocketShellExample.java)
+[Telnet](src/examples/java/examples/shell/TelnetShellExample.java),
+[SSH](src/examples/java/examples/shell/SshShellExample.java),
+[Websocket](src/examples/java/examples/shell/WebsocketShellExample.java).
 
 #### Screencast
 
 Broadcast the desktop to the client, focusing on pushing data to the TTY.
 
 The actual [example](src/examples/java/examples/screencast/Screencaster.java), run with
-[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
-[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java)
-[Websocket](src/examples/examples/java/screencast/WebsocketScreencastingExample.java)
+[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java),
+[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java),
+[Websocket](src/examples/examples/java/screencast/WebsocketScreencastingExample.java).
 
 #### Snake
 
 The popular Snake game on the event loop.
 
 The actual [example](src/examples/java/examples/snake/SnakeGame.java), run with
-[Telnet bootstrap](src/examples/java/examples/screencast/TelnetScreencastingExample.java)
-[SSH bootstrap](src/examples/java/examples/screencast/SshScreencastingExample.java)
-[Websocket bootstrap](src/examples/java/examples/screencast/WebsocketScreencastingExample.java)
+[Telnet](src/examples/java/examples/screencast/TelnetScreencastingExample.java),
+[SSH](src/examples/java/examples/screencast/SshScreencastingExample.java),
+[Websocket](src/examples/java/examples/screencast/WebsocketScreencastingExample.java).
 
 #### Ptybridge
 
 The PTY bridge is a bridge to native process, use with caution for security reasons, run with
-[Telnet](src/examples/java/examples/ptybridge/TelnetPtyBridgeExample.java)
-[SSH](src/examples/java/examples/ptybridge/SshPtyBridgeExample.java)
-[Websocket](src/examples/java/examples/ptybridge/WebsocketPtyBridgeExample.java)
+[Telnet](src/examples/java/examples/ptybridge/TelnetPtyBridgeExample.java),
+[SSH](src/examples/java/examples/ptybridge/SshPtyBridgeExample.java),
+[Websocket](src/examples/java/examples/ptybridge/WebsocketPtyBridgeExample.java).
 
 ### Todo
 
