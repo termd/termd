@@ -44,7 +44,6 @@ public class PtyMaster extends Thread {
   private Process process;
   private boolean interrupted;
 
-
   public PtyMaster(String line, Consumer<int[]> stdout, Consumer<Void> doneHandler) {
     this.line = line;
     this.doneHandler = doneHandler;

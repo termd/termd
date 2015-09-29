@@ -69,7 +69,7 @@ public class TtyBridge {
     return this;
   }
 
-  public void readline() {
+  public TtyBridge readline() {
     InputStream inputrc = Keymap.class.getResourceAsStream("inputrc");
     Keymap keymap = new Keymap(inputrc);
     Readline readline = new Readline(keymap);
@@ -84,12 +84,17 @@ public class TtyBridge {
     });
     conn.stdoutHandler().accept(Helper.toCodePoints("Welcome sir\n"));
     read(conn, readline);
+    return this;
   }
 
   void read(final TtyConnection conn, final Readline readline) {
     readline.readline(conn, "% ", line -> {
       if (processStdinListener != null) {
         processStdinListener.accept(line);
+      }
+      if (line == null) {
+        conn.close();
+        return;
       }
       PtyMaster task = new PtyMaster(line,
           buffer -> {
