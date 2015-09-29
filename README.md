@@ -1,6 +1,6 @@
 ## Termd
 
-An open source terminal daemon library providing terminal handling in Java under ASL 2.0
+An open source library for writing terminal applications in Java under ASL 2.0.
 
 [![Build Status](https://termd.ci.cloudbees.com/buildStatus/icon?job=termd-core)](https://termd.ci.cloudbees.com/job/termd-core/)
 
@@ -32,6 +32,20 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
 - Unicode support
 - Terminfo capabilities
 
+### Supported protocols
+
+#### Telnet
+
+Termd provides its own implementation of Telnet written on top of Netty 4.
+
+#### SSH
+
+Termd provides an implementation of [Apache SSHD](http://mina.apache.org/sshd-project/) backed by Netty 4.
+
+#### Websocket
+
+Termd in a web page using the [term.js](https://github.com/chjj/term.js/) client library and Netty websockets.
+
 ### FAQ
 
 - what is not Termd ?
@@ -39,7 +53,11 @@ Build it yourself or consume the snapshot from [Sonatype OSS repository](https:/
   - not an arg parser
   - not a command framework
 - why async style ?
-  - keyboard, ctrl-c, etc... event processing is easy to program against   
+  - keyboard, ctrl-c, etc... event processing is easy to program against
+- why would I use Termd ?
+  - you want to write a terminal application easily
+  - you want to support various protocols like SSH, telnet or a web interface
+  - you don't care about the technical details
 
 ### Todo
 
