@@ -18,7 +18,7 @@ public class ReadlineExample {
         conn);
   }
 
-  private static void readline(Readline readline, TtyConnection conn) {
+  public static void readline(Readline readline, TtyConnection conn) {
     readline.readline(conn, "% ", line -> {
       if (line == null) {
         conn.write("Logout").close();
