@@ -61,6 +61,36 @@ Termd in a web page using the [term.js](https://github.com/chjj/term.js/) client
 
 ### Examples
 
+#### Events
+
+A simple examples showing TTY events.
+
+The actual [example](src/examples/java/examples/events/EventsExample.java).
+
+[Telnet](src/examples/java/examples/events/TelnetEventsExample.java)
+[SSH](src/examples/java/examples/events/SshEventsExample.java)
+[Websocket](src/examples/java/examples/events/WebsocketEventsExample.java)
+
+#### Readline
+
+A simple examples showing how to use Readline.
+
+The actual [example](src/examples/java/examples/readline/ReadlineExample.java).
+
+[Telnet](src/examples/java/examples/readline/TelnetReadlineExample.java)
+[SSH](src/examples/java/examples/readline/SshReadlineExample.java)
+[Websocket](src/examples/java/examples/readline/WebsocketReadlineExample.java)
+
+#### Readline function
+
+A simple examples showing how to extend Readline with a custom function that reverse the line content.
+
+The actual [example](src/examples/java/examples/readlinefunction/ReadlineFunctionExample.java).
+
+[Telnet](src/examples/java/examples/readlinefunction/TelnetReadlineFunctionExample.java)
+[SSH](src/examples/java/examples/readlinefunction/SshReadlineFunctionExample.java)
+[Websocket](src/examples/java/examples/readlinefunction/WebsocketReadlineFunctionExample.java)
+
 #### Shell
 
 A simple shell example giving an overview of TTY interactions.
