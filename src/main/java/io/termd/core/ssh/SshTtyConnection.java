@@ -68,6 +68,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   private Consumer<Void> closeHandler;
   protected ChannelSession session;
   private final AtomicBoolean closed = new AtomicBoolean();
+  private ExitCallback exitCallback;
 
   public SshTtyConnection(Consumer<TtyConnection> handler) {
     this.handler = handler;
@@ -196,6 +197,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
 
   @Override
   public void setExitCallback(ExitCallback callback) {
+    this.exitCallback = callback;
   }
 
   @Override
@@ -269,7 +271,7 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
 
   @Override
   public void close() {
-    session.close(false);
+    exitCallback.onExit(0);
   }
 
   private static Charset parseCharset(String value) {
