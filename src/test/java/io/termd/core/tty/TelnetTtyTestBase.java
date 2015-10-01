@@ -68,6 +68,11 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
   }
 
   @Override
+  protected void assertDisconnect(boolean clean) throws Exception {
+    client.disconnect(clean);
+  }
+
+  @Override
   public void testSize() throws Exception {
     wsHandler = new WindowSizeOptionHandler(80, 24, false, false, true, true);
     client.setOptionHandler(wsHandler);

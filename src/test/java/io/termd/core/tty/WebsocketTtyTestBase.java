@@ -125,6 +125,16 @@ public abstract class WebsocketTtyTestBase extends TtyTestBase {
   }
 
   @Override
+  protected void assertDisconnect(boolean clean) throws Exception {
+    if (clean) {
+      session.close();
+    } else {
+      // No way ???
+      session.close();
+    }
+  }
+
+  @Override
   protected void resize(int width, int height) throws Exception {
     Map<String, Object> msg = new HashMap<>();
     msg.put("action", "resize");

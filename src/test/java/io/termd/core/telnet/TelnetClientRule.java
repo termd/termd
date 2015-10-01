@@ -24,6 +24,7 @@ import org.junit.rules.ExternalResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.function.BiConsumer;
 
 /**
@@ -31,6 +32,7 @@ import java.util.function.BiConsumer;
  */
 public class TelnetClientRule extends ExternalResource {
 
+  private Socket socket;
   private OutputStream directOutput;
   public TelnetClient client;
 
@@ -66,8 +68,16 @@ public class TelnetClientRule extends ExternalResource {
   }
 
   public void disconnect() throws IOException {
+    disconnect(true);
+  }
+
+  public void disconnect(boolean clean) throws IOException {
     if (client.isConnected()) {
-      client.disconnect();
+      if (clean) {
+        client.disconnect();
+      } else {
+        socket.close();
+      }
     }
   }
 
@@ -99,6 +109,7 @@ public class TelnetClientRule extends ExternalResource {
       @Override
       protected void _connectAction_() throws IOException {
         super._connectAction_();
+        socket = _socket_;
         directOutput = _output_;
       }
     };

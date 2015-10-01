@@ -28,6 +28,8 @@ import org.junit.After;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
@@ -87,6 +89,18 @@ public abstract class SshTtyTestBase extends TtyTestBase {
     channel.connect();
     in = channel.getInputStream();
     out = channel.getOutputStream();
+  }
+
+  @Override
+  protected void assertDisconnect(boolean clean) throws Exception {
+    if (clean) {
+      session.disconnect();
+    } else {
+      Field socketField = session.getClass().getDeclaredField("socket");
+      socketField.setAccessible(true);
+      Socket socket = (Socket) socketField.get(session);
+      socket.close();
+    }
   }
 
   @Override

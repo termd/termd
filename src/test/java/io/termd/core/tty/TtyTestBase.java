@@ -44,6 +44,10 @@ public abstract class TtyTestBase extends TestBase {
 
   protected abstract void resize(int width, int height) throws Exception;
 
+  protected void assertDisconnect(boolean clean) throws Exception {
+    throw new UnsupportedOperationException();
+  }
+
   protected void assertConnect() throws Exception {
     assertConnect(null);
   }
@@ -203,6 +207,31 @@ public abstract class TtyTestBase extends TestBase {
     await(latch);
     assertWrite("bye");
     await();
+  }
+
+  @Test
+  public void testClientDisconnectClean() throws Exception {
+    testClientDisconnect(true);
+  }
+
+  @Test
+  public void testClientDisconnect() throws Exception {
+    testClientDisconnect(false);
+  }
+
+  private void testClientDisconnect(boolean clean) throws Exception {
+    CountDownLatch disconnectLatch = new CountDownLatch(1);
+    CountDownLatch closedLatch = new CountDownLatch(1);
+    server(conn -> {
+      disconnectLatch.countDown();
+      conn.setCloseHandler(v -> {
+        closedLatch.countDown();
+      });
+    });
+    assertConnect();
+    assertTrue(disconnectLatch.await(10, TimeUnit.SECONDS));
+    assertDisconnect(clean);
+    assertTrue(closedLatch.await(10, TimeUnit.SECONDS));
   }
 
   @Test
