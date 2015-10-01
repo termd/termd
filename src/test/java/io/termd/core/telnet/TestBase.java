@@ -154,6 +154,14 @@ public class TestBase {
     }
   }
 
+  public void assertTrue(String msg, boolean condition) {
+    try {
+      Assert.assertTrue(msg, condition);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
   public void assertFalse(boolean condition) {
     try {
       Assert.assertFalse(condition);

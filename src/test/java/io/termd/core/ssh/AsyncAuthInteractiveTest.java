@@ -9,7 +9,7 @@ import com.jcraft.jsch.UserInfo;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class AsyncAuthTest extends AsyncAuthTestBase {
+public class AsyncAuthInteractiveTest extends AsyncAuthTestBase {
 
   protected boolean authenticate() throws Exception {
 
@@ -18,32 +18,31 @@ public class AsyncAuthTest extends AsyncAuthTestBase {
     ChannelShell channel;
 
     session = jsch.getSession("whatever", "localhost", 5000);
-    session.setPassword("whocares");
     session.setUserInfo(new UserInfo() {
       @Override
       public String getPassphrase() {
-        return null;
+        throw new UnsupportedOperationException();
       }
 
       @Override
       public String getPassword() {
-        return null;
+        return "whocares";
       }
 
       @Override
       public boolean promptPassword(String s) {
-        return false;
+        return true;
       }
 
       @Override
       public boolean promptPassphrase(String s) {
-        return false;
+        throw new UnsupportedOperationException();
       }
 
       @Override
       public boolean promptYesNo(String s) {
         return true;
-      } // Accept all server keys
+      }
 
       @Override
       public void showMessage(String s) {
@@ -52,10 +51,12 @@ public class AsyncAuthTest extends AsyncAuthTestBase {
     try {
       session.connect();
     } catch (JSchException e) {
-      if (e.getMessage().equals("Auth cancel")) {
-        return false;
-      } else {
-        throw e;
+      switch (e.getMessage()) {
+        case "Auth cancel":
+        case "Auth fail":
+          return false;
+        default:
+          throw e;
       }
     }
     channel = (ChannelShell) session.openChannel("shell");

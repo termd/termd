@@ -20,16 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable implements Service  {
-
-  public static final String AUTH_TIMEOUT = "auth-timeout";
-  public static final int DEFAULT_AUTH_TIMEOUT = 10000;
 
   public static final int DEFAULT_MAX_AUTH_REQUESTS = 20;
   private final ServerSession session;
@@ -43,7 +38,6 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
 
   private int maxAuthRequests;
   private int nbAuthRequests;
-  private int authTimeout;
 
   public AsyncUserAuthService(Session s) throws SshException {
     ValidateUtils.checkTrue(s instanceof ServerSession, "Server side service used on client side");
@@ -53,7 +47,6 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
 
     this.session = (ServerSession) s;
     maxAuthRequests = session.getIntProperty(ServerFactoryManager.MAX_AUTH_REQUESTS, DEFAULT_MAX_AUTH_REQUESTS);
-    authTimeout = session.getIntProperty(AUTH_TIMEOUT, DEFAULT_AUTH_TIMEOUT);
 
     ServerFactoryManager manager = getFactoryManager();
     userAuthFactories = new ArrayList<>(manager.getUserAuthFactories());
@@ -97,7 +90,6 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
 
   @Override
   public void process(int cmd, Buffer buffer) throws Exception {
-    assert async == null;
     Boolean authed = Boolean.FALSE;
 
     if (cmd == SshConstants.SSH_MSG_USERAUTH_REQUEST) {
@@ -136,20 +128,7 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
         try {
           authed = currentAuth.auth(session, username, service, buffer);
         } catch (Exception e) {
-          if (e instanceof AsyncAuth) {
-            async = (AsyncAuth) e;
-            ScheduledExecutorService executor = session.getFactoryManager().getScheduledExecutorService();
-            executor.schedule(() -> {
-              async.setAuthed(false);
-            }, authTimeout, TimeUnit.MILLISECONDS);
-            async.setListener(authenticated -> {
-              try {
-                sendAuthenticationResult(buffer, authenticated);
-              } catch (Exception e1) {
-                // HANDLE THIS BETTER
-                e1.printStackTrace();
-              }
-            });
+          if (asyncAuth(buffer, e)) {
             return;
           }
 
@@ -158,6 +137,7 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
         }
       }
     } else {
+      assert async == null;
       if (this.currentAuth == null) {
         // This should not happen
         throw new IllegalStateException("No current authentication mechanism for cmd=" + (cmd & 0xFF));
@@ -169,6 +149,10 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
       try {
         authed = currentAuth.next(buffer);
       } catch (Exception e) {
+        if (asyncAuth(buffer, e)) {
+          return;
+        }
+
         // Continue
         log.debug("Failed ({}) to authenticate: {}", e.getClass().getSimpleName(), e.getMessage());
       }
@@ -179,6 +163,24 @@ public class AsyncUserAuthService extends CloseableUtils.AbstractCloseable imple
       log.debug("Authentication not finished");
     } else {
       sendAuthenticationResult(buffer, authed);
+    }
+  }
+
+  private boolean asyncAuth(Buffer buffer, Exception e) {
+    if (e instanceof AsyncAuth) {
+      async = (AsyncAuth) e;
+      async.setListener(authenticated -> {
+        async = null;
+        try {
+          sendAuthenticationResult(buffer, authenticated);
+        } catch (Exception e1) {
+          // HANDLE THIS BETTER
+          e1.printStackTrace();
+        }
+      });
+      return true;
+    } else {
+      return false;
     }
   }
 
