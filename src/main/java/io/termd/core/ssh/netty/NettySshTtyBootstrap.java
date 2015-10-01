@@ -18,7 +18,7 @@ package io.termd.core.ssh.netty;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.termd.core.ssh.SshTtyConnection;
+import io.termd.core.ssh.TtyCommand;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
@@ -93,7 +93,7 @@ public class NettySshTtyBootstrap {
     server.setHost(host);
     server.setKeyPairProvider(keyPairProvider);
     server.setPasswordAuthenticator(passwordAuthenticator);
-    server.setShellFactory(() -> new SshTtyConnection(factory));
+    server.setShellFactory(() -> new TtyCommand(factory));
     try {
       server.start();
     } catch (Exception e) {

@@ -18,7 +18,7 @@ package io.termd.core.tty;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.termd.core.ssh.SshTtyConnection;
+import io.termd.core.ssh.TtyCommand;
 import io.termd.core.ssh.netty.NettyIoServiceFactoryFactory;
 import io.termd.core.ssh.netty.NettyIoSession;
 import org.apache.sshd.common.session.Session;
@@ -53,8 +53,8 @@ public class NettySshTtyTest extends SshTtyTestBase {
   }
 
   @Override
-  protected SshTtyConnection createConnection(Consumer<TtyConnection> onConnect) {
-    return new SshTtyConnection(onConnect) {
+  protected TtyCommand createConnection(Consumer<TtyConnection> onConnect) {
+    return new TtyCommand(onConnect) {
       @Override
       public void execute(Runnable task) {
         Session session = this.session.getSession();

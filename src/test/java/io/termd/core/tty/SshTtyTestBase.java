@@ -20,7 +20,7 @@ import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
-import io.termd.core.ssh.SshTtyConnection;
+import io.termd.core.ssh.TtyCommand;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
@@ -122,8 +122,8 @@ public abstract class SshTtyTestBase extends TtyTestBase {
 
   protected abstract SshServer createServer();
 
-  protected SshTtyConnection createConnection(Consumer<TtyConnection> onConnect) {
-    return new SshTtyConnection(onConnect);
+  protected TtyCommand createConnection(Consumer<TtyConnection> onConnect) {
+    return new TtyCommand(onConnect);
   }
 
   @Override

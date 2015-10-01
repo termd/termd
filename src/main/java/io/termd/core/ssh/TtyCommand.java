@@ -23,17 +23,19 @@ import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
-import io.termd.core.util.Logging;
 import io.termd.core.util.Vector;
 import org.apache.sshd.common.channel.PtyMode;
+import org.apache.sshd.common.future.CloseFuture;
+import org.apache.sshd.common.future.SshFutureListener;
+import org.apache.sshd.common.io.IoInputStream;
+import org.apache.sshd.common.io.IoOutputStream;
+import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
+import org.apache.sshd.server.AsyncCommand;
 import org.apache.sshd.server.ChannelSessionAware;
-import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
-import org.apache.sshd.server.session.ServerSession;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +52,7 @@ import java.util.regex.Pattern;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class SshTtyConnection implements Command, SessionAware, ChannelSessionAware, TtyConnection {
+public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSessionAware {
 
   private static final Pattern LC_PATTERN = Pattern.compile("(?:\\p{Alpha}{2}_\\p{Alpha}{2}\\.)?([^@]+)(?:@.+)?");
 
@@ -69,100 +71,28 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   protected ChannelSession session;
   private final AtomicBoolean closed = new AtomicBoolean();
   private ExitCallback exitCallback;
+  private Connection conn;
+  private IoOutputStream ioOut;
 
-  public SshTtyConnection(Consumer<TtyConnection> handler) {
+  public TtyCommand(Consumer<TtyConnection> handler) {
     this.handler = handler;
   }
 
   @Override
-  public String term() {
-    return term;
-  }
-
-  @Override
-  public Consumer<int[]> getStdinHandler() {
-    return readBuffer.getReadHandler();
-  }
-
-  @Override
-  public void setStdinHandler(Consumer<int[]> handler) {
-    readBuffer.setReadHandler(handler);
-  }
-
-  @Override
-  public Consumer<String> getTermHandler() {
-    return termHandler;
-  }
-
-  @Override
-  public void setTermHandler(Consumer<String> handler) {
-    termHandler = handler;
-  }
-
-  @Override
-  public Vector size() {
-    return size;
-  }
-
-  @Override
-  public Consumer<Vector> getSizeHandler() {
-    return sizeHandler;
-  }
-
-  @Override
-  public void setSizeHandler(Consumer<Vector> handler) {
-    sizeHandler = handler;
-  }
-
-  @Override
-  public BiConsumer<TtyEvent, Integer> getEventHandler() {
-    return eventDecoder.getEventHandler();
-  }
-
-  @Override
-  public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
-    eventDecoder.setEventHandler(handler);
-  }
-
-  @Override
-  public Consumer<int[]> stdoutHandler() {
-    return stdout;
+  public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
+    if (decoder != null) {
+      decoder.write(buf, start, len);
+    } else {
+      // Data send too early ?
+    }
+    return len;
   }
 
   @Override
   public void setChannelSession(ChannelSession session) {
-
-
-    // Set data receiver at this moment to prevent setting a blocking input stream
-    session.setDataReceiver(new ChannelDataReceiver() {
-      @Override
-      public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
-        if (decoder != null) {
-          decoder.write(buf, start, len);
-        } else {
-          // Data send too early ?
-        }
-        return len;
-      }
-
-      @Override
-      public void close() throws IOException {
-        if (closed.compareAndSet(false, true)) {
-          if (closeHandler != null) {
-            closeHandler.accept(null);
-          } else {
-            // This happen : report it to the SSHD project
-          }
-        }
-      }
-    });
-
     this.session = session;
   }
 
-  @Override
-  public void setSession(ServerSession session) {
-  }
 
   @Override
   public void setInputStream(InputStream in) {
@@ -170,29 +100,25 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
 
   @Override
   public void setOutputStream(final OutputStream out) {
-    this.out = event -> {
-      // beware : this might be blocking
-      try {
-        out.write(event);
-        out.flush();
-      } catch (IOException e) {
-        Logging.logUndeclaredIoError(e);
-      }
-    };
-  }
-
-  @Override
-  public void execute(Runnable task) {
-    session.getSession().getFactoryManager().getScheduledExecutorService().execute(task);
-  }
-
-  @Override
-  public void schedule(Runnable task, long delay, TimeUnit unit) {
-    session.getSession().getFactoryManager().getScheduledExecutorService().schedule(task, delay, unit);
   }
 
   @Override
   public void setErrorStream(OutputStream err) {
+  }
+
+  @Override
+  public void setIoInputStream(IoInputStream in) {
+  }
+
+  @Override
+  public void setIoOutputStream(IoOutputStream out) {
+    this.ioOut = out;
+    this.out = bytes -> out.write(new ByteArrayBuffer(bytes));
+  }
+
+  @Override
+  public void setIoErrorStream(IoOutputStream err) {
+
   }
 
   @Override
@@ -223,9 +149,11 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
     decoder = new BinaryDecoder(512, charset, eventDecoder);
     stdout = new TtyOutputMode(new BinaryEncoder(512, charset, out));
     term = env.getEnv().get("TERM");
+    conn = new Connection();
 
     //
-    handler.accept(this);
+    session.setDataReceiver(this);
+    handler.accept(conn);
   }
 
   private int getControlChar(Environment env, PtyMode key, int def) {
@@ -256,22 +184,31 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
   }
 
   @Override
+  public void close() throws IOException {
+    ioOut.close(false).addListener(future -> {
+      exitCallback.onExit(0);
+      if (closed.compareAndSet(false, true)) {
+        if (closeHandler != null) {
+          closeHandler.accept(null);
+        } else {
+          // This happen : report it to the SSHD project
+        }
+      }
+    });
+  }
+
+  @Override
   public void destroy() {
+
+    // Test this
   }
 
-  @Override
-  public void setCloseHandler(Consumer<Void> closeHandler) {
-    this.closeHandler = closeHandler;
+  protected void execute(Runnable task) {
+    session.getSession().getFactoryManager().getScheduledExecutorService().execute(task);
   }
 
-  @Override
-  public Consumer<Void> getCloseHandler() {
-    return closeHandler;
-  }
-
-  @Override
-  public void close() {
-    exitCallback.onExit(0);
+  protected void schedule(Runnable task, long delay, TimeUnit unit) {
+    session.getSession().getFactoryManager().getScheduledExecutorService().schedule(task, delay, unit);
   }
 
   private static Charset parseCharset(String value) {
@@ -284,5 +221,91 @@ public class SshTtyConnection implements Command, SessionAware, ChannelSessionAw
       }
     }
     return null;
+  }
+
+  private class Connection implements TtyConnection {
+
+    @Override
+    public String term() {
+      return term;
+    }
+
+    @Override
+    public Consumer<int[]> getStdinHandler() {
+      return readBuffer.getReadHandler();
+    }
+
+    @Override
+    public void setStdinHandler(Consumer<int[]> handler) {
+      readBuffer.setReadHandler(handler);
+    }
+
+    @Override
+    public Consumer<String> getTermHandler() {
+      return termHandler;
+    }
+
+    @Override
+    public void setTermHandler(Consumer<String> handler) {
+      termHandler = handler;
+    }
+
+    @Override
+    public Vector size() {
+      return size;
+    }
+
+    @Override
+    public Consumer<Vector> getSizeHandler() {
+      return sizeHandler;
+    }
+
+    @Override
+    public void setSizeHandler(Consumer<Vector> handler) {
+      sizeHandler = handler;
+    }
+
+    @Override
+    public BiConsumer<TtyEvent, Integer> getEventHandler() {
+      return eventDecoder.getEventHandler();
+    }
+
+    @Override
+    public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
+      eventDecoder.setEventHandler(handler);
+    }
+
+    @Override
+    public Consumer<int[]> stdoutHandler() {
+      return stdout;
+    }
+
+    @Override
+    public void execute(Runnable task) {
+      TtyCommand.this.execute(task);
+    }
+
+    @Override
+    public void schedule(Runnable task, long delay, TimeUnit unit) {
+      TtyCommand.this.schedule(task, delay, unit);
+    }
+
+    @Override
+    public void setCloseHandler(Consumer<Void> handler) {
+      closeHandler = handler;
+    }
+
+    @Override
+    public Consumer<Void> getCloseHandler() {
+      return closeHandler;
+    }
+
+    @Override
+    public void close() {
+      try {
+        TtyCommand.this.close();
+      } catch (IOException ignore) {
+      }
+    }
   }
 }
