@@ -210,6 +210,22 @@ public abstract class TtyTestBase extends TestBase {
   }
 
   @Test
+  public void testServerDisconnect() throws Exception {
+    CountDownLatch closedLatch = new CountDownLatch(1);
+    server(conn -> {
+      conn.setStdinHandler(bytes -> {
+        conn.close();
+      });
+      conn.setCloseHandler(v -> {
+        closedLatch.countDown();
+      });
+    });
+    assertConnect();
+    assertWrite("whatever");
+    assertTrue(closedLatch.await(10, TimeUnit.SECONDS));
+  }
+
+  @Test
   public void testClientDisconnectClean() throws Exception {
     testClientDisconnect(true);
   }
