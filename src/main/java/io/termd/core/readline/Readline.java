@@ -20,6 +20,7 @@ import io.termd.core.term.Device;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
+import io.termd.core.util.Logging;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 /**
  * Make this class thread safe as SSH will access this class with different threds [sic].
@@ -215,7 +217,7 @@ public class Readline {
           paused = true;
           function.apply(this);
         } else {
-          System.out.println("Unimplemented function " + fname.name());
+          Logging.READLINE.log(Level.WARNING, "Unimplemented function " + fname.name());
         }
       } else {
         LineBuffer buf = buffer.copy();

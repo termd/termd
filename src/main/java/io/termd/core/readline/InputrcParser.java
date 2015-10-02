@@ -16,11 +16,14 @@
 
 package io.termd.core.readline;
 
+import io.termd.core.util.Logging;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,15 +49,14 @@ public abstract class InputrcParser {
     while (sc.hasNext()) {
       String next = sc.next();
       if (COMMENT.matcher(next).matches()) {
-        System.out.println("comment");
       } else if (CONDITIONAL.matcher(next).matches()) {
-        System.out.println("conditional");
+        Logging.READLINE.log(Level.WARNING, "Inputrc conditional not implemented");
       } else {
         Matcher matcher = SET_VARIABLE.matcher(next);
         if (matcher.matches()) {
           String variable = matcher.group(1);
           String value = matcher.group(2);
-          System.out.println("SET " + variable + " = " + value);
+          Logging.READLINE.log(Level.WARNING, "Inputrc set variable not implemented");
         } else {
           matcher = BIND.matcher(next);
           if (matcher.matches()) {

@@ -26,7 +26,9 @@ import java.util.logging.Logger;
  */
 public final class Logging {
 
-  private static final Logger IO_ERROR = Logger.getLogger("io.termd.core.io_error");
+  public static final Logger IO_ERROR = Logger.getLogger("io.termd.core.io_error");
+  public static final Logger READLINE = Logger.getLogger("io.termd.core.readline");
+  public static final Logger TERMINFO = Logger.getLogger("io.termd.core.terminfo");
 
   /**
    * Log an io error reported by the IO layer that lead to closing the resource

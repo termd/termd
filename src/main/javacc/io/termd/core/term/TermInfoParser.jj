@@ -277,7 +277,7 @@ void parseStringFeature(String name, ParserHandler handler):
     { handler.addStringFeature(name, new Sequence(value)); }
   } catch (ParseException e) {
     // Deep error recovery
-    System.out.println("Coult not parse feature " + name);
+    io.termd.core.util.Logging.TERMINFO.log(java.util.logging.Level.FINEST, "Could not parse feature " + name);
     Token t;
     do {
       t = getNextToken();
