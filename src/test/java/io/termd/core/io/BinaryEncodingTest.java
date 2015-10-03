@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -96,37 +95,5 @@ public class BinaryEncodingTest {
     decoder.write(new byte[]{(byte) 0xAC});
     assertEquals(1, codePoints.size());
     assertEquals('\u20AC', (int)codePoints.get(0));
-  }
-
-  @Test
-  public void testDecodeMalformed() throws Exception {
-    // Todo
-  }
-
-  @Test
-  public void testEncoderOverflow() throws Exception {
-    assertEncode(4, "ABCDE", new int[]{65, 66, 67, 68}, new int[]{69});
-    assertEncode(5, "ABCDE", new int[]{65, 66, 67, 68, 69});
-  }
-
-  @Test
-  public void testEncodeMalformed() throws Exception {
-    // Todo
-  }
-
-  private void assertEncode(int bufferSize, String chars, int[]... bytes) {
-    final List<int[]> abc = new ArrayList<>();
-    BinaryEncoder decoder = new BinaryEncoder(bufferSize, UTF8, event -> {
-      int[] def = new int[event.length];
-      for (int i = 0;i < event.length;i++) {
-        def[i] = event[i];
-      }
-      abc.add(def);
-    });
-    decoder.accept(Helper.toCodePoints(chars));
-    assertEquals(bytes.length, abc.size());
-    for (int i = 0;i < bytes.length;i++) {
-      assertArrayEquals(bytes[i], abc.get(i));
-    }
   }
 }

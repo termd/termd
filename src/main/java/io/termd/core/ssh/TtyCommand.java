@@ -147,7 +147,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
     readBuffer = new ReadBuffer(this::execute);
     eventDecoder = new TtyEventDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, charset, eventDecoder);
-    stdout = new TtyOutputMode(new BinaryEncoder(512, charset, out));
+    stdout = new TtyOutputMode(new BinaryEncoder(charset, out));
     term = env.getEnv().get("TERM");
     conn = new Connection();
 

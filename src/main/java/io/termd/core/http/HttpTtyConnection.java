@@ -70,7 +70,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
     readBuffer = new ReadBuffer(this::execute);
     onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
     decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
-    stdout = new TtyOutputMode(new BinaryEncoder(512, StandardCharsets.US_ASCII, this::write));
+    stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
   }
 
   @Override

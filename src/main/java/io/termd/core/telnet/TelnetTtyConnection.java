@@ -55,7 +55,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private final ReadBuffer readBuffer = new ReadBuffer(this::execute);
   private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
-  private final BinaryEncoder encoder = new BinaryEncoder(512, StandardCharsets.US_ASCII, data -> conn.write(data));
+  private final BinaryEncoder encoder = new BinaryEncoder(StandardCharsets.US_ASCII, data -> conn.write(data));
   private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
   private final Consumer<TtyConnection> handler;
 
