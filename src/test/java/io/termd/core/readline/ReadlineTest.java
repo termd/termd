@@ -2,11 +2,13 @@ package io.termd.core.readline;
 
 import io.termd.core.telnet.TestBase;
 import io.termd.core.tty.TtyEvent;
+import io.termd.core.util.Vector;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -14,14 +16,13 @@ import java.util.function.Supplier;
  */
 public class ReadlineTest extends TestBase {
 
-  /*
   @Test
   public void testPrompt() {
-    Term term = new Term();
+    TestTerm term = new TestTerm(this);
+    term.readline(event -> testComplete());
     term.assertScreen("% ");
     term.assertAt(0, 2);
   }
-*/
 
   @Test
   public void testEnter() {
@@ -196,12 +197,11 @@ public class ReadlineTest extends TestBase {
     assertEquals("A\"\nB\nC\"", a.get());
   }
 
-/*
   @Test
   public void testPreserveOriginalHandlers() {
     TestTerm term = new TestTerm(this);
     Consumer<int[]> readHandler = buf -> {};
-    Consumer<Dimension> sizeHandler = size -> {};
+    Consumer<Vector> sizeHandler = size -> {};
     term.readHandler = readHandler;
     term.sizeHandler = sizeHandler;
     term.readlineComplete();
@@ -211,7 +211,6 @@ public class ReadlineTest extends TestBase {
     assertEquals(term.readHandler, readHandler);
     assertEquals(term.sizeHandler, sizeHandler);
   }
-*/
 
   @Test
   public void testBuffering() {
@@ -393,164 +392,4 @@ public class ReadlineTest extends TestBase {
     term.read('\r');
     assertEquals("a", line.get());
   }
-
-/*
-
-  @Test
-  public void testCharsQueuing() {
-    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<ReadlineRequest>() {
-      @Override
-      public void handle(ReadlineRequest request) {
-        switch (request.requestCount()) {
-          case 0:
-            request.write("% ").end();
-            break;
-          case 1:
-            ctx.set(request);
-            break;
-          default:
-            fail("was not expecting such request");
-        }
-      }
-    });
-    term.handler.append(new int[]{'\r'});
-    assertNotNull(ctx);
-    term.assertScreen("% ");
-    term.assertAt(1, 0);
-    term.handler.append(new int[]{'A'});
-    term.assertScreen("% ");
-    term.assertAt(1, 0);
-    ctx.get().write("% ").end();
-    term.assertScreen(
-        "% ",
-        "% A");
-    term.assertAt(1, 3);
-  }
-
-  @Test
-  public void testSetDataHandler() {
-    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
-    final LinkedList<TermEvent> events = new LinkedList<>();
-    Term term = new Term(new Handler<ReadlineRequest>() {
-      @Override
-      public void handle(final ReadlineRequest request) {
-        switch (request.requestCount()) {
-          case 0:
-            request.write("% ").end();
-            break;
-          case 1:
-            ctx.set(request);
-            request.eventHandler(new Handler<TermEvent>() {
-              @Override
-              public void handle(TermEvent data) {
-                events.add(data);
-                if (events.size() == 1) {
-                  request.eventHandler(null);
-                }
-              }
-            });
-            break;
-          default:
-            fail("was not expecting such request");
-        }
-      }
-    });
-    term.handler.append(new int[]{'\r'});
-    term.handler.append(new int[]{'h','e','l','l','o'});
-    assertEquals(1, events.size());
-    assertTrue(Arrays.equals(new int[]{'h', 'e', 'l', 'l', 'o'}, ((TermEvent.Read) events.get(0)).getData()));
-    term.assertScreen(
-        "% "
-    );
-    term.assertAt(1, 0);
-    term.handler.append(new int[]{'b', 'y', 'e'});
-    assertEquals(1, events.size());
-    ctx.get().write("% ").end();
-    term.assertScreen(
-        "% ",
-        "% bye"
-    );
-    term.assertAt(1, 5);
-  }
-
-  @Test
-  public void testResetDataHandlerAfterRequest() {
-    final LinkedList<TermEvent> events = new LinkedList<>();
-    final AtomicReference<ReadlineRequest> ctx = new AtomicReference<>();
-    Term term = new Term(new Handler<ReadlineRequest>() {
-      @Override
-      public void handle(final ReadlineRequest request) {
-        switch (request.requestCount()) {
-          case 0:
-            request.write("% ").end();
-            break;
-          case 1:
-            request.eventHandler(new Handler<TermEvent>() {
-              @Override
-              public void handle(TermEvent event) {
-                events.add(event);
-              }
-            });
-            ctx.set(request);
-            break;
-          case 2:
-            ctx.set(request);
-            break;
-          default:
-            fail("was not expecting such request");
-        }
-      }
-    });
-    term.handler.append(new int[]{'\r'});
-    ctx.get().write("% ").end();
-    term.handler.append(new int[]{'\r'});
-    term.handler.append(new int[]{'b', 'y', 'e'});
-    ctx.get().write("% ").end();
-    assertEquals(0, events.size());
-    term.assertScreen(
-        "% ",
-        "% ",
-        "% bye"
-    );
-    term.assertAt(2, 5);
-  }
-
-  @Test
-  public void testEndedTermRequest() throws Exception {
-    final CountDownLatch latch = new CountDownLatch(1);
-    Term term = new Term(new Handler<ReadlineRequest>() {
-      @Override
-      public void handle(final ReadlineRequest request) {
-        request.write("foo");
-        request.end();
-        assertNull(request.line());
-        assertEquals(0, request.requestCount());
-        try {
-          request.eventHandler(new Handler<TermEvent>() {
-            @Override
-            public void handle(TermEvent event) {
-            }
-          });
-          fail("was expecting an illegal state exception");
-        } catch (IllegalStateException ignore) {
-        }
-        try {
-          request.write("something");
-          fail("was expecting an illegal state exception");
-        } catch (IllegalStateException ignore) {
-        }
-        try {
-          request.end();
-          fail("was expecting an illegal state exception");
-        } catch (IllegalStateException ignore) {
-        }
-        latch.countDown();
-      }
-    });
-    awaitLatch(latch);
-    term.assertScreen("foo");
-    term.assertAt(0, 3);
-  }
-*/
 }

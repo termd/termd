@@ -146,43 +146,6 @@ public abstract class TtyTestBase extends TestBase {
     await();
   }
 
-  /*
-    @Test
-    public void testAsyncEndRequest() throws Exception {
-      final ArrayBlockingQueue<ReadlineRequest> requestContextWait = new ArrayBlockingQueue<>(1);
-      server(new Provider<TelnetHandler>() {
-        @Override
-        public TelnetHandler provide() {
-          return new TelnetTermConnection() {
-            @Override
-            protected void onOpen(TelnetConnection conn) {
-              super.onOpen(conn);
-              new ReadlineTerm(this, new Handler<ReadlineRequest>() {
-                @Override
-                public void handle(ReadlineRequest request) {
-                  switch (request.requestCount()) {
-                    case 0:
-                      request.write("% ").end();
-                      break;
-                    default:
-                      requestContextWait.add(request);
-                  }
-                }
-              });
-            }
-          };
-        }
-      });
-      assertConnect();
-      assertEquals("% ", assertReadString(2));
-      assertWriteln("");
-      ReadlineRequest requestContext = assertNotNull(requestContextWait.poll(10, TimeUnit.SECONDS));
-      assertEquals("\r\n", assertReadString(2));
-      requestContext.write("% ").end();
-      assertEquals("% ", assertReadString(2));
-    }
-  */
-
   @Test
   public void testServerDisconnect() throws Exception {
     CountDownLatch closedLatch = new CountDownLatch(1);

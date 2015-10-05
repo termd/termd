@@ -115,6 +115,15 @@ The actual [example](src/examples/java/examples/snake/SnakeGame.java), run with
 [SSH](src/examples/java/examples/screencast/SshScreencastingExample.java),
 [Websocket](src/examples/java/examples/screencast/WebsocketScreencastingExample.java).
 
+#### Plasma
+
+A funny demo effect using unicode chars.
+
+The actual [example](src/examples/java/examples/plasma/Plasma.java), run with
+[Telnet](src/examples/java/examples/screencast/TelnetPlasmaExample.java),
+[SSH](src/examples/java/examples/screencast/SshPlasmaExample.java),
+[Websocket](src/examples/java/examples/screencast/WebsocketPlasmaExample.java).
+
 #### Ptybridge
 
 The PTY bridge is a bridge to native process, use with caution for security reasons, run with
