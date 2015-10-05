@@ -25,6 +25,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -181,33 +182,6 @@ public abstract class TtyTestBase extends TestBase {
       assertEquals("% ", assertReadString(2));
     }
   */
-  @Test
-  public void testBufferedRead() throws Exception {
-    AtomicInteger count = new AtomicInteger();
-    final CountDownLatch latch = new CountDownLatch(1);
-    server(conn -> {
-      conn.setEventHandler((event, cp) -> conn.setStdinHandler(codePoints -> {
-        switch (count.getAndIncrement()) {
-          case 0:
-            assertEquals("hello", Helper.fromCodePoints(codePoints));
-            latch.countDown();
-            break;
-          case 1:
-            assertEquals("bye", Helper.fromCodePoints(codePoints));
-            testComplete();
-            break;
-          default:
-            fail("Too many requests");
-        }
-      }));
-    });
-    assertConnect();
-    assertWrite("hello");
-    assertWrite(3);
-    await(latch);
-    assertWrite("bye");
-    await();
-  }
 
   @Test
   public void testServerDisconnect() throws Exception {

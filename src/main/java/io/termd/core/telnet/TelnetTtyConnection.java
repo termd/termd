@@ -26,8 +26,6 @@ import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -51,10 +49,9 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
-  private final ByteArrayOutputStream acceptBuffer = new ByteArrayOutputStream();
+  private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4);
   private final ReadBuffer readBuffer = new ReadBuffer(this::execute);
-  private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
-  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
+  private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, readBuffer);
   private final BinaryEncoder encoder = new BinaryEncoder(StandardCharsets.US_ASCII, data -> conn.write(data));
   private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
   private final Consumer<TtyConnection> handler;
@@ -100,19 +97,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
 
   @Override
   protected void onData(byte[] data) {
-    if (accepted) {
-      decoder.write(data);
-    } else {
-      if (acceptBuffer.size() < 10000) {
-        try {
-          acceptBuffer.write(data);
-        } catch (IOException ignore) {
-          // Can't happen
-        }
-      } else {
-        // Just lose data
-      }
-    }
+    decoder.write(data);
   }
 
   @Override
@@ -146,12 +131,8 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
       if (!outBinary | (outBinary && sendingBinary)) {
         if (!inBinary | (inBinary && receivingBinary)) {
           accepted = true;
+          readBuffer.setReadHandler(eventDecoder);
           handler.accept(this);
-          if (acceptBuffer.size() > 0) {
-            byte[] pending = acceptBuffer.toByteArray();
-            acceptBuffer.reset();
-            onData(pending);
-          }
         }
       }
     }
@@ -213,12 +194,12 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
 
   @Override
   public Consumer<int[]> getStdinHandler() {
-    return readBuffer.getReadHandler();
+    return eventDecoder.getReadHandler();
   }
 
   @Override
   public void setStdinHandler(Consumer<int[]> handler) {
-    readBuffer.setReadHandler(handler);
+    eventDecoder.setReadHandler(handler);
   }
 
   @Override

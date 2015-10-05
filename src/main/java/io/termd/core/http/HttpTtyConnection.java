@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
-import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyConnection;
@@ -59,17 +58,15 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   private Vector size = new Vector(80, 24); // For now hardcoded
   private Consumer<Vector> sizeHandler;
-  private final ReadBuffer readBuffer;
-  private final TtyEventDecoder onCharSignalDecoder;
+  private final TtyEventDecoder eventDecoder;
   private final BinaryDecoder decoder;
   private final Consumer<int[]> stdout;
   private Consumer<Void> closeHandler;
   private Consumer<String> termHandler;
 
   public HttpTtyConnection() {
-    readBuffer = new ReadBuffer(this::execute);
-    onCharSignalDecoder = new TtyEventDecoder(3, 26, 4).setReadHandler(readBuffer);
-    decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, onCharSignalDecoder);
+    eventDecoder = new TtyEventDecoder(3, 26, 4);
+    decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
     stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
   }
 
@@ -132,20 +129,20 @@ public abstract class HttpTtyConnection implements TtyConnection {
 
   @Override
   public BiConsumer<TtyEvent, Integer> getEventHandler() {
-    return onCharSignalDecoder.getEventHandler();
+    return eventDecoder.getEventHandler();
   }
 
   @Override
   public void setEventHandler(BiConsumer<TtyEvent, Integer> handler) {
-    onCharSignalDecoder.setEventHandler(handler);
+    eventDecoder.setEventHandler(handler);
   }
 
   public Consumer<int[]> getStdinHandler() {
-    return readBuffer.getReadHandler();
+    return eventDecoder.getReadHandler();
   }
 
   public void setStdinHandler(Consumer<int[]> handler) {
-    readBuffer.setReadHandler(handler);
+    eventDecoder.setReadHandler(handler);
   }
 
   public Consumer<int[]> stdoutHandler() {

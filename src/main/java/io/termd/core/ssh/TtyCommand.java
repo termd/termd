@@ -18,15 +18,12 @@ package io.termd.core.ssh;
 
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
-import io.termd.core.tty.ReadBuffer;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
 import org.apache.sshd.common.channel.PtyMode;
-import org.apache.sshd.common.future.CloseFuture;
-import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoInputStream;
 import org.apache.sshd.common.io.IoOutputStream;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
@@ -60,7 +57,6 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private Charset charset;
   private String term;
   private TtyEventDecoder eventDecoder;
-  private ReadBuffer readBuffer;
   private BinaryDecoder decoder;
   private Consumer<int[]> stdout;
   private Consumer<byte[]> out;
@@ -144,8 +140,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
     int veof = getControlChar(env, PtyMode.VEOF, 4);
 
     //
-    readBuffer = new ReadBuffer(this::execute);
-    eventDecoder = new TtyEventDecoder(vintr, vsusp, veof).setReadHandler(readBuffer);
+    eventDecoder = new TtyEventDecoder(vintr, vsusp, veof);
     decoder = new BinaryDecoder(512, charset, eventDecoder);
     stdout = new TtyOutputMode(new BinaryEncoder(charset, out));
     term = env.getEnv().get("TERM");
@@ -232,12 +227,12 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
 
     @Override
     public Consumer<int[]> getStdinHandler() {
-      return readBuffer.getReadHandler();
+      return eventDecoder.getReadHandler();
     }
 
     @Override
     public void setStdinHandler(Consumer<int[]> handler) {
-      readBuffer.setReadHandler(handler);
+      eventDecoder.setReadHandler(handler);
     }
 
     @Override
