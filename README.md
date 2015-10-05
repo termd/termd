@@ -122,6 +122,10 @@ The PTY bridge is a bridge to native process, use with caution for security reas
 [SSH](src/examples/java/examples/ptybridge/SshPtyBridgeExample.java),
 [Websocket](src/examples/java/examples/ptybridge/WebsocketPtyBridgeExample.java).
 
+#### Telnet
+
+A simple telnet example that shows Telnet options negociation.
+
 ### Todo
 
 - dynamic prompt
