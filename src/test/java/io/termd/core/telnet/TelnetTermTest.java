@@ -20,7 +20,6 @@ public abstract class TelnetTermTest extends TelnetTestBase {
       final AtomicInteger count = new AtomicInteger();
       return new TelnetTtyConnection(false, false, conn -> {
         conn.setSizeHandler(size -> {
-          System.out.println("size changed " + size);
           switch (count.getAndIncrement()) {
             case 0:
               assertEquals(20, size.x());
@@ -43,11 +42,6 @@ public abstract class TelnetTermTest extends TelnetTestBase {
         });
       });
     });
-    System.out.println("------------------------------");
-    System.out.println("------------------------------");
-    System.out.println("------------------------------");
-    System.out.println("------------------------------");
-    System.out.println("------------------------------");
     WindowSizeOptionHandler optionHandler = new WindowSizeOptionHandler(20, 10, false, false, true, false);
     client.setOptionHandler(optionHandler);
     client.connect("localhost", 4000);
