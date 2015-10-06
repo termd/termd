@@ -6,15 +6,17 @@ An open source library for writing terminal applications in Java under ASL 2.0.
 
 ### Consuming the lib
 
-Build it yourself or consume the snapshot from [Sonatype OSS repository](https://oss.sonatype.org/content/repositories/snapshots/io/termd/termd-core/)
+Add this dependency to your build.
 
 ```
 <dependency>
   <groupId>io.termd</groupId>
   <artifactId>termd-core</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 </dependency>
 ```
+
+Snapshots are available from [Sonatype OSS repository](https://oss.sonatype.org/content/repositories/snapshots/io/termd/termd-core/)
 
 ### Features
 
