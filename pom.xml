@@ -17,6 +17,10 @@
   <artifactId>termd-core</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
+  <name>Termd Core</name>
+  <description>An open source terminal daemon library providing terminal handling in Java</description>
+  <url>http://termd.io/</url>
+
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -25,11 +29,27 @@
     </license>
   </licenses>
 
+  <organization>
+    <name>Termd</name>
+    <url>http://termd.io</url>
+  </organization>
+
   <scm>
     <connection>scm:git:git@github.com:termd/termd.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/termd/termd.git</developerConnection>
     <url>git@github.com:termd/termd.git</url>
   </scm>
+
+  <developers>
+    <developer>
+      <id>julien.viet</id>
+      <name>Julien Viet</name>
+      <email>julien@julienviet.com</email>
+      <roles>
+        <role>Owner</role>
+      </roles>
+    </developer>
+  </developers>
 
   <properties>
     <version.org.slf4j>1.7.12</version.org.slf4j>
