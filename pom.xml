@@ -27,7 +27,7 @@
 
   <scm>
     <connection>scm:git:git@github.com:termd/termd.git</connection>
-    <developerConnection>scm:git:git@github.com:termd/termd.git</developerConnection>
+    <developerConnection>scm:git:ssh://git@github.com/termd/termd.git</developerConnection>
     <url>git@github.com:termd/termd.git</url>
   </scm>
 
