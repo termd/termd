@@ -36,10 +36,6 @@ public class TelnetClientRule extends ExternalResource {
   private OutputStream directOutput;
   public TelnetClient client;
 
-  public OutputStream getDirectOutput() {
-    return directOutput;
-  }
-
   public String assertReadString(int length) throws Exception {
     return new String(assertReadBytes(length), 0, length, "UTF-8");
   }
@@ -101,6 +97,19 @@ public class TelnetClientRule extends ExternalResource {
   public TelnetClientRule flush() throws IOException {
     client.getOutputStream().flush();
     return this;
+  }
+
+  public void writeDirect(byte... bytes) throws IOException {
+    synchronized (client) {
+      directOutput.write(bytes);
+    }
+  }
+
+  public void writeDirectAndFlush(byte... bytes) throws IOException {
+    synchronized (client) {
+      directOutput.write(bytes);
+      directOutput.flush();
+    }
   }
 
   @Override

@@ -323,9 +323,7 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
     client.setOptionHandler(new SimpleOptionHandler(0, false, false, true, false));
     client.connect("localhost", 4000);
     latch.await();
-    client.getDirectOutput().write(-1);
-    client.getDirectOutput().write(-1);
-    client.getDirectOutput().flush();
+    client.writeDirectAndFlush((byte)-1, (byte)-1);
     await();
   }
 

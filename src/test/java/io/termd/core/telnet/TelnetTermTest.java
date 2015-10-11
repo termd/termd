@@ -1,5 +1,6 @@
 package io.termd.core.telnet;
 
+import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
@@ -46,11 +47,9 @@ public abstract class TelnetTermTest extends TelnetTestBase {
     client.setOptionHandler(optionHandler);
     client.connect("localhost", 4000);
     latch1.await(30, TimeUnit.SECONDS);
-    client.getDirectOutput().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, 80, 0, 24, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
-    client.getDirectOutput().flush();
+    client.writeDirectAndFlush(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, 80, 0, 24, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
     latch2.await(30, TimeUnit.SECONDS);
-    client.getDirectOutput().write(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, (byte) 180, 0, (byte) 160, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
-    client.getDirectOutput().flush();
+    client.writeDirectAndFlush(new byte[]{TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SB, 31, 0, (byte) 180, 0, (byte) 160, TelnetConnection.BYTE_IAC, TelnetConnection.BYTE_SE});
     await();
   }
 }

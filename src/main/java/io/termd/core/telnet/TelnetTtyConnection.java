@@ -108,9 +108,6 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
     conn.writeWillOption(Option.ECHO);
     conn.writeWillOption(Option.SGA);
 
-    // Window size
-    conn.writeDoOption(Option.NAWS);
-
     //
     if (inBinary) {
       conn.writeDoOption(Option.BINARY);
@@ -118,6 +115,9 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
     if (outBinary) {
       conn.writeWillOption(Option.BINARY);
     }
+
+    // Window size
+    conn.writeDoOption(Option.NAWS);
 
     // Get some info about user
     conn.writeDoOption(Option.TERMINAL_TYPE);
