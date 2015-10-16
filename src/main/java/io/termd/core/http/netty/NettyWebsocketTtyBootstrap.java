@@ -101,8 +101,8 @@ public class NettyWebsocketTtyBootstrap {
       channel.close();
     }
     channelGroup.close();
-    GenericFutureListener abc = f -> doneHandler.accept(null);
-    group.shutdownGracefully().addListener(abc);
+    GenericFutureListener listener = f -> doneHandler.accept(f.cause());
+    channelGroup.close().addListener(listener);
   }
 
   public CompletableFuture<Void> stop() throws InterruptedException {

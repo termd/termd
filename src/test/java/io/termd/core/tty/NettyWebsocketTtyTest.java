@@ -43,7 +43,7 @@ public class NettyWebsocketTtyTest extends WebsocketTtyTestBase {
 
   public void after() throws Exception {
     if (bootstrap != null) {
-      bootstrap.stop().get();
+      bootstrap.stop().get(10, TimeUnit.SECONDS);
       bootstrap = null;
     }
   }
