@@ -21,6 +21,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -28,10 +30,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.termd.core.telnet.TelnetBootstrap;
 import io.termd.core.telnet.TelnetHandler;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -40,12 +42,12 @@ import java.util.function.Supplier;
  */
 public class NettyTelnetBootstrap extends TelnetBootstrap {
 
-  private EventLoopGroup parentGroup;
-  private EventLoopGroup childGroup;
+  private EventLoopGroup group;
+  private ChannelGroup channelGroup;
 
   public NettyTelnetBootstrap() {
-    this.parentGroup = new NioEventLoopGroup(1);
-    this.childGroup = new NioEventLoopGroup();
+    this.group = new NioEventLoopGroup();
+    this.channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
   }
 
   public NettyTelnetBootstrap setHost(String host) {
@@ -59,13 +61,14 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
   @Override
   public void start(Supplier<TelnetHandler> factory, Consumer<Throwable> doneHandler) {
     ServerBootstrap boostrap = new ServerBootstrap();
-    boostrap.group(parentGroup, childGroup)
+    boostrap.group(group)
         .channel(NioServerSocketChannel.class)
         .option(ChannelOption.SO_BACKLOG, 100)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(new ChannelInitializer<SocketChannel>() {
           @Override
           public void initChannel(SocketChannel ch) throws Exception {
+            channelGroup.add(ch);
             ChannelPipeline p = ch.pipeline();
             TelnetChannelHandler handler = new TelnetChannelHandler(factory);
             p.addLast(handler);
@@ -83,13 +86,9 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
 
   @Override
   public void stop(Consumer<Throwable> doneHandler) {
-    AtomicInteger count = new AtomicInteger(2);
     GenericFutureListener<Future<Object>> adapter = (Future<Object> future) -> {
-      if (count.decrementAndGet() == 0) {
-        doneHandler.accept(null);
-      }
+      doneHandler.accept(future.cause());
     };
-    parentGroup.shutdownGracefully().addListener(adapter);
-    childGroup.shutdownGracefully().addListener(adapter);
+    channelGroup.close().addListener(adapter);
   }
 }

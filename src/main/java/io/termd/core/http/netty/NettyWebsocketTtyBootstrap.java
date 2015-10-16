@@ -26,6 +26,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.termd.core.tty.TtyConnection;
@@ -100,9 +101,7 @@ public class NettyWebsocketTtyBootstrap {
     if (channel != null) {
       channel.close();
     }
-    channelGroup.close();
-    GenericFutureListener listener = f -> doneHandler.accept(f.cause());
-    channelGroup.close().addListener(listener);
+    channelGroup.close().addListener((Future<Void> f) -> doneHandler.accept(f.cause()));
   }
 
   public CompletableFuture<Void> stop() throws InterruptedException {
