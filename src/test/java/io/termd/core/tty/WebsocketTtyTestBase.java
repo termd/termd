@@ -38,7 +38,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class WebsocketTtyTestBase extends TtyTestBase {
+  public abstract class WebsocketTtyTestBase extends TtyTestBase {
 
   private Endpoint endpoint;
   private Session session;
@@ -55,6 +55,11 @@ public abstract class WebsocketTtyTestBase extends TtyTestBase {
         endpoint = null;
       }
     }
+  }
+
+  @Override
+  public boolean checkDisconnected() {
+    return session == null || !session.isOpen();
   }
 
   @Override

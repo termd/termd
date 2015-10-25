@@ -261,6 +261,43 @@ public abstract class TtyTestBase extends TestBase {
     await();
   }
 
+  /**
+   * Check if the client is disconnected, this affects the connection, so this should not be used if the
+   * connection needs to be used after.
+   *
+   * @return if the client is disconnected
+   */
+  public boolean checkDisconnected() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Test
+  public void testConnectionCloseImmediatly() throws Exception {
+    server(conn -> {
+      conn.setCloseHandler(v -> {
+        new Thread() {
+          @Override
+          public void run() {
+            for (int i = 0;i < 100;i++) {
+              if (checkDisconnected()) {
+                testComplete();
+                return;
+              }
+              try {
+                Thread.sleep(10);
+              } catch (InterruptedException e) {
+                fail(e);
+              }
+            }
+          }
+        }.start();
+      });
+      conn.close();
+    });
+    assertConnect();
+    await();
+  }
+
   @Test
   public void testScheduleThread() throws Exception {
     server(conn -> {

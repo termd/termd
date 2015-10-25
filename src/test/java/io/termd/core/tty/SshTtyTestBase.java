@@ -20,12 +20,14 @@ import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+import io.termd.core.TestBase;
 import io.termd.core.ssh.TtyCommand;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -89,6 +91,15 @@ public abstract class SshTtyTestBase extends TtyTestBase {
     channel.connect();
     in = channel.getInputStream();
     out = channel.getOutputStream();
+  }
+
+  @Override
+  public boolean checkDisconnected() {
+    try {
+      return in != null && in.read() == -1;
+    } catch (IOException e) {
+      throw TestBase.failure(e);
+    }
   }
 
   @Override

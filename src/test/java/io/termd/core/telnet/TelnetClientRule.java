@@ -67,6 +67,19 @@ public class TelnetClientRule extends ExternalResource {
     disconnect(true);
   }
 
+  /**
+   * Check if the client is disconnected, this affects the input stream of the socket by reading bytes from it.
+   *
+   * @return if the client is disconnected
+   */
+  public boolean checkDisconnected() {
+    try {
+      return socket != null && socket.getInputStream().read() == -1;
+    } catch (IOException e) {
+      throw TestBase.failure(e);
+    }
+  }
+
   public void disconnect(boolean clean) throws IOException {
     if (client.isConnected()) {
       if (clean) {
@@ -120,6 +133,7 @@ public class TelnetClientRule extends ExternalResource {
         super._connectAction_();
         socket = _socket_;
         directOutput = _output_;
+        setKeepAlive(false);
       }
     };
   }

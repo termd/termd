@@ -32,6 +32,11 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
 
   protected abstract Function<Supplier<TelnetHandler>, Closeable> serverFactory();
 
+  @Override
+  public boolean checkDisconnected() {
+    return client.checkDisconnected();
+  }
+
   protected void server(Consumer<TtyConnection> onConnect) {
     server.start(() -> new TelnetTtyConnection(binary, binary, onConnect));
   }
