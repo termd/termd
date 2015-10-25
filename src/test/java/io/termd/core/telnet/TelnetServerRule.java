@@ -26,6 +26,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.termd.core.TestBase;
 import io.termd.core.telnet.netty.TelnetChannelHandler;
 import org.junit.rules.ExternalResource;
 

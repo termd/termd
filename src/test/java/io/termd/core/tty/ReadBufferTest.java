@@ -1,13 +1,12 @@
 package io.termd.core.tty;
 
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

@@ -14,7 +14,7 @@
  * under the License.
  *
  */
-package io.termd.core.telnet;
+package io.termd.core;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -57,17 +57,17 @@ public class TestBase {
     latch.countDown();
   }
 
-  protected static AssertionError failure(String msg) {
+  public static AssertionError failure(String msg) {
     return new AssertionError(msg);
   }
 
-  protected static AssertionError failure(String msg, Throwable cause) {
+  public static AssertionError failure(String msg, Throwable cause) {
     AssertionError afe = new AssertionError(msg);
     afe.initCause(cause);
     return afe;
   }
 
-  protected static AssertionError failure(Throwable cause) {
+  public static AssertionError failure(Throwable cause) {
     if (cause instanceof AssertionError) {
       return (AssertionError) cause;
     } else {

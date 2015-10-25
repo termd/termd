@@ -26,7 +26,7 @@ import io.termd.core.readline.functions.ForwardChar;
 import io.termd.core.readline.functions.KillLine;
 import io.termd.core.readline.functions.NextHistory;
 import io.termd.core.readline.functions.PreviousHistory;
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyOutputMode;

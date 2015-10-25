@@ -1,6 +1,6 @@
 package io.termd.core.readline;
 
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.util.Vector;
 import org.junit.Test;

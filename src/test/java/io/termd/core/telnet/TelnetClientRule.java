@@ -16,13 +16,13 @@
 
 package io.termd.core.telnet;
 
+import io.termd.core.TestBase;
 import org.apache.commons.net.telnet.InvalidTelnetOptionException;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.apache.commons.net.telnet.TelnetOptionHandler;
 import org.junit.rules.ExternalResource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.function.BiConsumer;

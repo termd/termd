@@ -2,9 +2,8 @@ package io.termd.core.ssh;
 
 import com.jcraft.jsch.JSchException;
 import io.termd.core.ssh.netty.AsyncAuth;
-import io.termd.core.ssh.netty.AsyncUserAuthService;
 import io.termd.core.ssh.netty.AsyncUserAuthServiceFactory;
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
@@ -12,7 +11,6 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerConnectionServiceFactory;
 import org.apache.sshd.util.EchoShellFactory;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;

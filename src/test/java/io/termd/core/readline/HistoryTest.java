@@ -16,7 +16,7 @@
 
 package io.termd.core.readline;
 
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 

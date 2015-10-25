@@ -1,5 +1,6 @@
 package io.termd.core.telnet;
 
+import io.termd.core.TestBase;
 import org.junit.Rule;
 
 import java.io.Closeable;

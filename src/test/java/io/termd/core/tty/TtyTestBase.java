@@ -16,7 +16,7 @@
 
 package io.termd.core.tty;
 
-import io.termd.core.telnet.TestBase;
+import io.termd.core.TestBase;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
@@ -25,7 +25,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
