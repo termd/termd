@@ -173,7 +173,7 @@ class TestTerm {
   TtyConnection conn = new TtyConnection() {
 
     @Override
-    public String term() {
+    public String terminalType() {
       return "xterm";
     }
 
@@ -183,12 +183,12 @@ class TestTerm {
     }
 
     @Override
-    public Consumer<String> getTermHandler() {
+    public Consumer<String> getTerminalTypeHandler() {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setTermHandler(Consumer<String> handler) {
+    public void setTerminalTypeHandler(Consumer<String> handler) {
       throw new UnsupportedOperationException();
     }
 

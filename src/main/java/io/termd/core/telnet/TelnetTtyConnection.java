@@ -63,7 +63,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   }
 
   @Override
-  public String term() {
+  public String terminalType() {
     return terminalType;
   }
 
@@ -170,12 +170,12 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   }
 
   @Override
-  public Consumer<String> getTermHandler() {
+  public Consumer<String> getTerminalTypeHandler() {
     return termHandler;
   }
 
   @Override
-  public void setTermHandler(Consumer<String> handler) {
+  public void setTerminalTypeHandler(Consumer<String> handler) {
     termHandler = handler;
     if (handler != null && terminalType != null) {
       handler.accept(terminalType);

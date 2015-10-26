@@ -32,11 +32,22 @@ public interface TtyConnection {
 
   Vector size();
 
-  String term();
+  /**
+   * @return the terminal type value, this can be null when the terminal has not declared its type yet. The {@link #setTerminalTypeHandler(Consumer)}
+   *         can be used to aware when the terminal type is known.
+   */
+  String terminalType();
 
-  Consumer<String> getTermHandler();
+  /**
+   * @return the terminal type handler
+   */
+  Consumer<String> getTerminalTypeHandler();
 
-  void setTermHandler(Consumer<String> handler);
+  /**
+   *
+   * @param handler set an handler called when the terminal type value is known
+   */
+  void setTerminalTypeHandler(Consumer<String> handler);
 
   Consumer<Vector> getSizeHandler();
 

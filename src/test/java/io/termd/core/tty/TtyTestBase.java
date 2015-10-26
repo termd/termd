@@ -196,10 +196,10 @@ public abstract class TtyTestBase extends TestBase {
       }
     };
     server(conn -> {
-      if (conn.term() != null) {
-        assertTerm.accept(conn.term());
+      if (conn.terminalType() != null) {
+        assertTerm.accept(conn.terminalType());
       } else {
-        conn.setTermHandler(assertTerm);
+        conn.setTerminalTypeHandler(assertTerm);
       }
     });
     assertConnect("xterm");

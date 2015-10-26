@@ -221,7 +221,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private class Connection implements TtyConnection {
 
     @Override
-    public String term() {
+    public String terminalType() {
       return term;
     }
 
@@ -236,12 +236,12 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
     }
 
     @Override
-    public Consumer<String> getTermHandler() {
+    public Consumer<String> getTerminalTypeHandler() {
       return termHandler;
     }
 
     @Override
-    public void setTermHandler(Consumer<String> handler) {
+    public void setTerminalTypeHandler(Consumer<String> handler) {
       termHandler = handler;
     }
 

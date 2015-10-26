@@ -28,7 +28,7 @@ public class EventsExample {
       conn.write("You resized your terminal to " + size + "\n");
     });
 
-    conn.setTermHandler(term -> {
+    conn.setTerminalTypeHandler(term -> {
       conn.write("Your terminal is " + term + "\n");
     });
 

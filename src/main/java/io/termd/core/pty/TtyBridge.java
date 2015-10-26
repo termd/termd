@@ -78,7 +78,7 @@ public class TtyBridge {
 
       readline.addFunction(function);
     }
-    conn.setTermHandler(term -> {
+    conn.setTerminalTypeHandler(term -> {
       // Not used yet but we should propagage this to the process builder
       // System.out.println("CLIENT $TERM=" + term);
     });

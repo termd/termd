@@ -71,7 +71,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   @Override
-  public String term() {
+  public String terminalType() {
     return "vt100";
   }
 
@@ -106,11 +106,11 @@ public abstract class HttpTtyConnection implements TtyConnection {
     }
   }
 
-  public Consumer<String> getTermHandler() {
+  public Consumer<String> getTerminalTypeHandler() {
     return termHandler;
   }
 
-  public void setTermHandler(Consumer<String> handler) {
+  public void setTerminalTypeHandler(Consumer<String> handler) {
     termHandler = handler;
   }
 
