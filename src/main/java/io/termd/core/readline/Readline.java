@@ -42,11 +42,8 @@ public class Readline {
   private final Device device;
   private final Map<String, Function> functions = new HashMap<>();
   private final EventQueue decoder;
-  private Consumer<int[]> prevReadHandler;
-  private Consumer<Vector> prevSizeHandler;
-  private BiConsumer<TtyEvent, Integer> prevEventHandler;
-  private Vector size;
   private Interaction interaction;
+  private Vector size;
   private List<int[]> history;
 
   public Readline(Keymap keymap) {
@@ -100,9 +97,18 @@ public class Readline {
   }
 
   private void deliver() {
-    while (decoder.hasNext() && interaction != null && !interaction.paused) {
-      KeyEvent next = decoder.next();
-      interaction.handle(next);
+    while (true) {
+      Interaction handler;
+      KeyEvent event;
+      synchronized (this) {
+        if (decoder.hasNext() && interaction != null && !interaction.paused) {
+          event = decoder.next();
+          handler = interaction;
+        } else {
+          return;
+        }
+      }
+      handler.handle(event);
     }
   }
 
@@ -121,10 +127,12 @@ public class Readline {
    * @param requestHandler the requestHandler
    */
   public void readline(TtyConnection conn, String prompt, Consumer<String> requestHandler, Consumer<Completion> completionHandler) {
-    if (interaction != null) {
-      throw new IllegalStateException("Already reading a line");
+    synchronized (this) {
+      if (interaction != null) {
+        throw new IllegalStateException("Already reading a line");
+      }
+      interaction = new Interaction(conn, prompt, requestHandler, completionHandler);
     }
-    interaction = new Interaction(conn, prompt, requestHandler, completionHandler);
     interaction.install();
     conn.write(prompt);
     schedulePendingEvent();
@@ -134,30 +142,39 @@ public class Readline {
    * Schedule delivery of pending events in the event queue.
    */
   public void schedulePendingEvent() {
-    if (interaction == null) {
-      throw new IllegalStateException("No interaction!");
+    TtyConnection conn;
+    synchronized (this) {
+      if (interaction == null) {
+        throw new IllegalStateException("No interaction!");
+      }
+      if (decoder.hasNext()) {
+        conn = interaction.conn;
+      } else {
+        return;
+      }
     }
-    if (decoder.hasNext()) {
-      interaction.conn.execute(Readline.this::deliver);
-    }
+    conn.execute(Readline.this::deliver);
   }
 
-  public Readline queueEvent(int[] codePoints) {
+  public synchronized Readline queueEvent(int[] codePoints) {
     decoder.append(codePoints);
     return this;
   }
 
-  public boolean hasEvent() {
+  public synchronized boolean hasEvent() {
     return decoder.hasNext();
   }
 
-  public KeyEvent nextEvent() {
+  public synchronized KeyEvent nextEvent() {
     return decoder.next();
   }
 
   public class Interaction {
 
     final TtyConnection conn;
+    private Consumer<int[]> prevReadHandler;
+    private Consumer<Vector> prevSizeHandler;
+    private BiConsumer<TtyEvent, Integer> prevEventHandler;
     private final String prompt;
     private final Consumer<String> requestHandler;
     private final Consumer<Completion> completionHandler;
@@ -190,7 +207,9 @@ public class Readline {
       conn.setStdinHandler(prevReadHandler);
       conn.setSizeHandler(prevSizeHandler);
       conn.setEventHandler(prevEventHandler);
-      interaction = null;
+      synchronized (Readline.this) {
+        interaction = null;
+      }
       requestHandler.accept(s);
     }
 
@@ -204,7 +223,11 @@ public class Readline {
           return;
         } else if (event.getCodePointAt(0) == 3) {
           // Specific behavior Ctrl-C
-          interaction = new Interaction(conn, interaction.prompt, interaction.requestHandler, interaction.completionHandler);
+          line.clear();
+          buffer.clear();
+          data.clear();
+          historyIndex = -1;
+          currentPrompt = prompt;
           conn.stdoutHandler().accept(new int[]{'\n'});
           conn.write(interaction.prompt);
           return;
@@ -214,7 +237,9 @@ public class Readline {
         FunctionEvent fname = (FunctionEvent) event;
         Function function = functions.get(fname.name());
         if (function != null) {
-          paused = true;
+          synchronized (this) {
+            paused = true;
+          }
           function.apply(this);
         } else {
           Logging.READLINE.log(Level.WARNING, "Unimplemented function " + fname.name());
@@ -350,10 +375,12 @@ public class Readline {
     }
 
     public void resume() {
-      if (!paused) {
-        throw new IllegalStateException();
+      synchronized (Readline.this) {
+        if (!paused) {
+          throw new IllegalStateException();
+        }
+        paused = false;
       }
-      paused = false;
       schedulePendingEvent();
     }
 
@@ -362,7 +389,9 @@ public class Readline {
       prevSizeHandler = conn.getSizeHandler();
       prevEventHandler = conn.getEventHandler();
       conn.setStdinHandler(data -> {
-        decoder.append(data);
+        synchronized (Readline.this) {
+          decoder.append(data);
+        }
         deliver();
       });
       size = conn.size();
