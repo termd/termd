@@ -25,6 +25,7 @@ import org.junit.rules.ExternalResource;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.function.BiConsumer;
 
 /**
@@ -75,6 +76,11 @@ public class TelnetClientRule extends ExternalResource {
   public boolean checkDisconnected() {
     try {
       return socket != null && socket.getInputStream().read() == -1;
+    } catch (SocketException e) {
+      if (e.getMessage().equals("Connection reset")) {
+        return true;
+      }
+      throw TestBase.failure(e);
     } catch (IOException e) {
       throw TestBase.failure(e);
     }
