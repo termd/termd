@@ -24,6 +24,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.regex.Pattern;
 
 /**
  * Various utils.
@@ -243,4 +244,79 @@ public class Helper {
       fut.complete(null);
     };
   }
+
+  private static final String SPACE = " ";
+  private static final char SPACE_CHAR = ' ';
+  private static final char BACK_SLASH = '\\';
+  private static final Pattern spaceEscapedPattern = Pattern.compile("\\\\ ");
+
+  public static String findWordClosestToCursor(String text, int cursor) {
+    boolean startOutsideText = false;
+    if (cursor >= text.length()) {
+      cursor = text.length() - 1;
+      startOutsideText = true;
+    }
+    if (cursor < 0 || text.trim().length() == 0)
+      return "";
+
+    boolean foundBackslash = false;
+
+    if (text.contains(SPACE)) {
+      int start, end;
+      if (text.charAt(cursor) == SPACE_CHAR) {
+        if (startOutsideText)
+          return "";
+        if (cursor > 0) {
+          if (text.charAt(cursor - 1) == SPACE_CHAR)
+            return "";
+          else
+            cursor--;
+        }
+      }
+
+      boolean space = false;
+      for (start = cursor; start > 0; start--) {
+        if (space) {
+          if (text.charAt(start) == BACK_SLASH) {
+            space = false;
+            foundBackslash = true;
+          }
+          else {
+            start += 2;
+            break;
+          }
+        }
+        if (Character.isSpaceChar(text.charAt(start)))
+          space = true;
+      }
+
+      boolean back = false;
+      for (end = cursor; end < text.length(); end++) {
+        if (text.charAt(end) == BACK_SLASH) {
+          back = true;
+          foundBackslash = true;
+        }
+        else if (back) {
+          if (Character.isSpaceChar(text.charAt(end))) {
+            back = false;
+          }
+        }
+        else if (Character.isSpaceChar(text.charAt(end))) {
+          break;
+        }
+      }
+      if (foundBackslash)
+        return switchEscapedSpacesToSpacesInWord(text.substring(start, end));
+      else
+        return text.substring(start, end);
+    }
+    else {
+      return text.trim();
+    }
+  }
+
+  public static String switchEscapedSpacesToSpacesInWord(String word) {
+    return spaceEscapedPattern.matcher(word).replaceAll(SPACE);
+  }
+
 }
