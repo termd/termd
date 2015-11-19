@@ -56,7 +56,9 @@ import java.util.function.Consumer;
  */
 public abstract class HttpTtyConnection implements TtyConnection {
 
-  private Vector size = new Vector(80, 24); // For now hardcoded
+  private static final Vector DEFAULT_SIZE = new Vector(80, 24);
+
+  private Vector size;
   private Consumer<Vector> sizeHandler;
   private final TtyEventDecoder eventDecoder;
   private final BinaryDecoder decoder;
@@ -65,9 +67,14 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private Consumer<String> termHandler;
 
   public HttpTtyConnection() {
-    eventDecoder = new TtyEventDecoder(3, 26, 4);
-    decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
-    stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
+    this(DEFAULT_SIZE);
+  }
+
+  public HttpTtyConnection(Vector size) {
+    this.size = size;
+    this.eventDecoder = new TtyEventDecoder(3, 26, 4);
+    this.decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
+    this.stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
   }
 
   @Override
@@ -85,8 +92,8 @@ public abstract class HttpTtyConnection implements TtyConnection {
       obj = mapper.readValue(msg, Map.class);
       action = (String) obj.get("action");
     } catch (IOException e) {
-      // Handle this better!!!
-      throw new RuntimeException("Cannot deserialize object from json", e);
+      // Log this
+      return;
     }
     if (action != null) {
       switch (action) {
@@ -95,11 +102,21 @@ public abstract class HttpTtyConnection implements TtyConnection {
           decoder.write(data.getBytes()); //write back echo
           break;
         case "resize":
-          int cols = (int) obj.get("cols");
-          int rows = (int) obj.get("rows");
-          size = new Vector(cols, rows);
-          if (sizeHandler != null) {
-            sizeHandler.accept(size);
+          try {
+            int cols = (int) obj.getOrDefault("cols", size.x());
+            int rows = (int) obj.getOrDefault("rows", size.y());
+            if (cols > 0 && rows > 0) {
+              Vector newSize = new Vector(cols, rows);
+              if (!newSize.equals(size())) {
+                size = newSize;
+                if (sizeHandler != null) {
+                  sizeHandler.accept(size);
+                }
+              }
+            }
+          } catch (Exception e) {
+            // Invalid size
+            // Log this
           }
           break;
       }
