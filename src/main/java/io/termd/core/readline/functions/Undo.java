@@ -40,6 +40,8 @@ public class Undo implements Function {
         if(ua != null) {
             LineBuffer buf = new LineBuffer().insert(ua.getBuffer());
             buf.moveCursor(ua.getCursorPosition()-buf.getCursor());
+            interaction.refresh(buf);
+            interaction.resume();
         }
     }
 }

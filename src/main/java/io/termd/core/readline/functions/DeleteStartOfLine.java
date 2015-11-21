@@ -33,7 +33,7 @@ public class DeleteStartOfLine extends ChangeFunction {
 
     @Override
     public String name() {
-        return "backward-kill-line";
+        return "unix-line-discard";
     }
 
     @Override

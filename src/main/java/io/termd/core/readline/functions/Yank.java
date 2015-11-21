@@ -28,7 +28,7 @@ import io.termd.core.readline.editing.EditMode;
  */
 public class Yank extends ChangeFunction {
 
-    Yank() {
+    public Yank() {
         super(EditMode.Status.YANK);
     }
 

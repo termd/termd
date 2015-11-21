@@ -99,15 +99,13 @@ abstract class ChangeFunction extends MovementFunction {
             if(cursor < oldCursor) {
                 addActionToUndoStack(interaction);
                 for( int i = cursor; i < oldCursor; i++) {
-                    interaction.buffer().replace(i,
-                            Character.toUpperCase(buf.getAt(i)));
+                    buf.replace(i, Character.toUpperCase(buf.getAt(i)));
                 }
             }
             else {
                 addActionToUndoStack(interaction);
                 for( int i = oldCursor; i < cursor; i++) {
-                    interaction.buffer().replace(i, Character.toUpperCase(
-                            buf.getAt(i)));
+                    buf.replace(i, Character.toUpperCase(buf.getAt(i)));
                 }
             }
             buf.moveCursor(cursor - oldCursor);
