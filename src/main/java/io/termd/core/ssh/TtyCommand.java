@@ -69,6 +69,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private ExitCallback exitCallback;
   private Connection conn;
   private IoOutputStream ioOut;
+  private long lastAccessedTime;
 
   public TtyCommand(Consumer<TtyConnection> handler) {
     this.handler = handler;
@@ -77,6 +78,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   @Override
   public int data(ChannelSession channel, byte[] buf, int start, int len) throws IOException {
     if (decoder != null) {
+      lastAccessedTime = System.currentTimeMillis();
       decoder.write(buf, start, len);
     } else {
       // Data send too early ?
@@ -194,7 +196,6 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
 
   @Override
   public void destroy() {
-
     // Test this
   }
 
@@ -219,6 +220,11 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   }
 
   private class Connection implements TtyConnection {
+
+    @Override
+    public long lastAccessedTime() {
+      return lastAccessedTime;
+    }
 
     @Override
     public String terminalType() {

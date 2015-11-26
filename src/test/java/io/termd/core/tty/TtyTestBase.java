@@ -317,4 +317,34 @@ public abstract class TtyTestBase extends TestBase {
 
   protected void assertThreading(Thread connThread, Thread schedulerThread) throws Exception {
   }
+
+  @Test
+  public void testLastAccessedTime() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger count = new AtomicInteger();
+    server(conn -> {
+      long openTime = System.currentTimeMillis();
+      conn.setStdinHandler(cp -> {
+        long delta = System.currentTimeMillis() - openTime;
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertTrue(delta >= 0);
+            latch.countDown();
+            break;
+          case 1:
+            assertTrue(delta >= 10);
+            testComplete();
+            break;
+        }
+      });
+    });
+    assertConnect();
+    Thread.sleep(15);
+    assertWrite("hello");
+    awaitLatch(latch);
+    Thread.sleep(15);
+    assertWrite("byebye");
+    await();
+  }
+
 }

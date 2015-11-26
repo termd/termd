@@ -173,6 +173,11 @@ class TestTerm {
   TtyConnection conn = new TtyConnection() {
 
     @Override
+    public long lastAccessedTime() {
+      return 0;
+    }
+
+    @Override
     public String terminalType() {
       return "xterm";
     }

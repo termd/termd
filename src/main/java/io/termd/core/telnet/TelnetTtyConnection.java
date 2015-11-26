@@ -55,11 +55,17 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private final BinaryEncoder encoder = new BinaryEncoder(StandardCharsets.US_ASCII, data -> conn.write(data));
   private final Consumer<int[]> stdout = new TtyOutputMode(encoder);
   private final Consumer<TtyConnection> handler;
+  private long lastAccessedTime;
 
   public TelnetTtyConnection(boolean inBinary, boolean outBinary, Consumer<TtyConnection> handler) {
     this.inBinary = inBinary;
     this.outBinary = outBinary;
     this.handler = handler;
+  }
+
+  @Override
+  public long lastAccessedTime() {
+    return lastAccessedTime;
   }
 
   @Override
@@ -97,6 +103,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
 
   @Override
   protected void onData(byte[] data) {
+    lastAccessedTime = System.currentTimeMillis();
     decoder.write(data);
   }
 

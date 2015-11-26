@@ -30,6 +30,11 @@ import java.util.function.Consumer;
  */
 public interface TtyConnection {
 
+  /**
+   * @return the last time this connection received input
+   */
+  long lastAccessedTime();
+
   Vector size();
 
   /**

@@ -65,6 +65,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private final Consumer<int[]> stdout;
   private Consumer<Void> closeHandler;
   private Consumer<String> termHandler;
+  private long lastAccessedTime;
 
   public HttpTtyConnection() {
     this(DEFAULT_SIZE);
@@ -75,6 +76,11 @@ public abstract class HttpTtyConnection implements TtyConnection {
     this.eventDecoder = new TtyEventDecoder(3, 26, 4);
     this.decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
     this.stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
+  }
+
+  @Override
+  public long lastAccessedTime() {
+    return lastAccessedTime;
   }
 
   @Override
@@ -98,6 +104,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
     if (action != null) {
       switch (action) {
         case "read":
+          lastAccessedTime = System.currentTimeMillis();
           String data = (String) obj.get("data");
           decoder.write(data.getBytes()); //write back echo
           break;
