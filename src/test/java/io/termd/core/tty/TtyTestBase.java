@@ -325,7 +325,7 @@ public abstract class TtyTestBase extends TestBase {
     server(conn -> {
       long openTime = System.currentTimeMillis();
       conn.setStdinHandler(cp -> {
-        long delta = System.currentTimeMillis() - openTime;
+        long delta = conn.lastAccessedTime() - openTime;
         switch (count.getAndIncrement()) {
           case 0:
             assertTrue(delta >= 0);
