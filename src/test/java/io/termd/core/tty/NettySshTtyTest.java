@@ -42,7 +42,7 @@ public class NettySshTtyTest extends SshTtyTestBase {
 
   @After
   public void after() throws Exception {
-    eventLoopGroup.shutdownGracefully().sync();
+    eventLoopGroup.shutdownGracefully();
   }
 
   @Override
