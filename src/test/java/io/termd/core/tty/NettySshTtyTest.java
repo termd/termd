@@ -26,6 +26,7 @@ import org.apache.sshd.server.SshServer;
 import org.junit.After;
 import org.junit.Before;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /**
@@ -54,7 +55,7 @@ public class NettySshTtyTest extends SshTtyTestBase {
 
   @Override
   protected TtyCommand createConnection(Consumer<TtyConnection> onConnect) {
-    return new TtyCommand(onConnect) {
+    return new TtyCommand(charset, onConnect) {
       @Override
       public void execute(Runnable task) {
         Session session = this.session.getSession();

@@ -4,6 +4,8 @@ import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -15,6 +17,7 @@ public class NettyTelnetTtyBootstrap {
   private final NettyTelnetBootstrap telnet;
   private boolean outBinary;
   private boolean inBinary;
+  private Charset charset = StandardCharsets.UTF_8;
 
   public NettyTelnetTtyBootstrap() {
     this.telnet = new NettyTelnetBootstrap();
@@ -68,6 +71,13 @@ public class NettyTelnetTtyBootstrap {
     return this;
   }
 
+  public Charset getCharset() {
+    return charset;
+  }
+
+  public void setCharset(Charset charset) {
+    this.charset = charset;
+  }
 
   public CompletableFuture<?> start(Consumer<TtyConnection> factory) {
     CompletableFuture<?> fut = new CompletableFuture<>();
@@ -82,7 +92,7 @@ public class NettyTelnetTtyBootstrap {
   }
 
   public void start(Consumer<TtyConnection> factory, Consumer<Throwable> doneHandler) {
-    telnet.start(() -> new TelnetTtyConnection(inBinary, outBinary, factory), doneHandler);
+    telnet.start(() -> new TelnetTtyConnection(inBinary, outBinary, charset, factory), doneHandler);
   }
 
   public void stop(Consumer<Throwable> doneHandler) {

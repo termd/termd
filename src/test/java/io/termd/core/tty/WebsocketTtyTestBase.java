@@ -149,4 +149,9 @@ import java.util.concurrent.CountDownLatch;
     String json = mapper.writeValueAsString(msg);
     session.getBasicRemote().sendText(json);
   }
+
+  @Override
+  public void testDifferentCharset() throws Exception {
+    // Don't test, charset in this case is always UTF-8 for text frames
+  }
 }

@@ -19,6 +19,7 @@ package io.termd.core.tty;
 import io.termd.core.util.Vector;
 import io.termd.core.util.Helper;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -36,6 +37,16 @@ public interface TtyConnection {
   long lastAccessedTime();
 
   Vector size();
+
+  /**
+   * @return the current charset for sending data
+   */
+  Charset inputCharset();
+
+  /**
+   * @return the current charset for receiving data
+   */
+  Charset outputCharset();
 
   /**
    * @return the terminal type value, this can be null when the terminal has not declared its type yet. The {@link #setTerminalTypeHandler(Consumer)}

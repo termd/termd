@@ -28,6 +28,8 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -38,6 +40,7 @@ public class NettySshTtyBootstrap {
 
   private String host;
   private int port;
+  private Charset charset;
   private EventLoopGroup parentGroup;
   private EventLoopGroup childGroup;
   private SshServer server;
@@ -47,6 +50,7 @@ public class NettySshTtyBootstrap {
   public NettySshTtyBootstrap() {
     this.host = "localhost";
     this.port = 5000;
+    this.charset = StandardCharsets.UTF_8;
     this.parentGroup = new NioEventLoopGroup(1);
     this.childGroup = new NioEventLoopGroup();
     this.keyPairProvider = new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath());
@@ -86,6 +90,14 @@ public class NettySshTtyBootstrap {
     return this;
   }
 
+  public Charset getCharset() {
+    return charset;
+  }
+
+  public void setCharset(Charset charset) {
+    this.charset = charset;
+  }
+
   public void start(Consumer<TtyConnection> factory, Consumer<Throwable> doneHandler) {
     server = SshServer.setUpDefaultServer();
     server.setIoServiceFactoryFactory(new NettyIoServiceFactoryFactory(childGroup));
@@ -93,7 +105,7 @@ public class NettySshTtyBootstrap {
     server.setHost(host);
     server.setKeyPairProvider(keyPairProvider);
     server.setPasswordAuthenticator(passwordAuthenticator);
-    server.setShellFactory(() -> new TtyCommand(factory));
+    server.setShellFactory(() -> new TtyCommand(charset, factory));
     try {
       server.start();
     } catch (Exception e) {

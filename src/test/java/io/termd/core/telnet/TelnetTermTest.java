@@ -4,6 +4,7 @@ import org.apache.commons.net.telnet.TerminalTypeOptionHandler;
 import org.apache.commons.net.telnet.WindowSizeOptionHandler;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +20,7 @@ public abstract class TelnetTermTest extends TelnetTestBase {
     final CountDownLatch latch2 = new CountDownLatch(1);
     server.start(() -> {
       final AtomicInteger count = new AtomicInteger();
-      return new TelnetTtyConnection(false, false, conn -> {
+      return new TelnetTtyConnection(false, false, StandardCharsets.UTF_8, conn -> {
         conn.setSizeHandler(size -> {
           switch (count.getAndIncrement()) {
             case 0:

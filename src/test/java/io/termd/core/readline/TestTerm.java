@@ -32,6 +32,8 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -171,6 +173,16 @@ class TestTerm {
   private LinkedList<Runnable> tasks = new LinkedList<>();
 
   TtyConnection conn = new TtyConnection() {
+
+    @Override
+    public Charset inputCharset() {
+      return StandardCharsets.UTF_8;
+    }
+
+    @Override
+    public Charset outputCharset() {
+      return StandardCharsets.UTF_8;
+    }
 
     @Override
     public long lastAccessedTime() {

@@ -38,7 +38,7 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
   }
 
   protected void server(Consumer<TtyConnection> onConnect) {
-    server.start(() -> new TelnetTtyConnection(binary, binary, onConnect));
+    server.start(() -> new TelnetTtyConnection(binary, binary, charset, onConnect));
   }
 
   @Override
@@ -59,7 +59,7 @@ public abstract class TelnetTtyTestBase extends TtyTestBase {
 
   @Override
   protected void assertWrite(String s) throws Exception {
-    client.write(s.getBytes(StandardCharsets.UTF_8));
+    client.write(s.getBytes(charset));
     client.flush();
   }
 

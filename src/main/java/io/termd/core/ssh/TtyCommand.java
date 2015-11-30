@@ -54,6 +54,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private static final Pattern LC_PATTERN = Pattern.compile("(?:\\p{Alpha}{2}_\\p{Alpha}{2}\\.)?([^@]+)(?:@.+)?");
 
   private final Consumer<TtyConnection> handler;
+  private final Charset defaultCharset;
   private Charset charset;
   private String term;
   private TtyEventDecoder eventDecoder;
@@ -71,8 +72,9 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private IoOutputStream ioOut;
   private long lastAccessedTime;
 
-  public TtyCommand(Consumer<TtyConnection> handler) {
+  public TtyCommand(Charset defaultCharset, Consumer<TtyConnection> handler) {
     this.handler = handler;
+    this.defaultCharset = defaultCharset;
   }
 
   @Override
@@ -131,7 +133,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
       charset = parseCharset(lcctype);
     }
     if (charset == null) {
-      charset = Charset.forName("UTF-8");
+      charset = defaultCharset;
     }
     env.addSignalListener(signal -> updateSize(env), EnumSet.of(org.apache.sshd.server.Signal.WINCH));
     updateSize(env);
@@ -220,6 +222,16 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   }
 
   private class Connection implements TtyConnection {
+
+    @Override
+    public Charset inputCharset() {
+      return charset;
+    }
+
+    @Override
+    public Charset outputCharset() {
+      return charset;
+    }
 
     @Override
     public long lastAccessedTime() {

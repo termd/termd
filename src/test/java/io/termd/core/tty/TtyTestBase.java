@@ -20,6 +20,8 @@ import io.termd.core.TestBase;
 import io.termd.core.util.Helper;
 import org.junit.Test;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -32,8 +34,17 @@ import java.util.function.Consumer;
  */
 public abstract class TtyTestBase extends TestBase {
 
+  protected Charset charset = StandardCharsets.UTF_8;
+
   protected abstract void assertConnect(String term) throws Exception;
 
+  /**
+   * Assert we can read a string of a specified length in bytes.
+   *
+   * @param len the lenght in bytes
+   * @return the string
+   * @throws Exception
+   */
   protected abstract String assertReadString(int len) throws Exception;
 
   protected abstract void assertWrite(String s) throws Exception;
@@ -347,4 +358,15 @@ public abstract class TtyTestBase extends TestBase {
     await();
   }
 
+  @Test
+  public void testDifferentCharset() throws Exception {
+    charset = StandardCharsets.ISO_8859_1;
+    server(conn -> {
+      // 20AC does not exists in ISO_8859_1 and is replaced by `?`
+      conn.write("\u20AC");
+    });
+    assertConnect();
+    String s = assertReadString(1);
+    assertEquals("?", s);
+  }
 }

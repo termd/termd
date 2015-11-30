@@ -27,6 +27,7 @@ import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -56,8 +57,9 @@ import java.util.function.Consumer;
  */
 public abstract class HttpTtyConnection implements TtyConnection {
 
-  private static final Vector DEFAULT_SIZE = new Vector(80, 24);
+  public static final Vector DEFAULT_SIZE = new Vector(80, 24);
 
+  private Charset charset;
   private Vector size;
   private Consumer<Vector> sizeHandler;
   private final TtyEventDecoder eventDecoder;
@@ -68,14 +70,25 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private long lastAccessedTime;
 
   public HttpTtyConnection() {
-    this(DEFAULT_SIZE);
+    this(StandardCharsets.UTF_8, DEFAULT_SIZE);
   }
 
-  public HttpTtyConnection(Vector size) {
+  public HttpTtyConnection(Charset charset, Vector size) {
+    this.charset = charset;
     this.size = size;
     this.eventDecoder = new TtyEventDecoder(3, 26, 4);
-    this.decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, eventDecoder);
-    this.stdout = new TtyOutputMode(new BinaryEncoder(StandardCharsets.US_ASCII, this::write));
+    this.decoder = new BinaryDecoder(512, charset, eventDecoder);
+    this.stdout = new TtyOutputMode(new BinaryEncoder(charset, this::write));
+  }
+
+  @Override
+  public Charset outputCharset() {
+    return charset;
+  }
+
+  @Override
+  public Charset inputCharset() {
+    return charset;
   }
 
   @Override

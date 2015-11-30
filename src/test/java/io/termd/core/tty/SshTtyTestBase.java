@@ -121,7 +121,7 @@ public abstract class SshTtyTestBase extends TtyTestBase {
 
   @Override
   protected void assertWrite(String s) throws Exception {
-    out.write(s.getBytes(StandardCharsets.UTF_8));
+    out.write(s.getBytes(charset));
     out.flush();
   }
 
@@ -148,7 +148,7 @@ public abstract class SshTtyTestBase extends TtyTestBase {
   protected abstract SshServer createServer();
 
   protected TtyCommand createConnection(Consumer<TtyConnection> onConnect) {
-    return new TtyCommand(onConnect);
+    return new TtyCommand(charset, onConnect);
   }
 
   @Override

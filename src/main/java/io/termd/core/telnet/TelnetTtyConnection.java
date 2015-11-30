@@ -26,6 +26,7 @@ import io.termd.core.io.BinaryEncoder;
 import io.termd.core.io.TelnetCharset;
 import io.termd.core.tty.TtyConnection;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -49,6 +50,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private Consumer<String> termHandler;
   private Consumer<Void> closeHandler;
   protected TelnetConnection conn;
+  private final Charset charset;
   private final TtyEventDecoder eventDecoder = new TtyEventDecoder(3, 26, 4);
   private final ReadBuffer readBuffer = new ReadBuffer(this::execute);
   private final BinaryDecoder decoder = new BinaryDecoder(512, TelnetCharset.INSTANCE, readBuffer);
@@ -57,7 +59,8 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   private final Consumer<TtyConnection> handler;
   private long lastAccessedTime;
 
-  public TelnetTtyConnection(boolean inBinary, boolean outBinary, Consumer<TtyConnection> handler) {
+  public TelnetTtyConnection(boolean inBinary, boolean outBinary, Charset charset, Consumer<TtyConnection> handler) {
+    this.charset = charset;
     this.inBinary = inBinary;
     this.outBinary = outBinary;
     this.handler = handler;
@@ -84,10 +87,20 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   }
 
   @Override
+  public Charset inputCharset() {
+    return inBinary ? charset : StandardCharsets.US_ASCII;
+  }
+
+  @Override
+  public Charset outputCharset() {
+    return outBinary ? charset : StandardCharsets.US_ASCII;
+  }
+
+  @Override
   protected void onSendBinary(boolean binary) {
     sendingBinary = binary;
     if (binary) {
-      encoder.setCharset(StandardCharsets.UTF_8);
+      encoder.setCharset(charset);
     }
     checkAccept();
   }
@@ -96,7 +109,7 @@ public final class TelnetTtyConnection extends TelnetHandler implements TtyConne
   protected void onReceiveBinary(boolean binary) {
     receivingBinary = binary;
     if (binary) {
-      decoder.setCharset(StandardCharsets.UTF_8);
+      decoder.setCharset(charset);
     }
     checkAccept();
   }
