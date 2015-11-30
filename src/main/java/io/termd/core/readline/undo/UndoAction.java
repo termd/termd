@@ -1,9 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
- * Copyright 2014 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @authors tag. All rights reserved.
- * See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * Copyright 2015 Julien Viet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +15,6 @@
  */
 package io.termd.core.readline.undo;
 
-import io.termd.core.util.Helper;
-
 /**
  * @author Ståle W. Pedersen <stale.pedersen@jboss.org>
  */
@@ -28,11 +22,6 @@ public class UndoAction {
 
     private int cursorPosition;
     private int[] buffer;
-
-    public UndoAction(int cursorPosition, String buffer) {
-        setCursorPosition(cursorPosition);
-        setBuffer(Helper.toCodePoints(buffer));
-    }
 
     public UndoAction(int cursorPosition, int[] buffer) {
         setCursorPosition(cursorPosition);
