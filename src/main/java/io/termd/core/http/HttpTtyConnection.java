@@ -67,7 +67,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
   private final Consumer<int[]> stdout;
   private Consumer<Void> closeHandler;
   private Consumer<String> termHandler;
-  private long lastAccessedTime;
+  private long lastAccessedTime = System.currentTimeMillis();
 
   public HttpTtyConnection() {
     this(StandardCharsets.UTF_8, DEFAULT_SIZE);

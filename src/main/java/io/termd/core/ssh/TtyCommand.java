@@ -70,7 +70,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   private ExitCallback exitCallback;
   private Connection conn;
   private IoOutputStream ioOut;
-  private long lastAccessedTime;
+  private long lastAccessedTime = System.currentTimeMillis();
 
   public TtyCommand(Charset defaultCharset, Consumer<TtyConnection> handler) {
     this.handler = handler;

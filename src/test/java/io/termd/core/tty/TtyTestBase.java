@@ -333,7 +333,9 @@ public abstract class TtyTestBase extends TestBase {
   public void testLastAccessedTime() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicInteger count = new AtomicInteger();
+    long connTime = System.currentTimeMillis();
     server(conn -> {
+      assertTrue(conn.lastAccessedTime() >= connTime);
       long openTime = System.currentTimeMillis();
       conn.setStdinHandler(cp -> {
         long delta = conn.lastAccessedTime() - openTime;
