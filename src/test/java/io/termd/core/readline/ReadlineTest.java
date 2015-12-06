@@ -35,6 +35,19 @@ public class ReadlineTest extends TestBase {
   }
 
   @Test
+  public void cancel() {
+    TestTerm term = new TestTerm(this);
+    assertFalse(term.readline.cancel());
+    term.readline(s -> {
+      assertNull(s);
+      testComplete();
+    });
+    assertTrue(term.readline.cancel());
+    assertFalse(term.readline.cancel());
+    await();
+  }
+
+  @Test
   public void testInsertChar() {
     TestTerm term = new TestTerm(this);
     term.readlineFail();

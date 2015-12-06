@@ -53,14 +53,6 @@ public class Readline {
     addFunction(ACCEPT_LINE);
   }
 
-  public Interaction getInteraction() {
-    return interaction;
-  }
-
-  public void setInteraction(Interaction interaction) {
-    this.interaction = interaction;
-  }
-
   /**
    * @return the current history
    */
@@ -94,6 +86,20 @@ public class Readline {
       addFunction(function);
     }
     return this;
+  }
+
+  /**
+   * Cancel the current readline interaction if there one, the request handler is called with {@code null}.
+   */
+  public boolean cancel() {
+    Interaction interaction;
+    synchronized (this) {
+      interaction = this.interaction;
+      if (interaction == null) {
+        return false;
+      }
+    }
+    return interaction.end(null);
   }
 
   private void deliver() {
@@ -203,14 +209,18 @@ public class Readline {
      *
      * @param s the
      */
-    private void end(String s) {
-      conn.setStdinHandler(prevReadHandler);
-      conn.setSizeHandler(prevSizeHandler);
-      conn.setEventHandler(prevEventHandler);
+    private boolean end(String s) {
       synchronized (Readline.this) {
+        if (interaction == null) {
+          return false;
+        }
         interaction = null;
+        conn.setStdinHandler(prevReadHandler);
+        conn.setSizeHandler(prevSizeHandler);
+        conn.setEventHandler(prevEventHandler);
       }
       requestHandler.accept(s);
+      return true;
     }
 
     private void handle(KeyEvent event) {
