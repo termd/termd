@@ -405,4 +405,51 @@ public class ReadlineTest extends TestBase {
     term.read('\r');
     assertEquals("a", line.get());
   }
+
+  @Test
+  public void testMoveWord() {
+    TestTerm term = new TestTerm(this);
+    Supplier<String> line = term.readlineComplete();
+    term.read("foo  bar...  Foo-Bar.");
+    term.read(Keys.META_b.sequence);
+    term.read(Keys.META_d.sequence);
+    term.assertScreen("% foo  bar...  Foo-.");
+    term.read(Keys.CTRL_E.sequence);
+    term.read(Keys.LEFT.sequence);
+    term.read("Bar");
+    term.assertScreen("% foo  bar...  Foo-Bar.");
+    term.read(Keys.CTRL_A.sequence);
+    term.read(Keys.META_f.sequence);
+    term.read(Keys.META_f.sequence);
+    term.read(Keys.META_d.sequence);
+    term.assertScreen("% foo  bar-Bar.");
+    term.read(Keys.META_b.sequence);
+    term.read(Keys.CTRL_U.sequence);
+    term.assertScreen("% bar-Bar.");
+    term.read(Keys.META_f.sequence);
+    term.read(META_BACKWARD_DELETE_KEY);
+    term.assertScreen("% -Bar.");
+    term.read(CTRL_D_KEY);
+    term.read(Keys.RIGHT.sequence);
+    term.read(Keys.META_u.sequence);
+    term.assertScreen("% BAR.");
+    term.read(Keys.META_b.sequence);
+    term.read(Keys.META_l.sequence);
+    term.assertScreen("% bar.");
+    term.read(Keys.META_b.sequence);
+    term.read(Keys.META_c.sequence);
+    term.assertScreen("% Bar.");
+    term.read(Keys.CTRL_UNDERSCORE.sequence);
+    term.assertScreen("% bar.");
+    term.read(Keys.CTRL_UNDERSCORE.sequence);
+    term.assertScreen("% BAR.");
+    term.read(Keys.CTRL_A.sequence);
+    term.read(Keys.META_d.sequence);
+    term.assertScreen("% .");
+    term.read(Keys.CTRL_Y.sequence);
+    term.assertScreen("% BAR.");
+    term.read(Keys.CTRL_Y.sequence);
+    term.assertScreen("% BARBAR.");
+  }
+
 }

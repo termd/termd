@@ -16,6 +16,7 @@
 
 package io.termd.core.readline;
 
+import io.termd.core.readline.undo.UndoManager;
 import io.termd.core.term.Device;
 import io.termd.core.term.TermInfo;
 import io.termd.core.tty.TtyConnection;
@@ -190,6 +191,8 @@ public class Readline {
     private int historyIndex = -1;
     private String currentPrompt;
     private boolean paused;
+    private UndoManager undoManager;
+    private PasteManager pasteManager;
 
     private Interaction(
         TtyConnection conn,
@@ -202,6 +205,8 @@ public class Readline {
       this.currentPrompt = prompt;
       this.requestHandler = requestHandler;
       this.completionHandler = completionHandler;
+      undoManager = new UndoManager();
+      pasteManager = new PasteManager();
     }
 
     /**
@@ -414,6 +419,15 @@ public class Readline {
       });
       conn.setEventHandler(null);
     }
+
+    public PasteManager getPasteManager() {
+      return pasteManager;
+    }
+
+    public UndoManager getUndoManager() {
+      return undoManager;
+    }
+
   }
 
   // Need to access internal state

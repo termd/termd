@@ -59,6 +59,15 @@ enum Keys implements KeyEvent {
   A("A", 'A'), B("B", 'B'), C("C", 'C'), QUOTE("\"", '"'),
   BACKSLASH("\\", '\\'),
 
+  META_a("Meta-a", 27, 'a'),
+  META_b("Meta-b", 27, 'b'),
+  META_c("Meta-c", 27, 'c'),
+  META_d("Meta-d", 27, 'd'),
+  META_e("Meta-e", 27, 'e'),
+  META_f("Meta-f", 27, 'f'),
+  META_l("Meta-l", 27, 'l'),
+  META_u("Meta-u", 27, 'u'),
+
   UP("up", 27, '[', 'A'),
   DOWN("down", 27, '[', 'B'),
   RIGHT("right", 27, '[', 'C'),

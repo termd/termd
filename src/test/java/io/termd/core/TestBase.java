@@ -43,6 +43,7 @@ public class TestBase {
   protected static final int[] BACKWARD_KEY = { 27, '[', 'D' };
   protected static final int[] BACKWARD_DELETE_KEY = { 8 };
   protected static final int[] KILL_LINE = { ctrl('K') };
+  protected static final int[] META_BACKWARD_DELETE_KEY = { 27,8 };
 
   private volatile Throwable throwable;
   private CountDownLatch latch;

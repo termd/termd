@@ -225,6 +225,11 @@ public class LineBuffer {
     return cursor - prev;
   }
 
+  public void replace(int i, int c) {
+    if(i <= size)
+      data[i] = c;
+  }
+
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < size; i++) {
@@ -273,6 +278,23 @@ public class LineBuffer {
     }
     return offset;
   }
+
+  public void changeCase() {
+    if(Character.isLowerCase(data[cursor])) {
+      data[cursor] = Character.toUpperCase(data[cursor]);
+    }
+    else
+      data[cursor] = Character.toLowerCase(data[cursor]);
+  }
+
+    public void upCase() {
+        data[cursor] = Character.toUpperCase(data[cursor]);
+    }
+
+    public void downCase() {
+        data[cursor] = Character.toLowerCase(data[cursor]);
+    }
+
 
   public void update(LineBuffer dst, Consumer<int[]> out, int width) {
     new Update(out, width).perform(dst);

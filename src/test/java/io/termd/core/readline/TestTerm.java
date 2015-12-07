@@ -16,20 +16,12 @@
 
 package io.termd.core.readline;
 
-import io.termd.core.readline.functions.BackwardChar;
-import io.termd.core.readline.functions.BackwardDeleteChar;
-import io.termd.core.readline.functions.BeginningOfLine;
-import io.termd.core.readline.functions.Complete;
-import io.termd.core.readline.functions.DeleteChar;
-import io.termd.core.readline.functions.EndOfLine;
-import io.termd.core.readline.functions.ForwardChar;
-import io.termd.core.readline.functions.KillLine;
-import io.termd.core.readline.functions.NextHistory;
-import io.termd.core.readline.functions.PreviousHistory;
 import io.termd.core.TestBase;
+import io.termd.core.readline.functions.*;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyOutputMode;
+import io.termd.core.util.Helper;
 import io.termd.core.util.Vector;
 
 import java.nio.charset.Charset;
@@ -276,6 +268,18 @@ class TestTerm {
   public TestTerm(TestBase test) {
     this.readlineTest = test;
     Keymap keymap = InputrcParser.create();
+    keymap.bindFunction(Keys.META_c.sequence, "capitalize-word");
+    keymap.bindFunction(Keys.META_d.sequence, "kill-word");
+    keymap.bindFunction(Keys.META_f.sequence, "forward-word");
+    keymap.bindFunction(Keys.META_l.sequence, "downcase-word");
+    keymap.bindFunction(Keys.META_u.sequence, "upcase-word");
+    keymap.bindFunction(Keys.CTRL_U.sequence, "unix-line-discard");
+    keymap.bindFunction(Keys.CTRL_Y.sequence, "yank");
+    keymap.bindFunction(Keys.CTRL_UNDERSCORE.sequence, "undo");
+
+    //meta-del, meta-backspace
+    keymap.bindFunction(new int[]{27,8}, "backward-kill-word");
+
     readline = new Readline(keymap);
     readline.addFunction(new BackwardDeleteChar());
     readline.addFunction(new BackwardChar());
@@ -287,6 +291,17 @@ class TestTerm {
     readline.addFunction(new DeleteChar());
     readline.addFunction(new Complete());
     readline.addFunction(new KillLine());
+    readline.addFunction(new MoveBackwardWord());
+    readline.addFunction(new MoveForwardWord());
+    readline.addFunction(new DeleteBackwardWord());
+    readline.addFunction(new DeleteForwardWord());
+    readline.addFunction(new DeleteStartOfLine());
+    readline.addFunction(new DeleteEndOfLine());
+    readline.addFunction(new CapitalizeForwardWord());
+    readline.addFunction(new UpCaseForwardWord());
+    readline.addFunction(new DownCaseForwardWord());
+    readline.addFunction(new Undo());
+    readline.addFunction(new Yank());
   }
 
   public void readlineFail() {
@@ -358,6 +373,10 @@ class TestTerm {
 
   void read(int... data) {
     readHandler.accept(data);
+  }
+
+  void read(String data) {
+    readHandler.accept(Helper.toCodePoints(data));
   }
 
   TestTerm setWidth(int width) {
