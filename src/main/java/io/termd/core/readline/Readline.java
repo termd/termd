@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.logging.Level;
+import java.util.stream.IntStream;
 
 /**
  * Make this class thread safe as SSH will access this class with different threds [sic].
@@ -371,6 +373,7 @@ public class Readline {
 
     private void refresh(LineBuffer update, int width) {
       LineBuffer copy3 = new LineBuffer();
+      IntStream.Builder consumer = IntStream.builder();
       copy3.insert(Helper.toCodePoints(currentPrompt));
       copy3.insert(buffer().toArray());
       copy3.setCursor(currentPrompt.length() + buffer().getCursor());
@@ -378,7 +381,12 @@ public class Readline {
       copy2.insert(Helper.toCodePoints(currentPrompt));
       copy2.insert(update.toArray());
       copy2.setCursor(currentPrompt.length() + update.getCursor());
-      copy3.update(copy2, conn.stdoutHandler(), width);
+      copy3.update(copy2, data -> {
+        for (int cp : data) {
+          consumer.accept(cp);
+        }
+      }, width);
+      conn.stdoutHandler().accept(consumer.build().toArray());
       buffer.clear();
       buffer.insert(update.toArray());
       buffer.setCursor(update.getCursor());
