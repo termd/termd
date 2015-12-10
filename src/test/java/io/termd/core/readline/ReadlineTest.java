@@ -405,4 +405,61 @@ public class ReadlineTest extends TestBase {
     term.read('\r');
     assertEquals("a", line.get());
   }
+
+  @Test
+  public void testBackwardWord() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('a', '0', '1', ' ', 'e', '9', '_', '_' ,'5', 'a');
+    term.read(BACKWARD_KEY);
+    term.assertAt(0, 11);
+    term.read(BACKWARD_WORD_SEQ);
+    term.assertAt(0, 10);
+    term.read(BACKWARD_WORD_SEQ);
+    term.assertAt(0, 6);
+    term.read(BACKWARD_WORD_SEQ);
+    term.assertAt(0, 2);
+    term.read(BACKWARD_WORD_SEQ);
+    term.assertAt(0, 2);
+  }
+
+  @Test
+  public void testForwardWord() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('a', '0', '1', ' ', 'e', '9', '_', '_', '5', 'a');
+    term.read(CTRL_A_KEY);
+    term.assertAt(0, 2);
+    term.read(FORWARD_KEY);
+    term.assertAt(0, 3);
+    term.read(FORWARD_WORD_SEQ);
+    term.assertAt(0, 5);
+    term.read(FORWARD_WORD_SEQ);
+    term.assertAt(0, 8);
+    term.read(FORWARD_WORD_SEQ);
+    term.assertAt(0, 12);
+    term.read(FORWARD_WORD_SEQ);
+    term.assertAt(0, 12);
+  }
+
+  @Test
+  public void testBackwardKillWord() {
+    TestTerm term = new TestTerm(this);
+    term.readlineComplete();
+    term.read('a', '0', '1', ' ', 'e', '9', '_', '_', '5', 'a');
+    term.read(BACKWARD_KEY);
+    term.assertAt(0, 11);
+    term.read(META_BACKSPACE);
+    term.assertAt(0, 10);
+    term.assertScreen("% a01 e9__a");
+    term.read(META_BACKSPACE);
+    term.assertAt(0, 6);
+    term.assertScreen("% a01 a");
+    term.read(META_BACKSPACE);
+    term.assertAt(0, 2);
+    term.assertScreen("% a");
+    term.read(META_BACKSPACE);
+    term.assertAt(0, 2);
+    term.assertScreen("% a");
+  }
 }

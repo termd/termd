@@ -14,3 +14,6 @@
 "\C-j": accept-line
 "\C-m": accept-line
 "\C-k": kill-line
+"\eb": backward-word
+"\ef": forward-word
+"\e\C-?": backward-kill-word

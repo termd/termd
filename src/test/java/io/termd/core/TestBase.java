@@ -40,9 +40,12 @@ public class TestBase {
   protected static final int[] UP_KEY = { 27, '[', 'A' };
   protected static final int[] DOWN_KEY = { 27, '[', 'B' };
   protected static final int[] FORWARD_KEY = { 27, '[', 'C' };
+  protected static final int[] FORWARD_WORD_SEQ = { 27, 'f' };
   protected static final int[] BACKWARD_KEY = { 27, '[', 'D' };
+  protected static final int[] BACKWARD_WORD_SEQ = { 27, 'b' };
   protected static final int[] BACKWARD_DELETE_KEY = { 8 };
   protected static final int[] KILL_LINE = { ctrl('K') };
+  protected static final int[] META_BACKSPACE = { 27, 127 };
 
   private volatile Throwable throwable;
   private CountDownLatch latch;
