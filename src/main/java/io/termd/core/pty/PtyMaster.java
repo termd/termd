@@ -36,6 +36,7 @@ import java.util.function.Consumer;
  */
 public class PtyMaster extends Thread {
 
+  private int bufferSize = 512;
   private final String line;
   private BiConsumer<Status, Status> changeHandler;
   private final Consumer<Void> doneHandler;
@@ -51,6 +52,17 @@ public class PtyMaster extends Thread {
     this.status = Status.NEW;
   }
 
+  public int getBufferSize() {
+    return bufferSize;
+  }
+
+  public void setBufferSize(int bufferSize) {
+    if (bufferSize < 2) {
+      throw new IllegalStateException("Buffer size is too small");
+    }
+    this.bufferSize = bufferSize;
+  }
+
   public BiConsumer<Status, Status> getChangeHandler() {
     return changeHandler;
   }
@@ -63,7 +75,7 @@ public class PtyMaster extends Thread {
 
     private final Charset charset = StandardCharsets.UTF_8; // We suppose the process out/err uses UTF-8
     private final InputStream in;
-    private final BinaryDecoder decoder = new BinaryDecoder(charset, stdout::accept);
+    private final BinaryDecoder decoder = new BinaryDecoder(bufferSize, charset, stdout::accept);
 
     public Pipe(InputStream in) {
       this.in = in;
