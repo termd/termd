@@ -13,7 +13,7 @@
 
   <groupId>io.termd</groupId>
   <artifactId>termd-core</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
 
   <name>Termd Core</name>
   <description>An open source terminal daemon library providing terminal handling in Java</description>
