@@ -93,6 +93,7 @@ public class PtyMaster extends Thread {
           decoder.write(buffer, 0, l);
         } catch (IOException e) {
           e.printStackTrace();
+          break; //break endless loop. "IOException: Stream closed" can be thrown when process is destroyed https://bugs.openjdk.java.net/browse/JDK-5101298
         }
       }
     }
