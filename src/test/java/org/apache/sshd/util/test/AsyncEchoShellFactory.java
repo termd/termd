@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sshd.util;
+package org.apache.sshd.util.test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,11 +25,13 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.channel.BufferedIoOutputStream;
+import org.apache.sshd.common.channel.Window;
 import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoInputStream;
 import org.apache.sshd.common.io.IoOutputStream;
 import org.apache.sshd.common.io.IoWriteFuture;
+import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import org.apache.sshd.server.AsyncCommand;
 import org.apache.sshd.server.ChannelSessionAware;
@@ -144,10 +146,17 @@ public class AsyncEchoShellFactory implements Factory<Command> {
                     out.write(new ByteArrayBuffer(bytes)).addListener(new SshFutureListener<IoWriteFuture>() {
                         @Override
                         public void operationComplete(IoWriteFuture future) {
-                            try {
-                                channel.getLocalWindow().consumeAndCheck(bytes.length);
-                            } catch (IOException e) {
-                                channel.getSession().exceptionCaught(e);
+                            Session session = channel.getSession();
+                            if (future.isWritten()) {
+                                try {
+                                    Window wLocal = channel.getLocalWindow();
+                                    wLocal.consumeAndCheck(bytes.length);
+                                } catch (IOException e) {
+                                    session.exceptionCaught(e);
+                                }
+                            } else {
+                                Throwable t = future.getException();
+                                session.exceptionCaught(t);
                             }
                         }
                     });

@@ -16,12 +16,10 @@
 
 package io.termd.core.ssh.netty;
 
-import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.common.io.IoService;
 import org.apache.sshd.common.io.IoSession;
-import org.apache.sshd.common.util.CloseableUtils;
+import org.apache.sshd.common.util.closeable.AbstractCloseable;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyIoService extends CloseableUtils.AbstractCloseable implements IoService {
+public class NettyIoService extends AbstractCloseable implements IoService {
 
   final AtomicLong sessionSeq = new AtomicLong();
   final Map<Long, IoSession> sessions = new ConcurrentHashMap<>();

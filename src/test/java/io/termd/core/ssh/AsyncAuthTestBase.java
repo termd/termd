@@ -9,13 +9,12 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerConnectionServiceFactory;
-import org.apache.sshd.util.EchoShellFactory;
+import org.apache.sshd.util.test.EchoShellFactory;
 import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -36,7 +35,7 @@ public abstract class AsyncAuthTestBase extends TestBase {
     }
     server = SshServer.setUpDefaultServer();
     if (timeout != null) {
-      server.setProperties(Collections.singletonMap(FactoryManager.AUTH_TIMEOUT, timeout.toString()));
+      server.getProperties().put(FactoryManager.AUTH_TIMEOUT, timeout.toString());
     }
     server.setPort(5000);
     server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser").toPath()));

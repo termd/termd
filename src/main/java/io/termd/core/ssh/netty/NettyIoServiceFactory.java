@@ -24,12 +24,12 @@ import org.apache.sshd.common.io.IoAcceptor;
 import org.apache.sshd.common.io.IoConnector;
 import org.apache.sshd.common.io.IoHandler;
 import org.apache.sshd.common.io.IoServiceFactory;
-import org.apache.sshd.common.util.CloseableUtils;
+import org.apache.sshd.common.util.closeable.AbstractCloseable;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyIoServiceFactory extends CloseableUtils.AbstractCloseable implements IoServiceFactory {
+public class NettyIoServiceFactory extends AbstractCloseable implements IoServiceFactory {
 
   final NettyIoHandlerBridge handlerBridge;
   final EventLoopGroup eventLoopGroup;

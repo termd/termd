@@ -34,7 +34,7 @@ import org.apache.sshd.common.future.DefaultCloseFuture;
 import org.apache.sshd.common.io.IoAcceptor;
 import org.apache.sshd.common.io.IoHandler;
 import org.apache.sshd.common.io.IoSession;
-import org.apache.sshd.common.util.CloseableUtils;
+import org.apache.sshd.common.util.closeable.AbstractCloseable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -48,7 +48,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyIoAcceptor extends CloseableUtils.AbstractCloseable implements IoAcceptor {
+public class NettyIoAcceptor extends AbstractCloseable implements IoAcceptor {
 
   final NettyIoServiceFactory factory;
   final ChannelGroup channelGroup;

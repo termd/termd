@@ -16,38 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sshd.deprecated;
+package org.apache.sshd.util.test;
 
-import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.client.session.ClientSessionHolder;
-import org.apache.sshd.common.session.SessionHolder;
-import org.apache.sshd.common.util.ValidateUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.session.ServerSession;
 
 /**
+ * TODO Add javadoc
+ *
+ * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public abstract class AbstractUserAuth
-        extends AbstractLoggingBean
-        implements UserAuth, SessionHolder<ClientSession>, ClientSessionHolder {
-    private final ClientSession session;
-    private final String service;
+public class BogusPasswordAuthenticator extends AbstractLoggingBean implements PasswordAuthenticator {
+    public static final BogusPasswordAuthenticator INSTANCE = new BogusPasswordAuthenticator();
 
-    protected AbstractUserAuth(ClientSession session, String service) {
-        this.session = ValidateUtils.checkNotNull(session, "No client session");
-        this.service = service;
+    public BogusPasswordAuthenticator() {
+        super();
     }
 
     @Override
-    public ClientSession getClientSession() {
-        return session;
-    }
+    public boolean authenticate(String username, String password, ServerSession session) {
+        boolean result = (username != null) && username.equals(password);
+        if (log.isDebugEnabled()) {
+            log.debug("authenticate({}) {} / {} - sucess = {}", session, username, password, Boolean.valueOf(result));
+        }
 
-    @Override
-    public final ClientSession getSession() {
-        return getClientSession();
-    }
-
-    public String getService() {
-        return service;
+        return result;
     }
 }

@@ -16,25 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sshd.deprecated;
+package org.apache.sshd.util.test;
 
-import java.io.IOException;
-
-import org.apache.sshd.common.util.buffer.Buffer;
+import org.apache.sshd.common.Factory;
+import org.apache.sshd.server.Command;
 
 /**
  * TODO Add javadoc
  *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public interface UserAuth {
+public class EchoShellFactory implements Factory<Command> {
+    public static final EchoShellFactory INSTANCE = new EchoShellFactory();
 
-    enum Result {
-        Success,
-        Failure,
-        Continued
+    public EchoShellFactory() {
+        super();
     }
 
-    Result next(Buffer buffer) throws IOException;
-
+    @Override
+    public Command create() {
+        return new EchoShell();
+    }
 }

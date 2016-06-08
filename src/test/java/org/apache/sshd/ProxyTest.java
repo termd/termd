@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -35,14 +35,11 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.FactoryManager;
-import org.apache.sshd.common.FactoryManagerUtils;
-import org.apache.sshd.common.SshdSocketAddress;
+import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.util.net.SshdSocketAddress;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.forward.AcceptAllForwardingFilter;
-import org.apache.sshd.util.BaseTestSupport;
-import org.apache.sshd.util.BogusPasswordAuthenticator;
-import org.apache.sshd.util.EchoShellFactory;
-import org.apache.sshd.util.Utils;
+import org.apache.sshd.util.test.BaseTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -62,12 +59,9 @@ public class ProxyTest extends BaseTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        sshd = SshServer.setUpDefaultServer();
-        FactoryManagerUtils.updateProperty(sshd, FactoryManager.WINDOW_SIZE, 2048);
-        FactoryManagerUtils.updateProperty(sshd, FactoryManager.MAX_PACKET_SIZE, "256");
-        sshd.setKeyPairProvider(Utils.createTestHostKeyProvider());
-        sshd.setShellFactory(new EchoShellFactory());
-        sshd.setPasswordAuthenticator(BogusPasswordAuthenticator.INSTANCE);
+        sshd = setupTestServer();
+        PropertyResolverUtils.updateProperty(sshd, FactoryManager.WINDOW_SIZE, 2048);
+        PropertyResolverUtils.updateProperty(sshd, FactoryManager.MAX_PACKET_SIZE, "256");
         sshd.setTcpipForwardingFilter(AcceptAllForwardingFilter.INSTANCE);
         sshd.start();
         sshPort = sshd.getPort();
@@ -105,33 +99,35 @@ public class ProxyTest extends BaseTestSupport {
     @Test
     public void testSocksProxy() throws Exception {
         try (ClientSession session = createNativeSession()) {
-            SshdSocketAddress dynamic = session.startDynamicPortForwarding(new SshdSocketAddress("localhost", 0));
-
             String expected = getCurrentTestName();
             byte[] bytes = expected.getBytes(StandardCharsets.UTF_8);
             byte[] buf = new byte[bytes.length + Long.SIZE];
-            for (int i = 0; i < 10; i++) {
-                try (Socket s = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", dynamic.getPort())))) {
-                    s.connect(new InetSocketAddress("localhost", echoPort));
-                    s.setSoTimeout((int) TimeUnit.SECONDS.toMillis(10L));
-
-                    try (OutputStream sockOut = s.getOutputStream();
-                         InputStream sockIn = s.getInputStream()) {
-
-                        sockOut.write(bytes);
-                        sockOut.flush();
-
-                        int l = sockIn.read(buf);
-                        assertEquals("Mismatched data at iteration " + i, expected, new String(buf, 0, l));
-                    }
-                }
-            }
-
-            session.stopDynamicPortForwarding(dynamic);
+            SshdSocketAddress dynamic = session.startDynamicPortForwarding(new SshdSocketAddress(TEST_LOCALHOST, 0));
 
             try {
-                try (Socket s = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", dynamic.getPort())))) {
-                    s.connect(new InetSocketAddress("localhost", echoPort));
+                for (int i = 0; i < 10; i++) {
+                    try (Socket s = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(TEST_LOCALHOST, dynamic.getPort())))) {
+                        s.connect(new InetSocketAddress(TEST_LOCALHOST, echoPort));
+                        s.setSoTimeout((int) TimeUnit.SECONDS.toMillis(10L));
+
+                        try (OutputStream sockOut = s.getOutputStream();
+                             InputStream sockIn = s.getInputStream()) {
+
+                            sockOut.write(bytes);
+                            sockOut.flush();
+
+                            int l = sockIn.read(buf);
+                            assertEquals("Mismatched data at iteration " + i, expected, new String(buf, 0, l));
+                        }
+                    }
+                }
+            } finally {
+                session.stopDynamicPortForwarding(dynamic);
+            }
+
+            try {
+                try (Socket s = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(TEST_LOCALHOST, dynamic.getPort())))) {
+                    s.connect(new InetSocketAddress(TEST_LOCALHOST, echoPort));
                     s.setSoTimeout((int) TimeUnit.SECONDS.toMillis(10L));
                     s.getOutputStream().write(bytes);
                     fail("Unexpected success to write proxy data");
@@ -139,21 +135,19 @@ public class ProxyTest extends BaseTestSupport {
             } catch (IOException e) {
                 // expected
             }
-
-            session.close(false).await();
         }
     }
 
     protected ClientSession createNativeSession() throws Exception {
-        client = SshClient.setUpDefaultClient();
-        FactoryManagerUtils.updateProperty(client, FactoryManager.WINDOW_SIZE, 2048);
-        FactoryManagerUtils.updateProperty(client, FactoryManager.MAX_PACKET_SIZE, 256);
+        client = setupTestClient();
+        PropertyResolverUtils.updateProperty(client, FactoryManager.WINDOW_SIZE, 2048);
+        PropertyResolverUtils.updateProperty(client, FactoryManager.MAX_PACKET_SIZE, 256);
         client.setTcpipForwardingFilter(AcceptAllForwardingFilter.INSTANCE);
         client.start();
 
-        ClientSession session = client.connect("sshd", "localhost", sshPort).verify(7L, TimeUnit.SECONDS).getSession();
-        session.addPasswordIdentity("sshd");
-        session.auth().verify();
+        ClientSession session = client.connect(getCurrentTestName(), TEST_LOCALHOST, sshPort).verify(7L, TimeUnit.SECONDS).getSession();
+        session.addPasswordIdentity(getCurrentTestName());
+        session.auth().verify(11L, TimeUnit.SECONDS);
         return session;
     }
 }

@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -20,7 +20,7 @@ package org.apache.sshd.deprecated;
 
 import java.io.IOException;
 
-import org.apache.sshd.client.auth.UserInteraction;
+import org.apache.sshd.client.auth.keyboard.UserInteraction;
 import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.client.future.DefaultAuthFuture;
 import org.apache.sshd.client.session.ClientSessionImpl;
@@ -29,8 +29,8 @@ import org.apache.sshd.common.ServiceFactory;
 import org.apache.sshd.common.SshConstants;
 import org.apache.sshd.common.SshException;
 import org.apache.sshd.common.session.Session;
-import org.apache.sshd.common.util.CloseableUtils;
 import org.apache.sshd.common.util.buffer.Buffer;
+import org.apache.sshd.common.util.closeable.AbstractCloseable;
 import org.apache.sshd.deprecated.UserAuth.Result;
 
 /**
@@ -38,7 +38,8 @@ import org.apache.sshd.deprecated.UserAuth.Result;
  *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public class ClientUserAuthServiceOld extends CloseableUtils.AbstractCloseable implements Service {
+// CHECKSTYLE:OFF
+public class ClientUserAuthServiceOld extends AbstractCloseable implements Service {
 
     public static class Factory implements ServiceFactory {
 
@@ -102,9 +103,9 @@ public class ClientUserAuthServiceOld extends CloseableUtils.AbstractCloseable i
             String welcome = buffer.getString();
             String lang = buffer.getString();
             log.debug("Welcome banner[{}]: {}", lang, welcome);
-            UserInteraction ui = session.getFactoryManager().getUserInteraction();
-            if (ui != null) {
-                ui.welcome(welcome);
+            UserInteraction ui = session.getUserInteraction();
+            if ((ui != null) && ui.isInteractionAllowed(session)) {
+                ui.welcome(session, welcome, lang);
             }
         } else {
             buffer.rpos(buffer.rpos() - 1);
@@ -112,7 +113,7 @@ public class ClientUserAuthServiceOld extends CloseableUtils.AbstractCloseable i
         }
     }
 
-    /**
+    /*
      * return true if/when ready for auth; false if never ready.
      *
      * @return server is ready and waiting for auth
@@ -188,10 +189,10 @@ public class ClientUserAuthServiceOld extends CloseableUtils.AbstractCloseable i
 
     @Override
     protected void preClose() {
-        super.preClose();
         if (!authFuture.isDone()) {
             authFuture.setException(new SshException("Session is closed"));
         }
+        super.preClose();
     }
 
     public AuthFuture auth(UserAuth userAuth) throws IOException {
@@ -205,3 +206,4 @@ public class ClientUserAuthServiceOld extends CloseableUtils.AbstractCloseable i
     }
 
 }
+// CHECKSTYLE:ON

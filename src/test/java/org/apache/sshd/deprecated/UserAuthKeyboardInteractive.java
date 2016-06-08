@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -21,15 +21,10 @@ package org.apache.sshd.deprecated;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sshd.client.auth.UserInteraction;
+import org.apache.sshd.client.auth.keyboard.UserInteraction;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.SshConstants;
 import org.apache.sshd.common.util.buffer.Buffer;
-
-import static org.apache.sshd.common.SshConstants.SSH_MSG_USERAUTH_FAILURE;
-import static org.apache.sshd.common.SshConstants.SSH_MSG_USERAUTH_INFO_REQUEST;
-import static org.apache.sshd.common.SshConstants.SSH_MSG_USERAUTH_INFO_RESPONSE;
-import static org.apache.sshd.common.SshConstants.SSH_MSG_USERAUTH_SUCCESS;
 
 /**
  * Userauth with keyboard-interactive method.
@@ -37,6 +32,7 @@ import static org.apache.sshd.common.SshConstants.SSH_MSG_USERAUTH_SUCCESS;
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  * @author <a href="mailto:j.kapitza@schwarze-allianz.de">Jens Kapitza</a>
  */
+// CHECKSTYLE:OFF
 public class UserAuthKeyboardInteractive extends AbstractUserAuth {
 
     private final String password;
@@ -48,6 +44,8 @@ public class UserAuthKeyboardInteractive extends AbstractUserAuth {
 
     @Override
     public Result next(Buffer buffer) throws IOException {
+        ClientSession session = getClientSession();
+        String service = getService();
         if (buffer == null) {
             log.debug("Send SSH_MSG_USERAUTH_REQUEST for password");
             buffer = session.createBuffer(SshConstants.SSH_MSG_USERAUTH_REQUEST);
@@ -61,12 +59,14 @@ public class UserAuthKeyboardInteractive extends AbstractUserAuth {
         } else {
             int cmd = buffer.getUByte();
             switch (cmd) {
-                case SSH_MSG_USERAUTH_INFO_REQUEST:
-                    log.debug("Received SSH_MSG_USERAUTH_INFO_REQUEST");
+                case SshConstants.SSH_MSG_USERAUTH_INFO_REQUEST: {
                     String name = buffer.getString();
                     String instruction = buffer.getString();
                     String language_tag = buffer.getString();
-                    log.info("Received {} {} {}", new Object[]{name, instruction, language_tag});
+                    if (log.isDebugEnabled()) {
+                        log.debug("next({}) Received SSH_MSG_USERAUTH_INFO_REQUEST - name={}, instruction={}, lang={}",
+                                 session, name, instruction, language_tag);
+                    }
                     int num = buffer.getInt();
                     String[] prompt = new String[num];
                     boolean[] echo = new boolean[num];
@@ -83,34 +83,40 @@ public class UserAuthKeyboardInteractive extends AbstractUserAuth {
                     } else if (num == 1 && password != null && !echo[0] && prompt[0].toLowerCase().startsWith("password:")) {
                         rep = new String[]{password};
                     } else {
-                        UserInteraction ui = session.getFactoryManager().getUserInteraction();
-                        if (ui != null) {
-                            String dest = session.getUsername() + "@" + session.getIoSession().getRemoteAddress().toString();
-                            rep = ui.interactive(dest, name, instruction, language_tag, prompt, echo);
+                        UserInteraction ui = session.getUserInteraction();
+                        if ((ui != null) && ui.isInteractionAllowed(session)) {
+                            rep = ui.interactive(session, name, instruction, language_tag, prompt, echo);
                         }
                     }
                     if (rep == null) {
                         return Result.Failure;
                     }
 
-                    buffer = session.createBuffer(SSH_MSG_USERAUTH_INFO_RESPONSE);
+                    buffer = session.createBuffer(SshConstants.SSH_MSG_USERAUTH_INFO_RESPONSE);
                     buffer.putInt(rep.length);
                     for (String r : rep) {
                         buffer.putString(r);
                     }
                     session.writePacket(buffer);
                     return Result.Continued;
-                case SSH_MSG_USERAUTH_SUCCESS:
+                }
+                case SshConstants.SSH_MSG_USERAUTH_SUCCESS:
                     log.debug("Received SSH_MSG_USERAUTH_SUCCESS");
                     return Result.Success;
-                case SSH_MSG_USERAUTH_FAILURE:
-                    log.debug("Received SSH_MSG_USERAUTH_FAILURE");
-                    return Result.Failure;
+                case SshConstants.SSH_MSG_USERAUTH_FAILURE:
+                    {
+                        String methods = buffer.getString();
+                        boolean partial = buffer.getBoolean();
+                        if (log.isDebugEnabled()) {
+                            log.debug("Received SSH_MSG_USERAUTH_FAILURE - partial={}, methods={}", partial, methods);
+                        }
+                        return Result.Failure;
+                    }
                 default:
                     log.debug("Received unknown packet {}", Integer.valueOf(cmd));
                     return Result.Continued;
             }
         }
     }
-
 }
+// CHECKSTYLE:ON

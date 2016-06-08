@@ -30,9 +30,9 @@ import org.apache.sshd.common.io.IoHandler;
 import org.apache.sshd.common.io.IoService;
 import org.apache.sshd.common.io.IoSession;
 import org.apache.sshd.common.io.IoWriteFuture;
-import org.apache.sshd.common.util.CloseableUtils;
 import org.apache.sshd.common.util.buffer.Buffer;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
+import org.apache.sshd.common.util.closeable.AbstractCloseable;
 
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyIoSession extends CloseableUtils.AbstractCloseable implements IoSession {
+public class NettyIoSession extends AbstractCloseable implements IoSession {
 
   private final Map<Object, Object> attributes = new HashMap<>();
   private final NettyIoAcceptor acceptor;

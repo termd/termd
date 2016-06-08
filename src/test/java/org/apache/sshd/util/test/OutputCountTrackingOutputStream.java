@@ -16,25 +16,41 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sshd.deprecated;
 
+package org.apache.sshd.util.test;
+
+import java.io.FilterOutputStream;
 import java.io.IOException;
-
-import org.apache.sshd.common.util.buffer.Buffer;
+import java.io.OutputStream;
 
 /**
- * TODO Add javadoc
- *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public interface UserAuth {
+public class OutputCountTrackingOutputStream extends FilterOutputStream {
+    protected long writeCount;
 
-    enum Result {
-        Success,
-        Failure,
-        Continued
+    public OutputCountTrackingOutputStream(OutputStream out) {
+        super(out);
     }
 
-    Result next(Buffer buffer) throws IOException;
+    @Override
+    public void write(int b) throws IOException {
+        out.write(b);
+        updateWriteCount(1L);
+    }
 
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        out.write(b, off, len); // don't call super since it calls the single 'write'
+        updateWriteCount(len);
+    }
+
+    public long getWriteCount() {
+        return writeCount;
+    }
+
+    protected long updateWriteCount(long delta) {
+        writeCount += delta;
+        return writeCount;
+    }
 }

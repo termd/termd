@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -16,31 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sshd.util;
 
-import org.apache.sshd.common.util.logging.AbstractLoggingBean;
-import org.apache.sshd.server.auth.password.PasswordAuthenticator;
-import org.apache.sshd.server.session.ServerSession;
+package org.apache.sshd.util.test;
+
+import org.apache.sshd.server.Command;
+import org.apache.sshd.server.CommandFactory;
+import org.apache.sshd.server.scp.UnknownCommand;
 
 /**
- * TODO Add javadoc
- *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public class BogusPasswordAuthenticator extends AbstractLoggingBean implements PasswordAuthenticator {
-    public static final BogusPasswordAuthenticator INSTANCE = new BogusPasswordAuthenticator();
+public class UnknownCommandFactory implements CommandFactory {
+    public static final UnknownCommandFactory INSTANCE = new UnknownCommandFactory();
 
-    public BogusPasswordAuthenticator() {
+    public UnknownCommandFactory() {
         super();
     }
 
     @Override
-    public boolean authenticate(String username, String password, ServerSession session) {
-        boolean result = (username != null) && username.equals(password);
-        if (log.isDebugEnabled()) {
-            log.debug("authenticate({}) {} / {} - sucess = {}", session, username, password, Boolean.valueOf(result));
-        }
-
-        return result;
+    public Command createCommand(String command) {
+        return new UnknownCommand(command);
     }
 }

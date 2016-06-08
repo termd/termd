@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.SshConstants;
+import org.apache.sshd.common.auth.UserAuthMethodFactory;
 import org.apache.sshd.common.util.buffer.Buffer;
 
 /**
@@ -29,6 +30,7 @@ import org.apache.sshd.common.util.buffer.Buffer;
  *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
+// CHECKSTYLE:OFF
 public class UserAuthPassword extends AbstractUserAuth {
     private final String password;
 
@@ -39,12 +41,14 @@ public class UserAuthPassword extends AbstractUserAuth {
 
     @Override
     public Result next(Buffer buffer) throws IOException {
+        ClientSession session = getClientSession();
+        String service = getService();
         if (buffer == null) {
             log.debug("Send SSH_MSG_USERAUTH_REQUEST for password");
             buffer = session.createBuffer(SshConstants.SSH_MSG_USERAUTH_REQUEST);
             buffer.putString(session.getUsername());
             buffer.putString(service);
-            buffer.putString("password");
+            buffer.putString(UserAuthMethodFactory.PASSWORD);
             buffer.putBoolean(false);
             buffer.putString(password);
             session.writePacket(buffer);
@@ -56,7 +60,11 @@ public class UserAuthPassword extends AbstractUserAuth {
                 return Result.Success;
             }
             if (cmd == SshConstants.SSH_MSG_USERAUTH_FAILURE) {
-                log.debug("Received SSH_MSG_USERAUTH_FAILURE");
+                String methods = buffer.getString();
+                boolean partial = buffer.getBoolean();
+                if (log.isDebugEnabled()) {
+                    log.debug("Received SSH_MSG_USERAUTH_FAILURE - partial={}, methods={}", partial, methods);
+                }
                 return Result.Failure;
             } else {
                 if (log.isDebugEnabled()) {
@@ -69,3 +77,4 @@ public class UserAuthPassword extends AbstractUserAuth {
     }
 
 }
+// CHECKSTYLE:ON
