@@ -25,6 +25,7 @@ import io.termd.core.ssh.TtyCommand;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
+import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
@@ -166,6 +167,12 @@ public abstract class SshTtyTestBase extends TtyTestBase {
     } catch (Exception e) {
       throw failure(e);
     }
+  }
+
+  @Before
+  public void before() {
+    sshd = null;
+    session = null;
   }
 
   @After

@@ -367,8 +367,16 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
     client.connect("localhost", 4000);
     latch.await();
     Reader reader = new InputStreamReader(client.client.getInputStream());
-    char[] hello = new char[5];
-    int num = reader.read(hello);
+    int expectedLen = 5;
+    char[] hello = new char[expectedLen];
+    int num = 0;
+    while (num < expectedLen) {
+      int read = reader.read(hello, num, expectedLen - num);
+      if (read == -1) {
+        fail("Unexpected");
+      }
+      num += read;
+    }
     assertEquals(5, num);
     assertEquals("hello", new String(hello));
     byte[] data = baos.toByteArray();

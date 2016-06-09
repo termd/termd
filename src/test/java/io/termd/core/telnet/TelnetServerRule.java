@@ -74,6 +74,11 @@ public class TelnetServerRule extends ExternalResource {
   }
 
   @Override
+  protected void before() throws Throwable {
+    server = null;
+  }
+
+  @Override
   protected void after() {
     if (server != null) {
       try {
