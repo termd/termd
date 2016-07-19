@@ -108,8 +108,8 @@ public abstract class HttpTtyConnection implements TtyConnection {
    * @param bytes
    */
   public void writeToDecoder(byte[] bytes) {
-      lastAccessedTime = System.currentTimeMillis();
-      decoder.write(bytes);
+    lastAccessedTime = System.currentTimeMillis();
+    decoder.write(bytes);
   }
 
   public void writeToDecoder(String msg) {
@@ -128,7 +128,7 @@ public abstract class HttpTtyConnection implements TtyConnection {
         case "read":
           lastAccessedTime = System.currentTimeMillis();
           String data = (String) obj.get("data");
-          decoder.write(data.getBytes());
+          decoder.write(data.getBytes()); //write back echo
           break;
         case "resize":
           try {
