@@ -398,7 +398,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.shell.TelnetShellExample</mainClass>
+                  <mainClass>examples.shell.NettyTelnetShellExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -484,7 +484,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.screencast.TelnetScreencastingExample</mainClass>
+                  <mainClass>examples.screencast.NettyTelnetScreencastingExample</mainClass>
                 </configuration>
               </execution>
             </executions>
@@ -657,7 +657,7 @@
                 </goals>
                 <phase>test</phase>
                 <configuration>
-                  <mainClass>examples.ptybridge.TelnetPtyBridgeExample</mainClass>
+                  <mainClass>examples.ptybridge.NettyTelnetPtyBridgeExample</mainClass>
                 </configuration>
               </execution>
             </executions>

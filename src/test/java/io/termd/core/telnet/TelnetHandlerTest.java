@@ -205,11 +205,27 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
   }
 
   @Test
-  public void testServerClose() throws Exception {
+  public void testServerConnectionClose() throws Exception {
     server.start(() -> new TelnetHandler() {
       @Override
       protected void onOpen(TelnetConnection conn) {
         conn.close();
+      }
+      @Override
+      protected void onClose() {
+        testComplete();
+      }
+    });
+    client.connect("localhost", 4000);
+    await();
+  }
+
+  @Test
+  public void testServerClose() throws Exception {
+    server.start(() -> new TelnetHandler() {
+      @Override
+      protected void onOpen(TelnetConnection conn) {
+        server.close();
       }
       @Override
       protected void onClose() {

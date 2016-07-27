@@ -38,6 +38,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
+ * Telnet bootstrap implemented with Netty NIO channels.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NettyTelnetBootstrap extends TelnetBootstrap {

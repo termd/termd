@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A test class.
+ * The telnet bootstrap is used for creating a telnet a telnet application.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

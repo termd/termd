@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.readlinefunction;
 
-import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+package io.termd.core.telnet;
 
-import java.util.concurrent.TimeUnit;
+import java.io.Closeable;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-public class TelnetReadlineFunctionExample {
+/**
+ * See <a href="http://commons.apache.org/proper/commons-net/examples/telnet/TelnetClientExample.java>for more possibilities</a>
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+public class NioTelnetTermTest extends TelnetTermTest {
 
-  public synchronized static void main(String[] args) throws Exception {
-    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
-    bootstrap.start(ReadlineFunctionExample::handle).get(10, TimeUnit.SECONDS);
-    System.out.println("Telnet server started on localhost:4000");
-    TelnetReadlineFunctionExample.class.wait();
+  @Override
+  protected Function<Supplier<TelnetHandler>, Closeable> serverFactory() {
+    return TelnetServerRule.NIO_SERVER;
   }
 }

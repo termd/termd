@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.snake;
+package examples.screencast;
 
-import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+import io.termd.core.telnet.TelnetTtyBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 
+import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
-public class TelnetSnakeExample {
+public class NettyTelnetScreencastingExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setHost("localhost").setPort(4000);
-    bootstrap.start(new SnakeGame()).get(10, TimeUnit.SECONDS);
+    TelnetTtyBootstrap bootstrap = new TelnetTtyBootstrap(new NettyTelnetBootstrap()).setOutBinary(true).setHost("localhost").setPort(4000);
+    Robot robot = new Robot();
+    bootstrap.start(conn -> new Screencaster(robot, conn).handle()).get(10, TimeUnit.SECONDS);
     System.out.println("Telnet server started on localhost:4000");
-    TelnetSnakeExample.class.wait();
+    NettyTelnetScreencastingExample.class.wait();
   }
 }

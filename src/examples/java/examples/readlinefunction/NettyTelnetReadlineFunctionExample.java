@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.ptybridge;
+package examples.readlinefunction;
 
-import io.termd.core.pty.TtyBridge;
-import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+import io.termd.core.telnet.TelnetTtyBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 
 import java.util.concurrent.TimeUnit;
 
-public class TelnetPtyBridgeExample {
+public class NettyTelnetReadlineFunctionExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
-    bootstrap.start(conn -> new TtyBridge(conn).readline()).get(10, TimeUnit.SECONDS);
+    TelnetTtyBootstrap bootstrap = new TelnetTtyBootstrap(new NettyTelnetBootstrap()).setOutBinary(true).setHost("localhost").setPort(4000);
+    bootstrap.start(ReadlineFunctionExample::handle).get(10, TimeUnit.SECONDS);
     System.out.println("Telnet server started on localhost:4000");
-    TelnetPtyBridgeExample.class.wait();
+    NettyTelnetReadlineFunctionExample.class.wait();
   }
 }

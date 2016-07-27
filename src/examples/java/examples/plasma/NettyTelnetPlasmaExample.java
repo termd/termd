@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.readline;
+package examples.plasma;
 
-import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+import io.termd.core.telnet.TelnetTtyBootstrap;
+import io.termd.core.telnet.netty.NettyTelnetBootstrap;
 
 import java.util.concurrent.TimeUnit;
 
-public class TelnetReadlineExample {
+public class NettyTelnetPlasmaExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
-    bootstrap.start(ReadlineExample::handle).get(10, TimeUnit.SECONDS);
+    TelnetTtyBootstrap bootstrap = new TelnetTtyBootstrap(new NettyTelnetBootstrap()).setOutBinary(true).setHost("localhost").setPort(4000);
+    bootstrap.start(new Plasma()).get(10, TimeUnit.SECONDS);
     System.out.println("Telnet server started on localhost:4000");
-    TelnetReadlineExample.class.wait();
+    NettyTelnetPlasmaExample.class.wait();
   }
 }

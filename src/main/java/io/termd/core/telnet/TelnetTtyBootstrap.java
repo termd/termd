@@ -1,6 +1,5 @@
-package io.termd.core.telnet.netty;
+package io.termd.core.telnet;
 
-import io.termd.core.telnet.TelnetTtyConnection;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 
@@ -12,22 +11,22 @@ import java.util.function.Consumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyTelnetTtyBootstrap {
+public class TelnetTtyBootstrap {
 
-  private final NettyTelnetBootstrap telnet;
+  private final TelnetBootstrap telnet;
   private boolean outBinary;
   private boolean inBinary;
   private Charset charset = StandardCharsets.UTF_8;
 
-  public NettyTelnetTtyBootstrap() {
-    this.telnet = new NettyTelnetBootstrap();
+  public TelnetTtyBootstrap(TelnetBootstrap telnet) {
+    this.telnet = telnet;
   }
 
   public String getHost() {
     return telnet.getHost();
   }
 
-  public NettyTelnetTtyBootstrap setHost(String host) {
+  public TelnetTtyBootstrap setHost(String host) {
     telnet.setHost(host);
     return this;
   }
@@ -36,7 +35,7 @@ public class NettyTelnetTtyBootstrap {
     return telnet.getPort();
   }
 
-  public NettyTelnetTtyBootstrap setPort(int port) {
+  public TelnetTtyBootstrap setPort(int port) {
     telnet.setPort(port);
     return this;
   }
@@ -51,7 +50,7 @@ public class NettyTelnetTtyBootstrap {
    * @param outBinary true to require the client to receive binary
    * @return this object
    */
-  public NettyTelnetTtyBootstrap setOutBinary(boolean outBinary) {
+  public TelnetTtyBootstrap setOutBinary(boolean outBinary) {
     this.outBinary = outBinary;
     return this;
   }
@@ -66,7 +65,7 @@ public class NettyTelnetTtyBootstrap {
    * @param inBinary true to require the client to emit binary
    * @return this object
    */
-  public NettyTelnetTtyBootstrap setInBinary(boolean inBinary) {
+  public TelnetTtyBootstrap setInBinary(boolean inBinary) {
     this.inBinary = inBinary;
     return this;
   }

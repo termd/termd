@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package examples.events;
+package examples.readlinefunction;
 
-import io.termd.core.telnet.netty.NettyTelnetTtyBootstrap;
+import io.termd.core.telnet.TelnetTtyBootstrap;
+import io.termd.core.telnet.nio.NioTelnetBootstrap;
 
 import java.util.concurrent.TimeUnit;
 
-public class TelnetEventsExample {
+public class NioTelnetReadlineFunctionExample {
 
   public synchronized static void main(String[] args) throws Exception {
-    NettyTelnetTtyBootstrap bootstrap = new NettyTelnetTtyBootstrap().setOutBinary(true).setHost("localhost").setPort(4000);
-    bootstrap.start(EventsExample::handle).get(10, TimeUnit.SECONDS);
+    TelnetTtyBootstrap bootstrap = new TelnetTtyBootstrap(new NioTelnetBootstrap()).setOutBinary(true).setHost("localhost").setPort(4000);
+    bootstrap.start(ReadlineFunctionExample::handle).get(10, TimeUnit.SECONDS);
     System.out.println("Telnet server started on localhost:4000");
-    TelnetEventsExample.class.wait();
+    NioTelnetReadlineFunctionExample.class.wait();
   }
 }

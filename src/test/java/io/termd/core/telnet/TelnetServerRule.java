@@ -28,10 +28,13 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.termd.core.TestBase;
 import io.termd.core.telnet.netty.TelnetChannelHandler;
+import io.termd.core.telnet.nio.NioTelnetBootstrap;
 import org.junit.rules.ExternalResource;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -66,6 +69,17 @@ public class TelnetServerRule extends ExternalResource {
     }
   };
 
+  public static final Function<Supplier<TelnetHandler>, Closeable> NIO_SERVER = handlerFactory -> {
+    TelnetBootstrap bootstrap = new NioTelnetBootstrap().setPort(4000).setHost("localhost");
+    CompletableFuture<?> startFuture = bootstrap.start(handlerFactory);
+    try {
+      startFuture.get(5, TimeUnit.SECONDS);
+      return bootstrap::stop;
+    } catch (Exception e) {
+      throw TestBase.failure(e);
+    }
+  };
+
   private final Function<Supplier<TelnetHandler>, Closeable> serverFactory;
   protected Closeable server;
 
@@ -78,8 +92,7 @@ public class TelnetServerRule extends ExternalResource {
     server = null;
   }
 
-  @Override
-  protected void after() {
+  public void close() {
     if (server != null) {
       try {
         server.close();
@@ -87,6 +100,11 @@ public class TelnetServerRule extends ExternalResource {
         e.printStackTrace();
       }
     }
+  }
+
+  @Override
+  protected void after() {
+    close();
   }
 
   public final void start(Supplier<TelnetHandler> telnetFactory) {
