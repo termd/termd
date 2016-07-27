@@ -19,10 +19,9 @@ package io.termd.core.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.io.BinaryEncoder;
-import io.termd.core.io.TelnetCharset;
+import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
-import io.termd.core.tty.TtyConnection;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
 
@@ -102,6 +101,16 @@ public abstract class HttpTtyConnection implements TtyConnection {
   }
 
   protected abstract void write(byte[] buffer);
+
+  /**
+   * Special case to handle tty events.
+   *
+   * @param bytes
+   */
+  public void writeToDecoder(byte[] bytes) {
+    lastAccessedTime = System.currentTimeMillis();
+    decoder.write(bytes);
+  }
 
   public void writeToDecoder(String msg) {
     ObjectMapper mapper = new ObjectMapper();
