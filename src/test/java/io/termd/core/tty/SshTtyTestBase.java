@@ -26,6 +26,7 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +35,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -173,6 +176,23 @@ public abstract class SshTtyTestBase extends TtyTestBase {
   public void before() {
     sshd = null;
     session = null;
+  }
+
+  @Test
+  public void testExitCode() throws Exception {
+    server(conn -> {
+      conn.setStdinHandler(bytes -> {
+        conn.close(25);
+      });
+    });
+    assertConnect();
+    assertWrite("whatever");
+    long timeout = System.currentTimeMillis() + 5000;
+    while (!channel.isClosed()) {
+      assertTrue(System.currentTimeMillis() < timeout);
+      Thread.sleep(10);
+    }
+    assertEquals(25, channel.getExitStatus());
   }
 
   @After

@@ -93,6 +93,10 @@ public interface TtyConnection {
 
   void close();
 
+  default void close(int exit) {
+    close();
+  }
+
   /**
    * Write a string to the client.
    *

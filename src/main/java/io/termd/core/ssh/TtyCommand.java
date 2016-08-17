@@ -184,8 +184,12 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
 
   @Override
   public void close() throws IOException {
+    close(0);
+  }
+
+  private void close(int exit) throws IOException {
     ioOut.close(false).addListener(future -> {
-      exitCallback.onExit(0);
+      exitCallback.onExit(exit);
       if (closed.compareAndSet(false, true)) {
         if (closeHandler != null) {
           closeHandler.accept(null);
@@ -317,6 +321,14 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
     public void close() {
       try {
         TtyCommand.this.close();
+      } catch (IOException ignore) {
+      }
+    }
+
+    @Override
+    public void close(int exit) {
+      try {
+        TtyCommand.this.close(exit);
       } catch (IOException ignore) {
       }
     }
