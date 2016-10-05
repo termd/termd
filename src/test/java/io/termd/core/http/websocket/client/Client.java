@@ -221,7 +221,7 @@ public class Client {
   public static void executeRemoteCommand(Client client, String command) {
     log.info("Executing remote command ...");
     RemoteEndpoint.Basic remoteEndpoint = client.getRemoteEndpoint();
-    String data = "{\"action\":\"read\",\"data\":\"" + command + "\\r\\n\"}";
+    String data = "{\"action\":\"read\",\"data\":\"" + command + "\\n\"}";
     try {
       remoteEndpoint.sendBinary(ByteBuffer.wrap(data.getBytes()));
     } catch (IOException e) {

@@ -22,12 +22,13 @@ package io.termd.core.util;
 public class MockProcess {
 
   public static final String WELCOME_MESSAGE = "Hi there! I'm a long running process.";
-  public static final String MESSAGE = "Hello again!";
+  public static final String DEFAULT_MESSAGE = "Hello again!";
+  public static final String LONG_MESSAGE = "Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message Long Message ";
   public static final String FINAL_MESSAGE = "I'm done.";
 
   /**
    *
-   * @param args 1: Number of repeats. 2: Delay in ms.
+   * @param args 1: Number of repeats. 2: Delay in ms. 3: Message to print, where "long" is replaced with long string.
    * @throws InterruptedException
    */
   public static void main(String[] args) throws InterruptedException {
@@ -43,10 +44,20 @@ public class MockProcess {
       delay = Integer.parseInt(args[1]);
     }
 
+    String message;
+    if (args.length >= 3 ) {
+      message = args[2];
+      if (message.equals("long")) {
+        message = LONG_MESSAGE;
+      }
+    } else {
+      message = DEFAULT_MESSAGE;
+    }
+
     System.out.println(WELCOME_MESSAGE);
-    System.out.println("I'll write to stdout test message '" + MESSAGE + "' " + repeat + " times with " + delay + "ms delay.");
+    System.out.println("I'll write to stdout test message '" + message + "' " + repeat + " times with " + delay + "ms delay.");
     for (int i = 0; i < repeat; i++) {
-      System.out.println(i + " : " + MESSAGE);
+      System.out.println(i + " : " + message);
       Thread.sleep(delay);
     }
     System.out.println(FINAL_MESSAGE);
