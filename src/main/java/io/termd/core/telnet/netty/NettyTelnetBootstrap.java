@@ -90,5 +90,6 @@ public class NettyTelnetBootstrap extends TelnetBootstrap {
       doneHandler.accept(future.cause());
     };
     channelGroup.close().addListener(adapter);
+    group.shutdownGracefully();
   }
 }
