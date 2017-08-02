@@ -18,6 +18,7 @@ package io.termd.core.tty;
 
 import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import io.termd.core.TestBase;
@@ -55,39 +56,31 @@ public abstract class SshTtyTestBase extends TtyTestBase {
     if (session != null) {
       throw failure("Already a session");
     }
-    session = jsch.getSession("whatever", "localhost", 5000);
-    session.setPassword("whocares");
-    session.setUserInfo(new UserInfo() {
-      @Override
-      public String getPassphrase() {
-        return null;
+    Exception cause = new Exception("Could not connect");
+    for (int i = 0;i < 10;i++) {
+      try {
+        Session sess = jsch.getSession("whatever", "localhost", 5000);
+        sess.setPassword("whocares");
+        sess.setUserInfo(new UserInfo() {
+          public String getPassphrase() { return null; }
+          public String getPassword() { return null; }
+          public boolean promptPassword(String s) { return false; }
+          public boolean promptPassphrase(String s) { return false; }
+          public boolean promptYesNo(String s) { return true; /* Accept all server keys */ }
+          public void showMessage(String s) { }
+        });
+        sess.connect();
+        session = sess;
+        break;
+      } catch (JSchException e) {
+        // Retry up to 10 times (see https://sourceforge.net/p/jsch/bugs/111/)
+        // Save cause for throwing it later
+        cause = e;
       }
-
-      @Override
-      public String getPassword() {
-        return null;
-      }
-
-      @Override
-      public boolean promptPassword(String s) {
-        return false;
-      }
-
-      @Override
-      public boolean promptPassphrase(String s) {
-        return false;
-      }
-
-      @Override
-      public boolean promptYesNo(String s) {
-        return true;
-      } // Accept all server keys
-
-      @Override
-      public void showMessage(String s) {
-      }
-    });
-    session.connect();
+    }
+    if (session == null) {
+      throw cause;
+    }
     channel = (ChannelShell) session.openChannel("shell");
     if (term != null) {
       channel.setPtyType(term);
