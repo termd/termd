@@ -88,36 +88,40 @@ public class TtyBridge {
   }
 
   void read(final TtyConnection conn, final Readline readline) {
-    readline.readline(conn, "% ", line -> {
-      if (processStdinListener != null) {
-        processStdinListener.accept(line);
+    readline.readline(conn, "% ", line -> onNewLine(conn, readline, line));
+  }
+
+  private void onNewLine(TtyConnection conn, Readline readline, String line) {
+    if (processStdinListener != null) {
+      processStdinListener.accept(line);
+    }
+    if (line == null) {
+      conn.close();
+      return;
+    }
+    PtyMaster task = new PtyMaster(line, buffer -> onStdOut(conn, buffer), empty -> doneHandler(conn, readline));
+    conn.setEventHandler((event,cp) -> {
+      if (event == TtyEvent.INTR) {
+        task.interruptProcess();
       }
-      if (line == null) {
-        conn.close();
-        return;
-      }
-      PtyMaster task = new PtyMaster(line,
-          buffer -> {
-            conn.execute(() -> {
-              conn.stdoutHandler().accept(buffer);
-            });
-            if (processStdoutListener != null) {
-              processStdoutListener.accept(buffer);
-            }
-          },
-          v -> {
-        conn.setEventHandler(null);
-        conn.execute(() -> read(conn, readline));
-      });
-      conn.setEventHandler((event,cp) -> {
-        if (event == TtyEvent.INTR) {
-          task.interruptProcess();
-        }
-      });
-      if (processListener != null) {
-        processListener.accept(task);
-      }
-      task.start();
     });
+    if (processListener != null) {
+      processListener.accept(task);
+    }
+    task.start();
+  }
+
+  private void doneHandler(TtyConnection conn, Readline readline) {
+    conn.setEventHandler(null);
+    conn.execute(() -> read(conn, readline));
+  }
+
+  private void onStdOut(TtyConnection conn, int[] buffer) {
+    conn.execute(() -> {
+      conn.stdoutHandler().accept(buffer);
+    });
+    if (processStdoutListener != null) {
+      processStdoutListener.accept(buffer);
+    }
   }
 }
