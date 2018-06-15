@@ -18,6 +18,8 @@ package io.termd.core.pty;
 
 import io.termd.core.io.BinaryDecoder;
 import io.termd.core.util.Helper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +37,8 @@ import java.util.function.Consumer;
  * @author <a href="mailto:matejonnet@gmail.com">Matej Lazar</a>
  */
 public class PtyMaster extends Thread {
+
+  Logger log = LoggerFactory.getLogger(PtyMaster.class);
 
   private int bufferSize = 512;
   private final String line;
@@ -125,6 +129,22 @@ public class PtyMaster extends Thread {
       stdout.start();
       stderr.start();
       try {
+        log.debug("Waiting stdout to complete...");
+        stdout.join();
+        log.debug("Stdout completed.");
+      } catch (InterruptedException e) {
+        setStatus(Status.INTERRUPTED);
+        Thread.currentThread().interrupt();
+      }
+      try {
+        log.debug("Waiting stderr to complete...");
+        stderr.join();
+        log.debug("Stderr completed.");
+      } catch (InterruptedException e) {
+        setStatus(Status.INTERRUPTED);
+        Thread.currentThread().interrupt();
+      }
+      try {
         int exitValue = process.waitFor();
         if (exitValue == 0) {
           setStatus(Status.COMPLETED);
@@ -133,16 +153,6 @@ public class PtyMaster extends Thread {
         }
       } catch (InterruptedException e) {
         setStatus(Status.INTERRUPTED);
-        Thread.currentThread().interrupt();
-      }
-      try {
-        stdout.join();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      try {
-        stderr.join();
-      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     } catch (IOException e) {
