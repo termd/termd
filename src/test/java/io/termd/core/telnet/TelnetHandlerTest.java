@@ -379,8 +379,12 @@ public abstract class TelnetHandlerTest extends TelnetTestBase {
     }
     assertEquals(5, num);
     assertEquals("hello", new String(hello));
-    byte[] data = baos.toByteArray();
-    assertEquals(10, data.length);
+    long now = System.currentTimeMillis();
+    byte[] data;
+    while ((data = baos.toByteArray()).length < 10) {
+      assertTrue(System.currentTimeMillis() - now < 10000);
+      Thread.sleep(5);
+    }
     assertEquals((byte)'h', data[3]);
     assertEquals((byte)'e', data[4]);
     assertEquals((byte)'l', data[5]);
