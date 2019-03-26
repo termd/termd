@@ -24,6 +24,7 @@ import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.util.function.Consumer;
 
 /**
@@ -47,6 +48,8 @@ public class BinaryDecoder {
       throw new IllegalArgumentException("Initial size must be at least 2");
     }
     decoder = charset.newDecoder();
+    decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
+    decoder.onMalformedInput(CodingErrorAction.REPLACE);
     bBuf = EMPTY;
     cBuf = CharBuffer.allocate(initialSize); // We need at least 2
     this.onChar = onChar;
@@ -59,6 +62,8 @@ public class BinaryDecoder {
    */
   public void setCharset(Charset charset) {
     decoder = charset.newDecoder();
+    decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
+    decoder.onMalformedInput(CodingErrorAction.REPLACE);
   }
 
   public void write(byte[] data) {
