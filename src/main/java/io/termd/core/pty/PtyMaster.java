@@ -122,24 +122,15 @@ public class PtyMaster extends Thread {
   public void run() {
     ProcessBuilder builder = new ProcessBuilder(line.split("\\s+"));
     try {
+      builder.redirectErrorStream(true);
       process = builder.start();
       setStatus(Status.RUNNING);
       Pipe stdout = new Pipe(process.getInputStream());
-      Pipe stderr = new Pipe(process.getErrorStream());
       stdout.start();
-      stderr.start();
       try {
         log.debug("Waiting stdout to complete...");
         stdout.join();
         log.debug("Stdout completed.");
-      } catch (InterruptedException e) {
-        setStatus(Status.INTERRUPTED);
-        Thread.currentThread().interrupt();
-      }
-      try {
-        log.debug("Waiting stderr to complete...");
-        stderr.join();
-        log.debug("Stderr completed.");
       } catch (InterruptedException e) {
         setStatus(Status.INTERRUPTED);
         Thread.currentThread().interrupt();
