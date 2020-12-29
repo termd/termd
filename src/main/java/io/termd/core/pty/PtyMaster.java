@@ -140,7 +140,11 @@ public class PtyMaster extends Thread {
         if (exitValue == 0) {
           setStatus(Status.COMPLETED);
         } else {
-          setStatus(Status.FAILED);
+          if (interrupted) {
+            setStatus(Status.INTERRUPTED);
+          } else {
+            setStatus(Status.FAILED);
+          }
         }
       } catch (InterruptedException e) {
         setStatus(Status.INTERRUPTED);
