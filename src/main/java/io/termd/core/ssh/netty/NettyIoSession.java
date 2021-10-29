@@ -80,9 +80,13 @@ public class NettyIoSession extends AbstractCloseable implements IoSession {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
       ByteBuf buf = (ByteBuf) msg;
-      byte[] bytes = new byte[buf.readableBytes()];
-      buf.getBytes(0, bytes);
-      acceptor.factory.handlerBridge.messageReceived(handler, NettyIoSession.this, new ByteArrayBuffer(bytes));
+      try {
+        byte[] bytes = new byte[buf.readableBytes()];
+        buf.getBytes(0, bytes);
+        acceptor.factory.handlerBridge.messageReceived(handler, NettyIoSession.this, new ByteArrayBuffer(bytes));
+      } finally {
+        buf.release();
+      }
     }
 
     @Override
