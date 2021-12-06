@@ -725,6 +725,66 @@
         </plugins>
       </build>
     </profile>
+
+    <!-- http://www.mojohaus.org/buildnumber-maven-plugin/
+    -Dmaven.buildNumber.doCheck=true for CI build
+    -->
+    <profile>
+      <id>addBuildInfoTojar</id>
+      <activation>
+        <property>
+          <name>!buildNumberOff</name>
+        </property>
+      </activation>
+      <properties>
+        <jar_with_pom>true</jar_with_pom>
+        <maven.buildNumber.shortRevisionLength>0</maven.buildNumber.shortRevisionLength>
+        <maven.buildNumber.useLastCommittedRevision>false</maven.buildNumber.useLastCommittedRevision>
+        <buildInfo></buildInfo>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <version>1.4</version>
+            <executions>
+              <execution>
+                <phase>validate</phase>
+                <goals>
+                  <goal>create</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <locale>en_US</locale>
+              <timestampFormat>{0,date,yyyy-MM-dd'T'HH:mm:ssX}</timestampFormat>
+              <items>
+                <item>timestamp</item>
+                <item>buildNumber</item>
+              </items>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>2.6</version>
+            <configuration>
+              <archive>
+                <addMavenDescriptor>${jar_with_pom}</addMavenDescriptor>
+                <manifestEntries>
+                  <SCM-Revision>${buildNumber}</SCM-Revision>
+                  <SCM-Branch>${scmBranch}</SCM-Branch>
+                  <Built-On>${timestamp}</Built-On>
+                  <Java-Target>${maven.compiler.target}</Java-Target>
+                  <Build-Info>${buildInfo}</Build-Info>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
