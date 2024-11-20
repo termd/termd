@@ -51,7 +51,7 @@
 
   <properties>
     <version.org.slf4j>1.7.21</version.org.slf4j>
-    <netty.version>4.1.1.Final</netty.version>
+    <netty.version>4.1.81.Final</netty.version>
     <jackson.version>2.7.4</jackson.version>
 
     <!-- maven-compiler-plugin -->
@@ -108,7 +108,19 @@
     <dependency>
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-core</artifactId>
-      <version>1.2.0</version>
+      <version>2.14.0</version>
+      <optional>true</optional>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.sshd</groupId>
+      <artifactId>sshd-netty</artifactId>
+      <version>2.14.0</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -302,54 +314,6 @@
   </build>
 
   <profiles>
-
-    <profile>
-      <id>jacoco</id>
-      <activation>
-        <property>
-          <name>!maven.surefire.debug</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.7.2.201409121644</version>
-            <executions>
-              <!-- pre-unit-test execution helps setting up some maven property,
-                which will be used later by JaCoCo -->
-              <execution>
-                <id>pre-unit-test</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-                <configuration>
-                  <destFile>${project.build.directory}/jacoco.exec</destFile>
-                  <!-- passing property which will contains settings for JaCoCo agent.
-                    If not specified, then "argLine" would be used for "jar" packaging -->
-                  <propertyName>surefireArgLine</propertyName>
-                </configuration>
-              </execution>
-              <!-- report phase setup -->
-              <execution>
-                <id>post-unit-test</id>
-                <phase>test</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <!-- output file with report data. -->
-                  <dataFile>${project.build.directory}/jacoco.exec</dataFile>
-                  <!-- output directory for the reports. -->
-                  <outputDirectory>${project.build.directory}/jacoco</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
 
     <!-- All examples : very verbose but well -->
 

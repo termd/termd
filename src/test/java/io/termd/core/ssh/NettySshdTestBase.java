@@ -13,7 +13,7 @@ public class NettySshdTestBase extends Assert {
   @Before
   public void setNettyServer() {
 //        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
-    System.setProperty(IoServiceFactoryFactory.class.getName(), TestIoServiceFactoryFactory.class.getName());
+//    System.setProperty(IoServiceFactoryFactory.class.getName(), TestIoServiceFactoryFactory.class.getName());
   }
 
   @After

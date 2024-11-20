@@ -18,15 +18,18 @@
  */
 package org.apache.sshd.util.test;
 
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.shell.ShellFactory;
+
+import java.io.IOException;
 
 /**
  * TODO Add javadoc
  *
  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
  */
-public class EchoShellFactory implements Factory<Command> {
+public class EchoShellFactory implements ShellFactory {
     public static final EchoShellFactory INSTANCE = new EchoShellFactory();
 
     public EchoShellFactory() {
@@ -34,7 +37,7 @@ public class EchoShellFactory implements Factory<Command> {
     }
 
     @Override
-    public Command create() {
+    public Command createShell(ChannelSession channel) throws IOException {
         return new EchoShell();
     }
 }
