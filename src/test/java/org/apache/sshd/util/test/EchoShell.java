@@ -26,7 +26,8 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 
@@ -83,7 +84,7 @@ public class EchoShell implements Command, Runnable {
     }
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channel, Environment env) throws IOException {
         environment = env;
         thread = new Thread(this, "EchoShell");
         thread.setDaemon(true);
@@ -91,7 +92,7 @@ public class EchoShell implements Command, Runnable {
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channel) throws Exception {
         thread.interrupt();
     }
 

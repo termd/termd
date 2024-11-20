@@ -16,17 +16,20 @@
 
 package io.termd.core.tty;
 
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.EventExecutor;
 import io.termd.core.ssh.TtyCommand;
-import io.termd.core.ssh.netty.NettyIoServiceFactoryFactory;
-import io.termd.core.ssh.netty.NettyIoSession;
 import org.apache.sshd.common.session.Session;
+import org.apache.sshd.netty.NettyIoServiceFactoryFactory;
+import org.apache.sshd.netty.NettyIoSession;
 import org.apache.sshd.server.SshServer;
 import org.junit.After;
 import org.junit.Before;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.function.Consumer;
 
 /**
@@ -58,9 +61,14 @@ public class NettySshTtyTest extends SshTtyTestBase {
     return new TtyCommand(charset, onConnect) {
       @Override
       public void execute(Runnable task) {
-        Session session = this.session.getSession();
-        NettyIoSession ioSession = (NettyIoSession) session.getIoSession();
-        ioSession.execute(task);
+        // Need this trick now since we cannot get the event loop from the session
+        for (EventExecutor eventExecutor : eventLoopGroup) {
+            EventLoop el = (EventLoop) eventExecutor;
+            if (el.inEventLoop()) {
+                el.execute(task);
+                break;
+            }
+        }
       }
     };
   }

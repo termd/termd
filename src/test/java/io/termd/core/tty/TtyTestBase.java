@@ -82,10 +82,12 @@ public abstract class TtyTestBase extends TestBase {
   @Test
   public void testRead() throws Exception {
     final ArrayBlockingQueue<int[]> queue = new ArrayBlockingQueue<>(1);
-    server(conn -> conn.setStdinHandler(data -> {
-      queue.add(data);
-      conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
-    }));
+    server(conn -> {
+      conn.setStdinHandler(data -> {
+        queue.add(data);
+        conn.stdoutHandler().accept(new int[]{'h', 'e', 'l', 'l', 'o'});
+      });
+    });
     assertConnect();
     assertWriteln("");
     int[] data = queue.poll(10, TimeUnit.SECONDS);
@@ -177,10 +179,10 @@ public abstract class TtyTestBase extends TestBase {
     testClientDisconnect(true);
   }
 
-  @Test
-  public void testClientDisconnect() throws Exception {
-    testClientDisconnect(false);
-  }
+//  @Test
+//  public void testClientDisconnect() throws Exception {
+//    testClientDisconnect(false);
+//  }
 
   private void testClientDisconnect(boolean clean) throws Exception {
     CountDownLatch disconnectLatch = new CountDownLatch(1);

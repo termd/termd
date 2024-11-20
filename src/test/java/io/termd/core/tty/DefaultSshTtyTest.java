@@ -16,6 +16,7 @@
 
 package io.termd.core.tty;
 
+import org.apache.sshd.common.io.nio2.Nio2ServiceFactoryFactory;
 import org.apache.sshd.server.SshServer;
 
 /**
@@ -25,6 +26,8 @@ public class DefaultSshTtyTest extends SshTtyTestBase {
 
   @Override
   protected SshServer createServer() {
-    return SshServer.setUpDefaultServer();
+    SshServer server = SshServer.setUpDefaultServer();
+    server.setIoServiceFactoryFactory(new Nio2ServiceFactoryFactory());
+    return server;
   }
 }

@@ -22,6 +22,7 @@ import io.termd.core.ssh.TtyCommand;
 import io.termd.core.tty.TtyConnection;
 import io.termd.core.util.Helper;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
+import org.apache.sshd.netty.NettyIoServiceFactoryFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
@@ -105,7 +106,7 @@ public class NettySshTtyBootstrap {
     server.setHost(host);
     server.setKeyPairProvider(keyPairProvider);
     server.setPasswordAuthenticator(passwordAuthenticator);
-    server.setShellFactory(() -> new TtyCommand(charset, factory));
+    server.setShellFactory(channelSession -> new TtyCommand(charset, factory));
     try {
       server.start();
     } catch (Exception e) {
