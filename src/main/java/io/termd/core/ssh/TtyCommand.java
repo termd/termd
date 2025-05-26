@@ -114,10 +114,14 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   public void setIoOutputStream(IoOutputStream out) {
     this.ioOut = out;
     this.out = bytes -> {
-      try {
-        out.writeBuffer(new ByteArrayBuffer(bytes));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(bytes);
+      while (byteArrayBuffer.available() > 0) {
+        try {
+          out.writeBuffer(byteArrayBuffer);
+        } catch (WritePendingException ignored) {
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
     };
   }
