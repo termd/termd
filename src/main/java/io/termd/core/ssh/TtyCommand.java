@@ -23,6 +23,7 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
+import org.apache.sshd.common.io.WritePendingException;
 import org.apache.sshd.common.channel.PtyMode;
 import org.apache.sshd.common.io.IoInputStream;
 import org.apache.sshd.common.io.IoOutputStream;
