@@ -23,6 +23,7 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
+import org.apache.sshd.common.io.IoWriteFuture;
 import org.apache.sshd.common.io.WritePendingException;
 import org.apache.sshd.common.channel.PtyMode;
 import org.apache.sshd.common.io.IoInputStream;
@@ -119,8 +120,10 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
       ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(bytes);
       while (byteArrayBuffer.available() > 0) {
         try {
-          out.writeBuffer(byteArrayBuffer);
+          IoWriteFuture ioWriteFuture = out.writeBuffer(byteArrayBuffer);
+          ioWriteFuture.verify(10, TimeUnit.SECONDS);
         } catch (WritePendingException | EOFException ignored) {
+         // System.err.println("write pending");
         } catch (IOException e) {
           throw new RuntimeException(e);
         }

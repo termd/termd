@@ -7,27 +7,37 @@ import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(Parameterized.class)
 public class SshTtyCommandTest {
 
     public static final int TIMEOUT_SECS = 5;
-    public static final int REPETITIONS = 1;
+    public static final int REPETITIONS = 10;
 
+    @Parameterized.Parameters
+    public static Object[][] data() {
+        return new Object[REPETITIONS][0];
+    }
 
-    @Test
-    public void runCommandViaSSHTest() throws InterruptedException {
-
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
         try {
             // Configura il server SSH (basato su SshShellExample)
             NettySshTtyBootstrap bootstrap = new NettySshTtyBootstrap()
@@ -35,11 +45,14 @@ public class SshTtyCommandTest {
                     .setHost("localhost");
 
             bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
-            System.out.println("SSH server started on localhost:5000");
         } catch (Exception e) {
             fail();
         }
+    }
 
+
+    @Test
+    public void runCommandViaSSHTest() throws InterruptedException {
         AtomicReference<String> result = new AtomicReference<>();
 
         // Avvia client SSH in un thread separato
@@ -52,7 +65,7 @@ public class SshTtyCommandTest {
                         .getClientSession()) {
                     session.addPasswordIdentity("password");
                     session.auth().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
-                    byte[] output = new byte[16];
+                    byte[] output = new byte[100];
                     try (
                             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                             ByteArrayInputStream inputStream = new ByteArrayInputStream(output)
@@ -64,19 +77,21 @@ public class SshTtyCommandTest {
                             channel.setErr(new NoCloseOutputStream(System.err));
                             channel.open().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
 
-                            for (int i = 0; i < REPETITIONS; i++) {
-                                String expectedOutput = "hello world " + i;
 
-                                OutputStream pipedIn = channel.getInvertedIn();
-                                // resets all data in the output stream
+                            String expectedOutput = "test";
 
-                                pipedIn.write(("echo " + expectedOutput + "\n").getBytes());
-                                pipedIn.flush();
-                                channel.waitFor(Collections.singletonList(ClientChannelEvent.STDOUT_DATA), TimeUnit.SECONDS.toMillis(1L));
+                            OutputStream pipedIn = channel.getInvertedIn();
+                            // resets all data in the output stream
 
-                                result.set(outputStream.toString());
+                            pipedIn.write(("echo test\n").getBytes());
+                            pipedIn.flush();
+                            channel.waitFor(Arrays.asList(
+                                    ClientChannelEvent.STDOUT_DATA,
+                                    ClientChannelEvent.EOF,
+                                    ClientChannelEvent.CLOSED
+                            ), TimeUnit.SECONDS.toMillis(2L));
 
-                            }
+                            result.set(outputStream.toString());
                         }
                     }
                 }
@@ -89,7 +104,16 @@ public class SshTtyCommandTest {
         clientThread.start();
         clientThread.join();
 
-        System.out.println("Result:\n"+ result.get());
+
+        String expected = "Welcome to Term.d shell example\n" +
+                "\n" +
+                "% echo test\n" +
+                "test";
+
+        expected = expected.replaceAll("(\r|\n)", "");
+        String actual = result.get().replaceAll("(\r|\n)", "");
+        System.out.println("Result:\n" + result.get());
+        assertEquals(expected, actual);
 
     }
 }
