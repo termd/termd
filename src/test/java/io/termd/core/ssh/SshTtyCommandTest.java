@@ -4,6 +4,7 @@ import examples.shell.Shell;
 import io.termd.core.ssh.netty.NettySshTtyBootstrap;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelShell;
+import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -66,10 +68,12 @@ public class SshTtyCommandTest {
                                 String expectedOutput = "hello world " + i;
 
                                 OutputStream pipedIn = channel.getInvertedIn();
-                                pipedIn.write(("echo " + expectedOutput).getBytes());
-                                pipedIn.flush();
+                                // resets all data in the output stream
 
-                                Thread.sleep(200); // dai tempo alla risposta
+                                pipedIn.write(("echo " + expectedOutput + "\n").getBytes());
+                                pipedIn.flush();
+                                channel.waitFor(Collections.singletonList(ClientChannelEvent.STDOUT_DATA), TimeUnit.SECONDS.toMillis(1L));
+
                                 result.set(outputStream.toString());
 
                             }

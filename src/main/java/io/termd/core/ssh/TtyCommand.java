@@ -35,6 +35,7 @@ import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -119,7 +120,7 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
       while (byteArrayBuffer.available() > 0) {
         try {
           out.writeBuffer(byteArrayBuffer);
-        } catch (WritePendingException ignored) {
+        } catch (WritePendingException | EOFException ignored) {
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
