@@ -7,7 +7,6 @@ import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -16,7 +15,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -25,31 +23,30 @@ import static org.junit.Assert.fail;
 public class SshTtyCommandTest {
 
     public static final int TIMEOUT_SECS = 5;
-    public static final int REPETITIONS = 10;
+    public static final int REPETITIONS = 2;
 
     @Parameterized.Parameters
     public static Object[][] data() {
         return new Object[REPETITIONS][0];
     }
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        try {
-            // Configura il server SSH (basato su SshShellExample)
-            NettySshTtyBootstrap bootstrap = new NettySshTtyBootstrap()
-                    .setPort(5000)
-                    .setHost("localhost");
-
-            bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            fail();
-        }
-    }
-
 
     @Test
     public void runCommandViaSSHTest() {
-        AtomicReference<String> result = new AtomicReference<>();
+        // Configura il server SSH (basato su SshShellExample)
+        NettySshTtyBootstrap bootstrap = new NettySshTtyBootstrap()
+                .setPort(5000)
+                .setHost("localhost");
+        try {
+
+            bootstrap.start(new Shell()).get(10, TimeUnit.SECONDS);
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+
+
+        String result = "";
 
         try (SshClient client = SshClient.setUpDefaultClient()) {
             client.start();
@@ -69,33 +66,41 @@ public class SshTtyCommandTest {
                         channel.open().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
 
                         OutputStream pipedIn = channel.getInvertedIn();
+
+                        StringBuilder expected = new StringBuilder();
+                        expected.append("Welcome to Term.d shell example\n")
+                                .append("\n")
+                                .append("% ");
+
+                        String expectedString = "";
+
                         // resets all data in the output stream
+                        for (int i = 0; i < REPETITIONS; i++) {
 
-                        String expectedRes = "hello world 1 w frsdfpa";
-                        pipedIn.write(("echo " + expectedRes + "\n").getBytes());
-                        pipedIn.flush();
-                        channel.waitFor(Arrays.asList(
-                                ClientChannelEvent.STDOUT_DATA,
-                                ClientChannelEvent.EOF
-                        ), TimeUnit.SECONDS.toMillis(2L));
+                            String expectedRes = "hello world " + (i + 1);
+                            pipedIn.write(("echo " + expectedRes + "\n").getBytes());
+                            pipedIn.flush();
+                            channel.waitFor(Arrays.asList(
+                                    ClientChannelEvent.STDOUT_DATA,
+                                    ClientChannelEvent.EOF
+                            ), TimeUnit.SECONDS.toMillis(2L));
 
-                        result.set(outputStream.toString());
-                        String expected = "Welcome to Term.d shell example\n" +
-                                "\n" +
-                                "% echo "+expectedRes+"\n" +
-                                expectedRes+"\n" +
-                                "% ";
+                            result = outputStream.toString();
+                            expected.append("echo ").append(expectedRes).append("\n").append(expectedRes).append("\n").append("% ");
 
-                        expected = expected.replaceAll("(\r|\n)", "");
-                        String actual = result.get().replaceAll("(\r|\n)", "");
-                        System.out.println("Result:\n" + result.get());
-                        assertEquals(expected, actual);
+                            expectedString = expected.toString().replaceAll("(\r|\n)", "");
+                            String actual = result.replaceAll("(\r|\n)", "");
+
+                            assertEquals(expectedString, actual);
+                        }
                     }
                 }
             }
 
+            bootstrap.stop();
         } catch (Exception e) {
-            e.printStackTrace();
+            fail(e.getMessage());
         }
+
     }
 }
