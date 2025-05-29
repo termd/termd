@@ -7,18 +7,14 @@ import org.apache.sshd.client.channel.ChannelShell;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.io.output.NoCloseOutputStream;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -52,68 +48,54 @@ public class SshTtyCommandTest {
 
 
     @Test
-    public void runCommandViaSSHTest() throws InterruptedException {
+    public void runCommandViaSSHTest() {
         AtomicReference<String> result = new AtomicReference<>();
 
-        // Avvia client SSH in un thread separato
-        Thread clientThread = new Thread(() -> {
-            try (SshClient client = SshClient.setUpDefaultClient()) {
-                client.start();
+        try (SshClient client = SshClient.setUpDefaultClient()) {
+            client.start();
 
-                try (ClientSession session = client.connect("user", "localhost", 5000)
-                        .verify(TIMEOUT_SECS, TimeUnit.SECONDS)
-                        .getClientSession()) {
-                    session.addPasswordIdentity("password");
-                    session.auth().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
-                    byte[] output = new byte[100];
-                    try (
-                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                            ByteArrayInputStream inputStream = new ByteArrayInputStream(output)
-                    ) {
-                        try (ChannelShell channel = session.createShellChannel()) {
-                            channel.setIn(inputStream);
-                            channel.setOut(outputStream);
+            try (ClientSession session = client.connect("user", "localhost", 5000)
+                    .verify(TIMEOUT_SECS, TimeUnit.SECONDS)
+                    .getClientSession()) {
+                session.addPasswordIdentity("password");
+                session.auth().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
+                try (
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+                ) {
+                    try (ChannelShell channel = session.createShellChannel()) {
+                        channel.setOut(outputStream);
 
-                            channel.setErr(new NoCloseOutputStream(System.err));
-                            channel.open().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
+                        channel.setErr(new NoCloseOutputStream(System.err));
+                        channel.open().verify(TIMEOUT_SECS, TimeUnit.SECONDS);
 
+                        OutputStream pipedIn = channel.getInvertedIn();
+                        // resets all data in the output stream
 
-                            String expectedOutput = "test";
+                        String expectedRes = "hello world 1 w frsdfpa";
+                        pipedIn.write(("echo " + expectedRes + "\n").getBytes());
+                        pipedIn.flush();
+                        channel.waitFor(Arrays.asList(
+                                ClientChannelEvent.STDOUT_DATA,
+                                ClientChannelEvent.EOF
+                        ), TimeUnit.SECONDS.toMillis(2L));
 
-                            OutputStream pipedIn = channel.getInvertedIn();
-                            // resets all data in the output stream
+                        result.set(outputStream.toString());
+                        String expected = "Welcome to Term.d shell example\n" +
+                                "\n" +
+                                "% echo "+expectedRes+"\n" +
+                                expectedRes+"\n" +
+                                "% ";
 
-                            pipedIn.write(("echo test\n").getBytes());
-                            pipedIn.flush();
-                            channel.waitFor(Arrays.asList(
-                                    ClientChannelEvent.STDOUT_DATA,
-                                    ClientChannelEvent.EOF,
-                                    ClientChannelEvent.CLOSED
-                            ), TimeUnit.SECONDS.toMillis(2L));
-
-                            result.set(outputStream.toString());
-                        }
+                        expected = expected.replaceAll("(\r|\n)", "");
+                        String actual = result.get().replaceAll("(\r|\n)", "");
+                        System.out.println("Result:\n" + result.get());
+                        assertEquals(expected, actual);
                     }
                 }
-
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        });
-        Thread.sleep(1000);
-        clientThread.start();
-        clientThread.join();
 
-
-        String expected = "Welcome to Term.d shell example\n" +
-                "\n" +
-                "% echo test\n" +
-                "test";
-
-        expected = expected.replaceAll("(\r|\n)", "");
-        String actual = result.get().replaceAll("(\r|\n)", "");
-        System.out.println("Result:\n" + result.get());
-        assertEquals(expected, actual);
-
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
