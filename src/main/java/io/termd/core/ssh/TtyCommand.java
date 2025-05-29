@@ -118,12 +118,14 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
     this.ioOut = out;
     this.out = bytes -> {
       ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(bytes);
+      // the loop is only needed if we catch a WritePendingException, to retry the write and clear the buffer
       while (byteArrayBuffer.available() > 0) {
         try {
           IoWriteFuture ioWriteFuture = out.writeBuffer(byteArrayBuffer);
-          ioWriteFuture.verify(10, TimeUnit.SECONDS);
+          // await the write so that we do not lose bytes
+          ioWriteFuture.verify(1, TimeUnit.SECONDS); 
         } catch (WritePendingException | EOFException ignored) {
-         // System.err.println("write pending");
+         // WritePendingException is only cought if the verify() method timeouts
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
