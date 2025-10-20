@@ -23,6 +23,8 @@ import io.termd.core.tty.TtyEvent;
 import io.termd.core.tty.TtyEventDecoder;
 import io.termd.core.tty.TtyOutputMode;
 import io.termd.core.util.Vector;
+import org.apache.sshd.common.io.IoWriteFuture;
+import org.apache.sshd.common.io.WritePendingException;
 import org.apache.sshd.common.channel.PtyMode;
 import org.apache.sshd.common.io.IoInputStream;
 import org.apache.sshd.common.io.IoOutputStream;
@@ -34,6 +36,7 @@ import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelDataReceiver;
 import org.apache.sshd.server.channel.ChannelSession;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -114,10 +117,18 @@ public class TtyCommand implements AsyncCommand, ChannelDataReceiver, ChannelSes
   public void setIoOutputStream(IoOutputStream out) {
     this.ioOut = out;
     this.out = bytes -> {
-      try {
-        out.writeBuffer(new ByteArrayBuffer(bytes));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      ByteArrayBuffer byteArrayBuffer = new ByteArrayBuffer(bytes);
+      // the loop is only needed if we catch a WritePendingException, to retry the write and clear the buffer
+      while (byteArrayBuffer.available() > 0) {
+        try {
+          IoWriteFuture ioWriteFuture = out.writeBuffer(byteArrayBuffer);
+          // await the write so that we do not lose bytes
+          ioWriteFuture.verify(1, TimeUnit.SECONDS); 
+        } catch (WritePendingException | EOFException ignored) {
+         // WritePendingException is only cought if the verify() method timeouts
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
     };
   }
