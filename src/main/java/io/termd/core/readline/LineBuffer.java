@@ -56,7 +56,7 @@ public class LineBuffer {
   /**
    * Insert a string in the buffer at the current cursor position.
    *
-   * @see {@link #insert(int)}
+   * @see #insert(int)
    */
   public LineBuffer insert(String s) {
     return insert(Helper.toCodePoints(s));

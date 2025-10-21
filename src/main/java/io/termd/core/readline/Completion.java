@@ -81,8 +81,8 @@ public class Completion {
   }
 
   /**
-   * Insert an inline completion, the {@code text} argument will be inserted at the current position and
-   * the new position will be changed, the underlying edition buffer is also modified.<p/>
+   * <p>Insert an inline completion, the {@code text} argument will be inserted at the current position and
+   * the new position will be changed, the underlying edition buffer is also modified.</p>
    *
    * @param text the text to insert inline
    * @param terminal true if an extra whitespace must be inserted after the text
@@ -126,8 +126,8 @@ public class Completion {
   }
 
   /**
-   * Write a block of text below the current edition line, a {@code CRLF} sequence is inserted before the
-   * block of text.<p/>
+   * <p>Write a block of text below the current edition line, a {@code CRLF} sequence is inserted before the
+   * block of text.</p>
    *
    * @param text the text to insert inline
    */
