@@ -36,6 +36,7 @@
     <connection>scm:git:git@github.com:termd/termd.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/termd/termd.git</developerConnection>
     <url>git@github.com:termd/termd.git</url>
+    <tag>1.1.11</tag>
   </scm>
 
   <developers>
@@ -57,8 +58,9 @@
     <!-- maven-compiler-plugin -->
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
-  </properties>
 
+      <!-- Execution skip -->
+      <skipEnforcer>false</skipEnforcer>  </properties>
   <dependencies>
 
     <dependency>
@@ -259,6 +261,31 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>enforce-no-vertx-snapshots</id>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                    <configuration>
+                        <skip>${skipEnforcer}</skip>
+                        <rules>
+                            <requireJavaVersion>
+                                <message>Must be released with Java 8!</message>
+                                <version>[1.8,9)</version>
+                            </requireJavaVersion>
+                            <requireReleaseDeps>
+                                <message>No Snapshots Allowed during a release!</message>
+                            </requireReleaseDeps>
+                        </rules>
+                        <fail>true</fail>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
   </build>
 
